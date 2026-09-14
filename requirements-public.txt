@@ -1,0 +1,4 @@
+# Optional user-run downloads only. Offline scanner/tests use the standard library.
+# Direct dependencies pinned; a full transitive lock is pending platform validation.
+yfinance==1.7.0
+exchange_calendars==4.13.2

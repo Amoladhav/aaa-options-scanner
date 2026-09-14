@@ -1,79 +1,74 @@
 # Project status
 
-Updated: 2026-09-13. Phase: intake and development preparation.
+Updated: 2026-09-13. Phase: first momentum implementation.
 
-## Current state
+## Implemented
 
-The parent and project AGENTS.md files contain shared policy revision 2. Agents
-may prepare code and make local commits; the user performs pushes and every
-credentialed application operation. The independent repository is on main with
-origin configured; local setup commit is `89dd8c8`. No remote request was made.
+- Independent Git repository with origin; no agent pushes or authenticated calls.
+  User setup commits `89dd8c8` and `cd9567b` are preserved. Initial scanned
+  momentum reference commit: `cba570f`.
+- Narrow reference baseline: three accepted files, 432 excluded. Full path/hash
+  manifest and value-suppressing finding disposition are recorded. Raw INBOX is
+  unchanged; excluded material remains unapproved. Redistribution rights unresolved.
+- Pure standard-library momentum core: 21/63/126-session adjusted returns,
+  50/25/25 weights, three-sigma clipping, stock/ETF peer groups, tied midranks,
+  finite-price validation, missing/stale exclusions and minimum group size 20.
+- Explicit synthetic demo, cached replay, sortable/filterable HTML, full master
+  universe CSV, ranking/exclusion CSVs, immutable per-run JSON snapshots and hashes.
+- User-run public adapter: Wikipedia current S&P membership; 11 sector ETFs and
+  50 starter ETFs including SPY; yfinance adjusted daily prices; XNYS completed
+  sessions with one-hour close buffer. No real provider execution by an agent.
+- Allowlisted agent-review summaries and sanitized failures; no synthetic fallback
+  on public-data failure. Third-party provider output is discarded, not captured.
 
-The complete incoming pattern scan has run; three momentum reference files are
-accepted and all other incoming files are excluded. See [intake notes](INTAKE.md). No dependencies
-were installed, and no incoming application code was executed.
+## Verification
 
-## Required checks available now
+On Ubuntu, Python 3.14.4: seven intake-tool tests and 28 offline application tests
+passed. The offline runner denies network, subprocesses, real environment reads,
+and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
+Guards are installed before test discovery. Tests cover numeric reference parity
+on complete untied inputs, ties, weights, endpoints, missing/nonfinite prices,
+future-data exclusion, split-adjusted constant prices, session close buffers,
+holiday/weekend schedules, group separation, provider batch orchestration with
+synthetic responses, HTML/CSV escaping and diagnostic allowlists.
 
-The intake tools use Python's standard library. Their intended minimum is Python
-3.11; only Python 3.14.4 in the current Linux environment has been verified so far.
-These commands run only the reviewed intake-tool tests.
-
-From the project directory on Linux/WSL:
+Commands from project root:
 
 ```bash
 python3 -I -S tools/test_intake_scan.py
+python3 -I -S tools/test_offline.py
+python3 -I -S run.py demo
 ```
 
-From the project directory in native Windows PowerShell, with Python 3.11 installed:
+See [README](../README.md) for native Windows and user-run public setup commands.
+No incoming application code was executed. The new active implementation is the
+only runtime source; reference tests are never collected. No third-party packages
+have been installed by the agent. Direct dependency pins are documented; a full
+transitive lock and installation verification remain pending.
 
-```powershell
-py -3.11 -I -S tools/test_intake_scan.py
-```
+Offline checks passed; live checks pending. Tests do not prove real provider
+access or strategy performance. Native Windows/macOS, browser interaction, CI,
+hooks, and WSL-specific checks remain pending.
 
-Seven synthetic tests passed on Python 3.14.4 in the current Linux environment.
-The runner disables
-site initialization and installs an audit guard before importing the local scanner:
-network/process operations are denied and file reads are restricted to the tool
-directory, synthetic temporary tree, and interpreter installation. This is a guard
-for reviewed intake tooling, not a sandbox for arbitrary incoming/native code.
-Native Windows, WSL-specific, and macOS verification remain pending.
+## Decisions and limits
 
-No application offline suite, hooks, CI, or sanitized provider-run diagnostic
-reporter exists yet. Do not run incoming pytest collection as a bootstrap check.
-Documentation-only edits require Markdown/link/policy review and a staged secret
-scan before committing; they do not require application execution.
+- User confirmed cross-sectional momentum, not strength relative to SPY.
+- Exact 21/63/126-session horizons replace Finviz performance period fields.
+- Missing values are excluded rather than imputed; ties receive equal percentiles.
+  Scores compare valid members only; exclusions can change the comparison universe.
+- Stock and ETF rankings are separate. Sector ETF view is a filtered ETF ranking.
+- The 50-ETF selection is a configurable starter watchlist, not verified current
+  options-volume leaders. Current symbol/fund and options liquidity checks pending.
+- Current membership snapshots are not historical universes for backtesting.
+- Current snapshot acquisition gets a full history each refresh; cached replay is
+  offline. Incremental download merging is deferred to avoid stale adjustments.
+- No OTA, IV metrics, persistence/Conviction, order execution or performance claims.
 
-## Findings to address before application execution
+## Next sequence
 
-- Several entry points infer live mode from token presence. In particular,
-  `run_momentum_scan.py` can select OTA from an available token even when
-  `--sample` selected fixture data for Finviz. Explicit offline mode must control
-  every adapter and avoid credential loading entirely.
-- `run_demo.py` calls `load_secrets()` despite being a demo. Configuration resolution
-  can select a local config directory, and permission checks currently warn rather
-  than fail closed. Secure storage and native Windows handling need implementation.
-- `diagnose_finviz.py` prints raw response snippets and exception text. Replace
-  this with allowlisted diagnostic summaries before requesting user-run checks.
-- The incoming capture guide requests authenticated cURL/response exports and
-  token-driven mode switching. Replace it with synthetic schemas and a verified,
-  authorized authentication method before implementing user-run live setup.
-- The OTA mapping conflates differently named IV metrics. Missing option volume
-  is replaced by a large value, and absent bid/ask spread defaults to zero, which
-  can permit liquidity checks to pass. Keep unknown inputs explicit and review
-  metric semantics before adopting these calculations.
-- The momentum design document describes session-based persistence, while the
-  configuration defaults to observation-based streaks. Specify the behavior and
-  verify it on deterministic session fixtures before calling it validated.
-- Requirements are unpinned, bundled dependencies are preferred only after installed
-  packages, and some documentation references absent setup scripts. Establish one
-  reproducible environment and accurate setup instructions.
-
-## First development acceptance criteria
-
-After preparing the sanitized baseline, implement an explicit offline mode with
-synthetic inputs, no credential reads or provider calls, and separate output/history.
-Establish and verify application test isolation before running accepted code.
-Preserve reviewed strategy behavior in later increments; obtain clarification for
-consequential unresolved strategy or provider-field definitions. No predictive
-performance or live compatibility claims are supported at this stage.
+1. User installs optional wheel dependencies and runs public refresh; inspect only
+   the allowlisted agent-review report. Fix real schema/packaging issues if evidenced.
+2. Verify an authorized OTA access method and exact IV/liquidity definitions before
+   enabling its isolated adapter. Offline tests use synthetic responses.
+3. Add session-based history/rotation, then options shortlist filters with unknown
+   inputs explicit. Research a verifiable options-volume ETF universe separately.

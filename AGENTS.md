@@ -175,12 +175,13 @@ This is guidance, not an active model configuration or a correctness guarantee.
   results and pending work. Git is initialized; the initial momentum reference
   and manifest accept three files only. Other incoming material remains excluded;
   the raw INBOX remains unchanged.
-- Only reviewed intake tooling may currently be executed. Incoming application
-  tests, launchers, provider diagnostics, and dependencies have not been run.
-  Establish application test isolation before promoting reference code into src/.
-- Implement a sanitized manual-run report before asking the user to perform live tests.
-- No provider access or application runtime compatibility has been demonstrated.
-  Hooks, CI, and the application validation suite are not configured yet.
+- The active standard-library implementation in src/ now has a guarded application
+  test runner: python3 -I -S tools/test_offline.py. Incoming tests and launchers
+  remain historical material and must never be collected or executed.
+- User-run public refresh writes allowlisted reports into artifacts/agent-review/.
+  Agents may inspect only those reports after public runs, not provider snapshots.
+- Offline tests run on Python 3.14.4 / Ubuntu. Real provider access, optional
+  dependencies, and native Windows/macOS remain unverified. Hooks and CI are absent.
 - Shared policy revision 2 is copied above so standalone clones retain the rules.
   Update copies by an explicit reviewed diff; do not weaken execution boundaries.
 

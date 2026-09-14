@@ -1,0 +1,62 @@
+symbol,company,sector,sector_etf
+XLB,Materials Select Sector SPDR,Materials,true
+XLC,Communication Services Select Sector SPDR,Communication Services,true
+XLE,Energy Select Sector SPDR,Energy,true
+XLF,Financial Select Sector SPDR,Financials,true
+XLI,Industrial Select Sector SPDR,Industrials,true
+XLK,Technology Select Sector SPDR,Technology,true
+XLP,Consumer Staples Select Sector SPDR,Consumer Staples,true
+XLRE,Real Estate Select Sector SPDR,Real Estate,true
+XLU,Utilities Select Sector SPDR,Utilities,true
+XLV,Health Care Select Sector SPDR,Health Care,true
+XLY,Consumer Discretionary Select Sector SPDR,Consumer Discretionary,true
+SPY,SPDR S&P 500 ETF,Broad equity,false
+QQQ,Invesco QQQ,Growth equity,false
+IWM,iShares Russell 2000,Small cap equity,false
+DIA,SPDR Dow Jones Industrial Average,Broad equity,false
+EEM,iShares MSCI Emerging Markets,International equity,false
+EFA,iShares MSCI EAFE,International equity,false
+EWZ,iShares MSCI Brazil,International equity,false
+FXI,iShares China Large-Cap,International equity,false
+KWEB,KraneShares CSI China Internet,International equity,false
+EWJ,iShares MSCI Japan,International equity,false
+EWY,iShares MSCI South Korea,International equity,false
+EWT,iShares MSCI Taiwan,International equity,false
+EWW,iShares MSCI Mexico,International equity,false
+INDA,iShares MSCI India,International equity,false
+VEA,Vanguard FTSE Developed Markets,International equity,false
+VWO,Vanguard FTSE Emerging Markets,International equity,false
+GLD,SPDR Gold Shares,Commodity,false
+SLV,iShares Silver Trust,Commodity,false
+GDX,VanEck Gold Miners,Mining equity,false
+GDXJ,VanEck Junior Gold Miners,Mining equity,false
+USO,United States Oil Fund,Commodity futures,false
+UNG,United States Natural Gas Fund,Commodity futures,false
+TLT,iShares 20+ Year Treasury Bond,Fixed income,false
+IEF,iShares 7-10 Year Treasury Bond,Fixed income,false
+SHY,iShares 1-3 Year Treasury Bond,Fixed income,false
+HYG,iShares iBoxx High Yield Corporate Bond,Fixed income,false
+LQD,iShares iBoxx Investment Grade Corporate Bond,Fixed income,false
+TIP,iShares TIPS Bond,Fixed income,false
+AGG,iShares Core US Aggregate Bond,Fixed income,false
+BND,Vanguard Total Bond Market,Fixed income,false
+SMH,VanEck Semiconductor,Industry equity,false
+SOXX,iShares Semiconductor,Industry equity,false
+XBI,SPDR S&P Biotech,Industry equity,false
+IBB,iShares Biotechnology,Industry equity,false
+KRE,SPDR S&P Regional Banking,Industry equity,false
+KBE,SPDR S&P Bank,Industry equity,false
+XOP,SPDR S&P Oil & Gas Exploration & Production,Industry equity,false
+OIH,VanEck Oil Services,Industry equity,false
+XRT,SPDR S&P Retail,Industry equity,false
+ITB,iShares US Home Construction,Industry equity,false
+XHB,SPDR S&P Homebuilders,Industry equity,false
+IYR,iShares US Real Estate,Real estate,false
+VNQ,Vanguard Real Estate,Real estate,false
+ARKK,ARK Innovation,Thematic equity,false
+ARKG,ARK Genomic Revolution,Thematic equity,false
+ARKF,ARK Fintech Innovation,Thematic equity,false
+TAN,Invesco Solar,Thematic equity,false
+ICLN,iShares Global Clean Energy,Thematic equity,false
+JETS,US Global Jets,Industry equity,false
+XME,SPDR S&P Metals & Mining,Mining equity,false
