@@ -1,0 +1,11 @@
+# Defensive workspace exclusions; repeat required patterns in independent repos.
+/INBOX/
+.env
+.env.*
+!.env.example
+.secrets/
+artifacts/
+*.har
+.venv/
+__pycache__/
+.ipynb_checkpoints/
