@@ -1,0 +1,51 @@
+# Cross-sectional momentum ranker configuration.
+direction: momentum          # momentum | reversal
+horizons:                    # horizon key -> composite weight (1-month double-weighted)
+  r21: 0.50
+  r63: 0.25
+  r126: 0.25
+winsorize_sigma: 3.0
+vol_adjust: false
+tail_pct: 0.10               # top/bottom decile
+min_universe: 20
+persistence_days: 3          # verified XNYS sessions before a name is "confirmed"
+
+finviz:
+  base_export_url: https://elite.finviz.com/export/screener
+  view: 151
+  filters: idx_sp500
+  # 0 No. | 1 Ticker | 2 Company | 3 Sector | 4 Industry
+  # 42/43/44 Perf Month/Quarter/Half Year | 49 ATR | 52/53/54 SMA 20/50/200
+  # 65 Price | 68 Earnings Date
+  # Verify against YOUR account: python diagnose_finviz.py --probe 0 100
+  columns: "0,1,2,3,4,42,43,44,65,49,52,53,54,68"
+  request_timeout_seconds: 30
+  header_aliases:
+    symbol: ["ticker", "symbol"]
+    company: ["company"]
+    sector: ["sector"]
+    industry: ["industry", "sub-sector", "subsector"]
+    perf_month: ["performance (month)", "perf month"]
+    perf_quarter: ["performance (quarter)", "perf quarter"]
+    perf_half: ["performance (half year)", "perf half"]
+    price: ["price"]
+    atr: ["average true range", "atr"]
+    earnings_date: ["earnings date", "earnings"]
+    sma20: ["20-day simple moving average", "sma20"]
+    sma50: ["50-day simple moving average", "sma50"]
+    sma200: ["200-day simple moving average", "sma200"]
+
+# Tail ranking aid. Z stays primary; persistence is a confidence modifier.
+conviction:
+  z_weight: 0.65
+  persistence_weight: 0.35
+  persistence_cap_sessions: 10
+  residualize_persistence: true    # strip the streak/z overlap so persistence adds info
+  trajectory_lookback: 5
+  max_gap_sessions: 3              # missed runs bridged before a streak episode breaks
+  watch_band: 0.10
+  churn_drift_tolerance: 0.20
+  # "observations" = consecutive scanner runs (original behaviour; recommended
+  # unless the scan truly runs every trading day). "sessions" = require adjacent
+  # trading sessions, breaking after max_gap_sessions missing ones.
+  streak_mode: observations

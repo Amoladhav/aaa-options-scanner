@@ -6,10 +6,11 @@ Updated: 2026-09-13. Phase: intake and development preparation.
 
 The parent and project AGENTS.md files contain shared policy revision 2. Agents
 may prepare code and make local commits; the user performs pushes and every
-credentialed application operation. No repository or remote exists yet.
+credentialed application operation. The independent repository is on main with
+origin configured; local setup commit is `89dd8c8`. No remote request was made.
 
-The complete incoming pattern scan has run; finding disposition and a sanitized
-reference baseline remain pending. See [intake notes](INTAKE.md). No dependencies
+The complete incoming pattern scan has run; three momentum reference files are
+accepted and all other incoming files are excluded. See [intake notes](INTAKE.md). No dependencies
 were installed, and no incoming application code was executed.
 
 ## Required checks available now

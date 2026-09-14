@@ -172,8 +172,9 @@ This is guidance, not an active model configuration or a correctness guarantee.
   pattern scan covered 435 files and 599 archive entries without executing input.
   The earlier README finding was an explicit placeholder, not an established leak.
 - See [intake notes](docs/INTAKE.md) and [project status](docs/STATUS.md) for scan
-  results and pending baseline work. No sanitized baseline, intake manifest, or
-  Git repository has been created yet; the raw INBOX remains unchanged.
+  results and pending work. Git is initialized; the initial momentum reference
+  and manifest accept three files only. Other incoming material remains excluded;
+  the raw INBOX remains unchanged.
 - Only reviewed intake tooling may currently be executed. Incoming application
   tests, launchers, provider diagnostics, and dependencies have not been run.
   Establish application test isolation before promoting reference code into src/.

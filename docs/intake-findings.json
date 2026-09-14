@@ -1,0 +1,211 @@
+{
+  "scan_summary": {
+    "filesystem_files_scanned": 435,
+    "archive_members_scanned": 599,
+    "findings": 40,
+    "coverage_gaps": 0
+  },
+  "disposition": "All candidate findings are in excluded files. No flagged material accepted. Values not displayed or classified as real credentials. Review remains pending before future acceptance.",
+  "findings": [
+    {
+      "path": "README.md",
+      "line": 36,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "config.example/secrets.example.toml",
+      "line": 3,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "diagnose_finviz.py",
+      "line": 35,
+      "rule": "credential-query"
+    },
+    {
+      "path": "diagnose_finviz.py",
+      "line": 48,
+      "rule": "credential-query"
+    },
+    {
+      "path": "run_scan.py",
+      "line": 77,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "run_universe.py",
+      "line": 67,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "scanner.py",
+      "line": 42,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "scanner.py",
+      "line": 90,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "src/trading_scanner/finviz_adapter.py",
+      "line": 71,
+      "rule": "credential-query"
+    },
+    {
+      "path": "src/trading_scanner/finviz_adapter.py",
+      "line": 186,
+      "rule": "credential-query"
+    },
+    {
+      "path": "src/trading_scanner/momentum_data.py",
+      "line": 86,
+      "rule": "credential-query"
+    },
+    {
+      "path": "src/trading_scanner/momentum_data.py",
+      "line": 223,
+      "rule": "credential-query"
+    },
+    {
+      "path": "src/trading_scanner/options_data.py",
+      "line": 125,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "src/trading_scanner/preflight.py",
+      "line": 71,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "tests/test_assemble.py",
+      "line": 55,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "tests/test_assemble.py",
+      "line": 55,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "tests/test_assemble.py",
+      "line": 66,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "tests/test_assemble.py",
+      "line": 89,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "vendor/anyio/from_thread.py",
+      "line": 55,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/anyio/from_thread.py",
+      "line": 71,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/anyio/from_thread.py",
+      "line": 92,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/anyio/from_thread.py",
+      "line": 99,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/anyio/from_thread.py",
+      "line": 120,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/anyio/from_thread.py",
+      "line": 257,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/anyio/from_thread.py",
+      "line": 310,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/anyio/from_thread.py",
+      "line": 582,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/dateutil/parser/_parser.py",
+      "line": 116,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/dateutil/parser/_parser.py",
+      "line": 122,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "vendor/httpcore/_async/http_proxy.py",
+      "line": 86,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "vendor/httpcore/_async/socks_proxy.py",
+      "line": 166,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/httpcore/_sync/http_proxy.py",
+      "line": 86,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "vendor/httpcore/_sync/socks_proxy.py",
+      "line": 166,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/httpx/_client.py",
+      "line": 469,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/httpx/_urls.py",
+      "line": 17,
+      "rule": "url-userinfo"
+    },
+    {
+      "path": "vendor/httpx/_urls.py",
+      "line": 34,
+      "rule": "url-userinfo"
+    },
+    {
+      "path": "vendor/httpx/_urls.py",
+      "line": 336,
+      "rule": "credential-assignment"
+    },
+    {
+      "path": "vendor/httpx/_urls.py",
+      "line": 338,
+      "rule": "url-userinfo"
+    },
+    {
+      "path": "vendor/openpyxl/chartsheet/protection.py",
+      "line": 41,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/openpyxl/formula/tokenizer.py",
+      "line": 228,
+      "rule": "credential-unquoted"
+    },
+    {
+      "path": "vendor/openpyxl/worksheet/protection.py",
+      "line": 98,
+      "rule": "credential-unquoted"
+    }
+  ]
+}

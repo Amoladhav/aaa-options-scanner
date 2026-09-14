@@ -31,25 +31,34 @@ line numbers, rules, and coverage metadata without matched values. The generated
 `review/` directory is an incomplete, non-executable view: affected lines are
 redacted and binary/archive contents are not copied there. It is not the baseline.
 
-## Baseline and traceability still to prepare
+## Initial momentum baseline accepted (2026-09-13)
+
+The first narrow baseline accepts three files: the momentum ranker, its ranker
+tests, and momentum example configuration. These passed a fresh pattern scan and
+static review without candidate matches; none were executed. All other files are
+excluded for now, including bundled dependencies and unverified data. The 40
+candidate findings are all in excluded material and remain quarantined, with
+values suppressed. They are not established credential leaks or cleared findings.
+
+[The manifest](intake-manifest.json) records all 435 paths, destinations, accepted
+hashes, dates, and exclusion reasons. [The finding ledger](intake-findings.json)
+records the complete scan and disposition. There were zero reported coverage gaps;
+this does not prove absence of secrets. No standalone license was found, and
+redistribution rights remain unresolved. See [reference notes](../reference/README.md).
+
+The user initialized the independent Git repository and configured origin. The
+initial local setup commit is `89dd8c8`; this intake is a separate local commit.
+
+## Remaining intake work for later features
 
 Raw INBOX remains unchanged, ignored at the workspace level, and outside the
 independent project repository boundary. Ignoring it neither sanitizes it nor
 provides access control.
 
-1. Resolve findings without displaying values. Remove credentials from accepted
-   copies and use empty configuration templates. Never reuse incoming credentials.
-2. Review source/data provenance and bundled dependency attribution. No standalone
-   license files were found in the inventory; redistribution rights and dependency
-   notices still require review. Record exclusions explicitly.
-3. Create a sanitized historical reference at `reference/incoming/`, with stable
-   relative filenames. Preserve applicable attribution; do not execute it.
-4. Create an intake manifest recording original relative path, sanitized SHA-256,
-   destination or exclusion reason, intake date, relationship to earlier intake,
-   and a human-readable sanitization/change summary. No manifest exists yet.
-5. Initialize only this project's Git repository. Scan the actual staged contents,
-   review the staged diff, and make the first local baseline commit. Later commits
-   record development changes; future incoming updates compare with this baseline
-   and local changes. Never overwrite an ambiguous replacement.
+1. Resolve findings in any additional selected files without displaying values.
+2. Review source/data provenance and licenses before accepting additional material.
+3. Compare accepted updates against this baseline and local changes; extend the
+   manifest and finding ledger without overwriting ambiguous replacements.
+4. Scan the actual staged contents and review the exact diff before each commit.
 
-No incoming material is currently committed or approved for application execution.
+No incoming application code is approved for execution.
