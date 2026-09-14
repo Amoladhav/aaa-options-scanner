@@ -1,0 +1,22 @@
+{
+  "scanner_version": "1",
+  "reviewed_at": "2026-09-13",
+  "exceptions": [
+    {
+      "path": "tools/test_intake_scan.py",
+      "sha256": "1ce8cd0940718dcd135a8f7ef556ba37748d0dbea734b845f7d99dbd84244f79",
+      "findings": [
+        {
+          "line": 53,
+          "rule": "credential-assignment",
+          "reason": "Synthetic fixture assembled from two test constants; first constant explicitly identifies synthetic data."
+        },
+        {
+          "line": 55,
+          "rule": "credential-assignment",
+          "reason": "Dynamic bearer-header test expression references the synthetic fixture above. No provider credential."
+        }
+      ]
+    }
+  ]
+}

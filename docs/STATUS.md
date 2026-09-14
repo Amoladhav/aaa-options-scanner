@@ -41,6 +41,7 @@ python3 -I -S run.py demo
 ```
 
 See [README](../README.md) for native Windows and user-run public setup commands.
+See [validation record](VALIDATION.md) for scan disposition and commit sequencing.
 No incoming application code was executed. The new active implementation is the
 only runtime source; reference tests are never collected. No third-party packages
 have been installed by the agent. Direct dependency pins are documented; a full
