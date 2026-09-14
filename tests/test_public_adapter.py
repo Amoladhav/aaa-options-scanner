@@ -6,6 +6,11 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import urllib.request
+import io
+import json
+
+from offline_boundary import temp
+from trading_scanner.progress import RunProgress
 
 from trading_scanner.core import calculate
 from trading_scanner.demo import make_snapshot
@@ -33,7 +38,9 @@ class PublicAdapterTests(unittest.TestCase):
         def download(symbols, **kwargs):
             calls.append((symbols, kwargs))
             class Frame:
-                empty = False
+                # Simulate one empty response: attempted batches still advance,
+                # but missing symbols must not count as received or ranked.
+                empty = len(calls) == 2
                 columns = SimpleNamespace(get_level_values=lambda level: symbols)
                 def __getitem__(self, symbol):
                     # Provider includes a future row; adapter must discard it.
@@ -45,15 +52,26 @@ class PublicAdapterTests(unittest.TestCase):
         fake_calendars = SimpleNamespace(get_calendar=lambda *a, **kw: SimpleNamespace(schedule=Schedule()))
         fake_yf = SimpleNamespace(download=download)
         now = datetime.fromisoformat(days[-1]+'T22:00:00+00:00')
-        with patch.dict('sys.modules', {'exchange_calendars':fake_calendars, 'yfinance':fake_yf}), patch.object(urllib.request, 'urlopen', return_value=Response()):
-            snapshot = fetch_snapshot(Path(__file__).resolve().parents[1]/'config/etfs.csv', now)
+        tracker = RunProgress(temp/'adapter-progress', 'c'*32, 'refresh', 'public', 'd'*64, stream=io.StringIO())
+        try:
+            with patch.dict('sys.modules', {'exchange_calendars':fake_calendars, 'yfinance':fake_yf}), patch.object(urllib.request, 'urlopen', return_value=Response()):
+                snapshot = fetch_snapshot(Path(__file__).resolve().parents[1]/'config/etfs.csv', now, progress=tracker)
+        finally:
+            tracker.close()
         self.assertEqual(len(snapshot['universe']), 511)
         self.assertEqual(len(calls), 13)
         self.assertTrue(all(len(symbols) <= 40 for symbols, _ in calls))
         self.assertTrue(all(k['auto_adjust'] is True and k['threads'] is False and k['repair'] is False for _, k in calls))
         self.assertEqual(snapshot['as_of'], days[-1])
         self.assertNotIn('2030-01-02', snapshot['prices']['SPY'])
-        self.assertEqual(len(calculate(snapshot)['ranked']), 511)
+        self.assertEqual(len(calculate(snapshot)['ranked']), 471)
+        events = [json.loads(line) for line in tracker.path.read_text().splitlines()]
+        self.assertEqual([r['stage'] for r in events if r['event'] == 'stage_started'],
+                         ['dependencies', 'constituents', 'calendar', 'prices'])
+        batches = [r for r in events if r['event'] == 'stage_progress']
+        self.assertEqual([r['completed'] for r in batches], list(range(1,14)))
+        self.assertEqual(batches[1]['counts']['symbols_received'], batches[0]['counts']['symbols_received'])
+        self.assertEqual(batches[-1]['counts'], {'symbols_requested':511, 'symbols_received':471})
 
     def test_safe_report_cannot_include_exception_text(self):
         from trading_scanner.cli import review_summary

@@ -12,12 +12,7 @@ import uuid
 from .core import calculate, DataError, normalize_universe
 from .demo import make_snapshot
 from .report import write_reports, write_csv
-
-SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
-               "CONSTITUENTS_COUNT_INVALID", "CONSTITUENTS_RESPONSE_TOO_LARGE",
-               "NO_VALID_PEER_GROUP", "INVALID_SNAPSHOT", "INSUFFICIENT_CALENDAR",
-               "MISSING_SNAPSHOT", "INVALID_SESSION_ORDER", "WEEKEND_SESSION",
-               "INVALID_SYMBOL", "CONFLICTING_SYMBOL", "INVALID_GROUP", "INVALID_ETF_CONFIG"}
+from .progress import RunProgress, SAFE_ERRORS
 
 
 class DiscardOutput:
@@ -77,12 +72,19 @@ def main(argv=None, root: Path | None = None) -> int:
     profile = "public" if args.command != "demo" else "synthetic"
     artifact_root = root / "artifacts"
     review = artifact_root / "agent-review"
-    review.mkdir(parents=True, exist_ok=True)
     ranked = excluded = 0
+    progress = None
     try:
+        progress = RunProgress(artifact_root / "logs", run_id, args.command,
+                               "unknown" if args.command == "cached" else profile, code_revision())
+        progress.begin()
+        print(f"Run log: {progress.path}", flush=True)
         if args.command == "demo":
+            progress.start("synthetic_data")
             snapshot = make_snapshot()
+            progress.finish()
         elif args.command == "cached":
+            progress.start("snapshot_load")
             snapshot = json.loads(args.snapshot.read_text(encoding="utf-8"))
             if not isinstance(snapshot, dict):
                 raise DataError("INVALID_SNAPSHOT")
@@ -90,6 +92,8 @@ def main(argv=None, root: Path | None = None) -> int:
             if not isinstance(profile, str) or profile not in {"synthetic", "public"}:
                 profile = "public"
                 raise DataError("INVALID_SNAPSHOT")
+            progress.set_profile(profile)
+            progress.finish()
         else:
             old_disable = logging.root.manager.disable
             try:
@@ -97,13 +101,18 @@ def main(argv=None, root: Path | None = None) -> int:
                 logging.disable(logging.CRITICAL)
                 with redirect_stdout(DiscardOutput()), redirect_stderr(DiscardOutput()):
                     from .public_data import fetch_snapshot
-                    snapshot = fetch_snapshot(root / "config" / "etfs.csv")
+                    snapshot = fetch_snapshot(root / "config" / "etfs.csv", progress=progress)
             finally:
                 logging.disable(old_disable)
+        progress.start("ranking")
         result = calculate(snapshot)
         ranked, excluded = len(result["ranked"]), len(result["excluded"])
         if ranked == 0:
             raise DataError("NO_VALID_PEER_GROUP")
+        progress.finish(counts={"ranked": ranked, "excluded": excluded})
+        if excluded:
+            progress.exclusions(excluded)
+        progress.start("reports")
         destination = artifact_root / ("replay" if args.command == "cached" else "runs") / profile / run_id
         destination.mkdir(parents=True, exist_ok=False)
         snapshot_bytes = (json.dumps(snapshot, indent=2, allow_nan=False) + "\n").encode("utf-8")
@@ -114,23 +123,47 @@ def main(argv=None, root: Path | None = None) -> int:
         write_csv(destination / "universe.csv", normalize_universe(snapshot["universe"]),
                   ("symbol", "group", "company", "sector", "sector_etf"))
         write_reports(result, destination)
+        progress.finish()
+        progress.start("summary")
+        review.mkdir(parents=True, exist_ok=True)
         summary = review_summary(run_id, profile, True, ranked, excluded)
         (review / f"{run_id}.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        progress.finish()
+        progress.end(counts={"ranked": ranked, "excluded": excluded})
         print(f"{profile.upper()} | as of {result['as_of']} | {ranked} ranked | {excluded} excluded")
         print(f"Report: {destination / 'report.html'}")
         print(f"Snapshot: {destination / 'snapshot.json'}")
         print(f"Agent review: {review / (run_id + '.json')}")
         return 0
-    except Exception as exc:
+    except (Exception, KeyboardInterrupt) as exc:
         error_code = "SCAN_FAILED"
-        if isinstance(exc, ModuleNotFoundError):
+        if isinstance(exc, KeyboardInterrupt):
+            error_code = "RUN_CANCELLED"
+        elif progress is None and isinstance(exc, OSError):
+            error_code = "LOG_UNAVAILABLE"
+        elif isinstance(exc, ModuleNotFoundError):
             error_code = "DEPENDENCY_UNAVAILABLE"
         elif isinstance(exc, FileNotFoundError) and args.command == "cached":
             error_code = "MISSING_SNAPSHOT"
         elif isinstance(exc, DataError) and len(exc.args) == 1 and exc.args[0] in SAFE_ERRORS:
             error_code = exc.args[0]
-        summary = review_summary(run_id, profile, False, ranked, excluded, error_code)
-        (review / f"{run_id}.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        if progress is not None:
+            try:
+                progress.end(error_code, counts={"ranked": ranked, "excluded": excluded})
+            except OSError:
+                print("LOG_UNAVAILABLE: unable to write final run event.")
+        try:
+            review.mkdir(parents=True, exist_ok=True)
+            summary = review_summary(run_id, profile, False, ranked, excluded, error_code)
+            (review / f"{run_id}.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+            print(f"Agent review: {review / (run_id + '.json')}")
+        except OSError:
+            print("SUMMARY_UNAVAILABLE: unable to write review report.")
         print(f"{error_code}: check dependency setup and inputs; no synthetic fallback or raw response logged.")
-        print(f"Agent review: {review / (run_id + '.json')}")
-        return 1
+        return 130 if error_code == "RUN_CANCELLED" else 1
+    finally:
+        if progress is not None:
+            try:
+                progress.close()
+            except OSError:
+                print("LOG_UNAVAILABLE: unable to close run log.")

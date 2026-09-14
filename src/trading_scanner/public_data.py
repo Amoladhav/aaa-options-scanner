@@ -94,12 +94,17 @@ def series_prices(series, allowed_sessions: set[str]) -> dict:
     return result
 
 
-def fetch_snapshot(etf_path: Path, now: datetime | None = None) -> dict:
+def fetch_snapshot(etf_path: Path, now: datetime | None = None, *, progress=None) -> dict:
     # Dependency imports and network are reachable only from the explicit command.
+    if progress is not None:
+        progress.start("dependencies")
     import urllib.request
     import exchange_calendars as calendars
     import yfinance as yf
 
+    if progress is not None:
+        progress.finish()
+        progress.start("constituents")
     now = now or datetime.now(timezone.utc)
     request = urllib.request.Request(CONSTITUENTS_URL, headers={"User-Agent": "MomentumResearch/0.1 (personal research)"})
     with urllib.request.urlopen(request, timeout=30) as response:
@@ -107,6 +112,9 @@ def fetch_snapshot(etf_path: Path, now: datetime | None = None) -> dict:
     if len(body) > 4_000_000:
         raise DataError("CONSTITUENTS_RESPONSE_TOO_LARGE")
     universe = normalize_universe(parse_constituents(body.decode("utf-8")) + load_etfs(etf_path))
+    if progress is not None:
+        progress.finish(counts={"symbols_requested": len(universe)})
+        progress.start("calendar")
     start = (now - timedelta(days=430)).date().isoformat()
     cal = calendars.get_calendar("XNYS", start=start, end=now.date().isoformat())
     schedule = [(stamp.date().isoformat(), row["close"].isoformat()) for stamp, row in cal.schedule.iterrows()]
@@ -115,21 +123,31 @@ def fetch_snapshot(etf_path: Path, now: datetime | None = None) -> dict:
         raise DataError("INSUFFICIENT_CALENDAR")
     cutoff = sessions[-1]
     allowed = set(sessions)
+    if progress is not None:
+        progress.finish()
     # yfinance's end is exclusive. Batching limits request bursts. Explicit
     # adjustment preserves split/dividend handling; no silent repair or filling.
     end = (datetime.fromisoformat(cutoff) + timedelta(days=1)).date().isoformat()
     prices = {}
+    if progress is not None:
+        progress.start("prices", total=(len(universe) + 39) // 40)
     for offset in range(0, len(universe), 40):
         symbols = [r["symbol"] for r in universe[offset:offset + 40]]
         frame = yf.download(symbols, start=start, end=end, interval="1d", auto_adjust=True,
                             back_adjust=False, repair=False, actions=False, threads=False,
                             progress=False, group_by="ticker", multi_level_index=True,
                             timeout=30, keepna=True, rounding=False, prepost=False)
-        if frame is None or frame.empty:
-            continue
-        for symbol in symbols:
-            if symbol in frame.columns.get_level_values(0):
-                prices[symbol] = series_prices(frame[symbol]["Close"], allowed)
+        if frame is not None and not frame.empty:
+            for symbol in symbols:
+                if symbol in frame.columns.get_level_values(0):
+                    prices[symbol] = series_prices(frame[symbol]["Close"], allowed)
+        if progress is not None:
+            # An empty response still completes an attempted batch, not a
+            # successful data validation. Ranking reports missing histories.
+            progress.advance(offset // 40 + 1, counts={"symbols_requested": min(offset + 40, len(universe)),
+                                                      "symbols_received": sum(bool(p) for p in prices.values())})
+    if progress is not None:
+        progress.finish()
     return {"schema_version": 1, "profile": "public", "as_of": cutoff,
             "membership_observed_at": now.isoformat(), "price_source": "Yahoo Finance via yfinance; auto_adjust=True",
             "calendar_source": "exchange_calendars XNYS; one hour after session close",

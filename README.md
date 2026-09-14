@@ -27,6 +27,42 @@ Each run saves `universe.csv`, `rankings.csv`, `excluded.csv`, `results.json` an
 `snapshot.json` alongside the HTML report. Runs get unique directories, preserving
 earlier snapshots. Public and synthetic artifacts are separated and ignored by Git.
 
+## Standard progress and run logs
+
+All scan commands (`demo`, `cached`, `refresh`) print progress to **stdout** by
+default. Each stage announces `Currently running: ...` before work begins, then
+prints completion. Price downloads update after each batch, including empty
+responses. Bars show **per-stage** completion, not an estimated percentage of
+total runtime or an indication that every requested symbol has valid data.
+
+```text
+INFO    [######--------------]  30% Currently running: Downloading adjusted daily prices (4/13 batches) | elapsed 12.3s
+```
+
+During a blocking download the latest stage remains displayed; there is no timed
+heartbeat or guessed ETA. Every update is flushed and written on a new line,
+including in IDE terminals and redirected stdout. No activation or new package
+is needed for progress/logging. Existing run commands stay the same.
+
+Each run also creates an exclusive UTF-8 JSON Lines file at
+`artifacts/logs/<run_id>.jsonl`, printed at startup. Each line is a structured
+event with UTC timestamp, sequence, severity (`INFO`, `WARNING`, `ERROR`), run ID,
+implementation revision, command/profile, stage/event, a fixed message, completed
+and total counts, percentage, elapsed seconds, safe counts and error code.
+The run ID matches the output directory and `agent-review` summary.
+
+Events are flushed immediately. Previous logs are preserved; there is no automatic
+retention deletion. Warnings report exclusion counts; failures preserve the last
+stage and actual progress. Ctrl+C records cancellation and returns exit code 130.
+The log does not contain symbols, raw provider output, arbitrary exception text,
+URLs, headers or credentials. Provider stdout/stderr remain suppressed while our
+own progress remains visible. No general HTTP debug logger is enabled.
+
+Use the same `RunProgress` component for future commands and adapters. Add fixed
+stage/error codes and allowlisted numeric counts instead of logging raw messages.
+After public runs, agents still read only the intended `artifacts/agent-review/`
+summary; ordinary run logs remain user-facing files.
+
 ## Download public data (user-run)
 
 This command builds the current S&P 500 membership from Wikipedia, combines it
@@ -155,6 +191,8 @@ interpreter. `CONSTITUENTS_SCHEMA_CHANGED` or `CONSTITUENTS_COUNT_INVALID` needs
 parser/source review. `NO_VALID_PEER_GROUP` means too few complete price series.
 `SCAN_FAILED` is a sanitized unclassified provider/input failure. Do not enable
 verbose HTTP logs or share raw captures to diagnose it.
+`LOG_UNAVAILABLE` indicates that a run log could not be created/written;
+check local disk space and permissions. A scan does not start if log creation fails.
 
 Offline checks passed; live checks pending. Native Windows/macOS, browser
 interaction, optional dependency installation, and real provider responses remain

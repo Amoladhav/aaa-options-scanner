@@ -20,10 +20,13 @@ Updated: 2026-09-13. Phase: first momentum implementation.
   sessions with one-hour close buffer. No real provider execution by an agent.
 - Allowlisted agent-review summaries and sanitized failures; no synthetic fallback
   on public-data failure. Third-party provider output is discarded, not captured.
+- Standard stdout stage messages and per-stage bars for every scan command; public
+  downloads report completed batches. Structured per-run JSONL logs are flushed
+  at each event, with safe timings/counts, failures, warnings and Ctrl+C cancellation.
 
 ## Verification
 
-On Ubuntu, Python 3.14.4: seven intake-tool tests and 28 offline application tests
+On Ubuntu, Python 3.14.4: seven intake-tool tests and 37 offline application tests
 passed. The offline runner denies network, subprocesses, real environment reads,
 and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
 Guards are installed before test discovery. Tests cover numeric reference parity
@@ -31,6 +34,9 @@ on complete untied inputs, ties, weights, endpoints, missing/nonfinite prices,
 future-data exclusion, split-adjusted constant prices, session close buffers,
 holiday/weekend schedules, group separation, provider batch orchestration with
 synthetic responses, HTML/CSV escaping and diagnostic allowlists.
+Progress/logging tests verify stdout visibility during provider suppression,
+immediate flushing, schemas, empty batches, safe failures, cancellations,
+exclusion warnings, cached profile resolution and preservation of earlier logs.
 
 Commands from project root:
 

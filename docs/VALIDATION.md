@@ -29,3 +29,25 @@ its separate unresolved findings are recorded in [the intake ledger](INTAKE.md).
 Offline checks passed; live checks pending. Optional dependency installation,
 real Yahoo/Wikipedia schemas, native Windows/macOS and browser interaction are
 not yet verified. No performance or trading-access claims are supported.
+
+## Standard progress/logging increment
+
+On the same Ubuntu / Python 3.14.4 environment:
+
+- `python3 -I -S tools/test_offline.py`: 37 guarded tests passed, including stdout
+  visibility while provider output is suppressed, immediate JSONL flushing,
+  event schema and run-ID correlation, partial/empty download batches, profile
+  resolution, exclusion warnings, failures, cancellation, log-write failures and
+  protection of earlier log files. Tests reject arbitrary event metadata and
+  verify that synthetic sensitive strings do not enter stdout or logs.
+- `python3 -I -S tools/test_intake_scan.py`: all 7 tests passed.
+- `python3 -I -S run.py demo`: displayed start/progress/completion on stdout;
+  generated 60 ranked synthetic symbols with no exclusions and a per-run log.
+- `artifacts/logs/` is ignored. Public requests remain user-run and were not
+  executed for this increment; the existing offline isolation guard is unchanged.
+
+Progress is measured per stage/batch; it is not a runtime estimate or evidence
+that all provider data arrived. There is no periodic heartbeat during a blocking
+request. The shared component and required usage for future commands are recorded
+in the project instructions and README. Full staged-index scanning and exact diff
+review precede the local commit; existing hash-bound synthetic exceptions apply.

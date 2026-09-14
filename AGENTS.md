@@ -180,6 +180,10 @@ This is guidance, not an active model configuration or a correctness guarantee.
   remain historical material and must never be collected or executed.
 - User-run public refresh writes allowlisted reports into artifacts/agent-review/.
   Agents may inspect only those reports after public runs, not provider snapshots.
+- All scan commands and future adapters must use the shared RunProgress component
+  for stdout stage/progress messages and per-run JSONL logs under artifacts/logs/.
+  Use fixed stage/error codes and allowlisted numeric counts, never raw provider
+  messages or exception text. Preserve the agent-review-only public intake boundary.
 - Offline tests run on Python 3.14.4 / Ubuntu. Real provider access, optional
   dependencies, and native Windows/macOS remain unverified. Hooks and CI are absent.
 - Shared policy revision 2 is copied above so standalone clones retain the rules.
