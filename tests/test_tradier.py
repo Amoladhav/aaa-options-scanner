@@ -114,3 +114,12 @@ class TradierTests(unittest.TestCase):
             for path in root.glob('artifacts/**/*.json*'):
                 self.assertNotIn('synthetic-local-input',path.read_text())
             self.assertNotIn('synthetic-local-input',output.getvalue())
+
+    def test_prompt_mode_bypasses_store_and_does_not_save(self):
+        root = temp / 'tradier-hidden-prompt'
+        with patch('trading_scanner.token_store.load_token') as load, patch('trading_scanner.token_store.operate') as store, patch('trading_scanner.token_store.prompt_api_key', return_value='synthetic-local-input') as prompt, patch('trading_scanner.tradier.fetch_probe', return_value={'call': {}, 'put': {}}), redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(run_probe(root, SimpleNamespace(profile='sandbox', symbol='SYNTH', as_of='2026-09-19', prompt_token=True)), 0)
+        prompt.assert_called_once_with(save=False)
+        load.assert_not_called()
+        store.assert_not_called()
+        self.assertNotIn('synthetic-local-input', output.getvalue())

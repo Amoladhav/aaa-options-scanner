@@ -216,3 +216,12 @@ numbers and realtime membership changes remain unresolved. Live retry is user-ru
 - Prepared CI matrix has not run remotely. Browser interaction remains unverified.
   No strategy performance claim; cached price-age checks are calendar-day limits,
   not a verified latest-session calendar check.
+
+## Tradier setup error correction
+
+110 guarded offline tests passed on Ubuntu / Python 3.14.4. Fixed provider-specific
+validation errors and surrounding pasted whitespace; added explicit hidden prompt
+mode with regression checks proving it bypasses OS-store reads/writes. The user's
+reported storage failure occurred locally and does not establish invalid Tradier
+credentials. Actual native-store availability and provider access remain user-run
+checks; no real credentials were inspected or requests executed.

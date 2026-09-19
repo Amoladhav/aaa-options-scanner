@@ -77,3 +77,11 @@ class WorkflowTests(unittest.TestCase):
                          ['aaa-options-scanner.tradier.sandbox', 'aaa-options-scanner.tradier.production'])
         with self.assertRaisesRegex(DataError, 'TOKEN_STORE_UNAVAILABLE'):
             token_store.operate('get', provider='tradier')
+
+    def test_provider_specific_validation_and_paste_padding(self):
+        self.assertEqual(token_store.valid_token('  synthetic-example  ', provider='tradier'), 'synthetic-example')
+        for value in ('', 'a b', 'a\nb'):
+            with self.assertRaisesRegex(DataError, '^TRADIER_TOKEN_INVALID$'):
+                token_store.valid_token(value, provider='tradier')
+        with self.assertRaisesRegex(DataError, '^OTA_TOKEN_INVALID$'):
+            token_store.valid_token('')

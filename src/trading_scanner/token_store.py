@@ -51,9 +51,11 @@ def operate(action, value=None, *, provider='ota', profile=None):
         logging.disable(old_disable)
 
 
-def valid_token(value):
+def valid_token(value, *, provider='ota'):
+    if isinstance(value, str):
+        value = value.strip()
     if not isinstance(value, str) or not re.fullmatch(r'[\x21-\x7e]{1,8192}', value):
-        raise DataError('OTA_TOKEN_INVALID')
+        raise DataError('TRADIER_TOKEN_INVALID' if provider == 'tradier' else 'OTA_TOKEN_INVALID')
     return value
 
 
@@ -61,7 +63,7 @@ def load_token(*, provider='ota', profile=None):
     value = operate('get') if provider == 'ota' and profile is None else operate('get', provider=provider, profile=profile)
     if value is None:
         raise DataError('TOKEN_STORE_EMPTY')
-    return valid_token(value)
+    return valid_token(value, provider=provider)
 
 
 def run_store(root, action, *, provider='ota', profile=None):
@@ -75,7 +77,7 @@ def run_store(root, action, *, provider='ota', profile=None):
         progress.begin()
         progress.start('token_store')
         if action == 'set':
-            value = valid_token(prompt_token() if provider == 'ota' else prompt_api_key())
+            value = valid_token(prompt_token() if provider == 'ota' else prompt_api_key(), provider=provider)
             try:
                 operate('set', value) if provider == 'ota' else operate('set', value, provider=provider, profile=profile)
             finally:
@@ -89,9 +91,14 @@ def run_store(root, action, *, provider='ota', profile=None):
         progress.finish()
     except (Exception, KeyboardInterrupt) as exc:
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'TOKEN_STORE_UNAVAILABLE'
-        if isinstance(exc, DataError) and exc.args[0] in ('TOKEN_STORE_EMPTY','OTA_TOKEN_INVALID','OTA_PROMPT_UNAVAILABLE'):
+        if isinstance(exc, DataError) and exc.args[0] in ('TOKEN_STORE_EMPTY','OTA_TOKEN_INVALID','TRADIER_TOKEN_INVALID','OTA_PROMPT_UNAVAILABLE'):
             code = exc.args[0]
-        print(f'{code}: no credential values logged; check optional keyring setup.')
+        if code in ('OTA_TOKEN_INVALID', 'TRADIER_TOKEN_INVALID'):
+            print(f'{code}: paste only the key, without a header prefix, quotes or internal whitespace.')
+        else:
+            print(f'{code}: OS storage unavailable; check keyring and an unlocked native store.')
+            if provider == 'tradier':
+                print('For a user-run probe without storage, use tradier-probe --prompt-token with the matching profile.')
     finally:
         if progress:
             try:
@@ -102,12 +109,13 @@ def run_store(root, action, *, provider='ota', profile=None):
     return 130 if code == 'RUN_CANCELLED' else 1 if code else 0
 
 
-def prompt_api_key():
+def prompt_api_key(*, save=True):
     import getpass
     import warnings
     try:
         with warnings.catch_warnings():
             warnings.simplefilter('error', getpass.GetPassWarning)
-            return getpass.getpass('Paste your Tradier API key (hidden; saved to OS store): ')
+            label = 'saved to OS store' if save else 'not saved'
+            return getpass.getpass(f'Paste your Tradier API key (hidden; {label}): ')
     except (EOFError, getpass.GetPassWarning):
         raise DataError('TOKEN_STORE_UNAVAILABLE') from None

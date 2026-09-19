@@ -87,6 +87,26 @@ available, unlocked Secret Service and session D-Bus; otherwise setup fails with
 `TOKEN_STORE_UNAVAILABLE`. See [keyring documentation](https://keyring.readthedocs.io/en/stable/).
 Native store execution remains user-validation pending.
 
+If WSL reports `TOKEN_STORE_UNAVAILABLE`, storage failed locally; it is not a
+Tradier authentication response. Missing keyring dependencies, unavailable Secret
+Service/D-Bus or a locked store can cause it. The exact cause is not established
+by that safe error. For the standalone probe after draft approval, bypass storage:
+
+```bash
+.venv/bin/python -I run.py tradier-probe --profile sandbox --symbol SPY --prompt-token
+```
+
+Use `production` with a production key. This prompts invisibly for this run only,
+never reads/writes the OS store and requires no keyring package. It still makes
+an authenticated market-data request when you run it. PowerShell uses
+`.\.venv\Scripts\python.exe` with the same arguments.
+
+Paste only the token; surrounding paste whitespace is trimmed. Empty input or
+internal whitespace is rejected locally as `TRADIER_TOKEN_INVALID`, before any
+provider request. No account number is needed for market quotes/options chains:
+see [Tradier's chain endpoint](https://docs.tradier.com/reference/brokerage-api-markets-get-options-chains).
+
+
 For your Tradier key, choose the profile matching the key and run locally:
 
 ```bash

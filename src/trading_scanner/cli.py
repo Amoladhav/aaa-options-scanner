@@ -101,6 +101,7 @@ def main(argv=None, root: Path | None = None) -> int:
     probe = subs.add_parser('tradier-probe', help='USER-RUN: standalone monthly ATM spread probe; no dashboard integration')
     probe.add_argument('--profile', choices=['sandbox','production'], required=True)
     probe.add_argument('--symbol', required=True)
+    probe.add_argument('--prompt-token', action='store_true', help='Hidden key input for this run only; bypass OS storage')
     probe.add_argument('--as-of', help='Explicit New York date YYYY-MM-DD; otherwise uses America/New_York timezone data')
     args = parser.parse_args(argv)
     if args.command == 'tradier-token':

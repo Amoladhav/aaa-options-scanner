@@ -205,7 +205,7 @@ def observation_date(override=None):
 def run_probe(root, args):
     from .cli import code_revision
     from .dashboard import atomic_json
-    from .token_store import load_token
+    from .token_store import load_token, prompt_api_key, valid_token
     run_id, revision = uuid.uuid4().hex, code_revision()
     progress, code, counts = None, None, {'chains_received': 0, 'rows': 0}
     try:
@@ -216,7 +216,9 @@ def run_probe(root, args):
         progress = RunProgress(root / 'artifacts' / 'logs', run_id, 'tradier-probe', args.profile, revision)
         progress.begin()
         progress.start('tradier_auth')
-        credential = load_token(provider='tradier', profile=args.profile)
+        credential = (valid_token(prompt_api_key(save=False), provider='tradier')
+                      if getattr(args, 'prompt_token', False)
+                      else load_token(provider='tradier', profile=args.profile))
         progress.finish()
         try:
             # Same-day expiry is excluded using the New York trading date.
