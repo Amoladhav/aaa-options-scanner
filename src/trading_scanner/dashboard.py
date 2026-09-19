@@ -18,7 +18,7 @@ FILTER_DEFAULTS = {'schema_version': 1, 'min_open_interest': 10000,
 EXTRA_FIELDS = ('price_status', 'ota_status', 'review_status', 'rank_change', 'history_status',
                 'meanIvPcnt', 'ivHi1YrPcnt', 'ivLow1YrPcnt', 'ivGauge',
                 'spreadLiquidityPcnt', 'totalOpenInterest', 'totalOptionsVolume',
-                'daysToEarnings', 'avgVol30d', *(field + '_status' for field in IV_FIELDS))
+                'daysToEarnings', 'avgVol30d', 'ota_field_status', *(field + '_status' for field in IV_FIELDS))
 
 
 def read_json(path, limit=30_000_000):
@@ -60,6 +60,9 @@ def filters_checked(filters):
 
 
 def ota_checked(payload, profile):
+    if isinstance(payload, dict) and payload.get('representation') == 'ota_raw':
+        from .ota_pipeline import normalize_snapshot
+        payload = normalize_snapshot(payload)
     if not isinstance(payload, dict) or payload.get('source') != ('synthetic' if profile == 'synthetic' else 'ota'):
         raise DataError('DASHBOARD_INPUT_INVALID')
     stamp = datetime.fromisoformat(payload['retrieved_at'])
@@ -83,6 +86,11 @@ def ota_checked(payload, profile):
                 if metrics[field] is not None:
                     raise DataError('DASHBOARD_INPUT_INVALID')
                 metrics[field + '_status'] = 'negative_unusable'
+        statuses = row.get('field_status', {})
+        if not isinstance(statuses, dict) or any(k not in OTA_FIELDS or v not in ('missing','null','blank','non_numeric','numeric_string','numeric','negative_unusable','invalid_count') for k,v in statuses.items()):
+            raise DataError('DASHBOARD_INPUT_INVALID')
+        if statuses:
+            metrics['field_status'] = dict(statuses)
         rows.append({'symbol': symbol, **metrics})
     # Persist only this allowlist, never arbitrary provider properties.
     return {'source': payload['source'], 'retrieved_at': stamp.isoformat(),
@@ -110,6 +118,7 @@ def combine(snapshot, ota, filters=None, *, now=None, previous=None):
         matched = lookup.get(row['symbol'])
         joined = {**row, **{key: matched.get(key) if matched else None for key in OTA_FIELDS},
                   **{field + '_status': matched.get(field + '_status') if matched else None for field in IV_FIELDS},
+                  'ota_field_status': json.dumps(matched.get('field_status', {}), sort_keys=True) if matched else None,
                   'price_status': price_status,
                   'ota_status': timing if matched else 'not_returned_by_screener',
                   'rank_change': None, 'history_status': 'no_prior_session'}
@@ -187,7 +196,7 @@ def write_dashboard(result, destination):
     write_csv(destination / 'departed.csv', result['departed'], ('symbol','group','rank','score','bias'))
     labels = {'symbol':'Symbol', 'company':'Company', 'group':'Group', 'sector':'Sector', 'bias':'CRS bias',
               'rank':'Rank', 'score':'CRS score', 'percentile':'Percentile', 'rank_change':'Rank change ↑',
-              'price_status':'Price age', 'ota_status':'OTA coverage', 'review_status':'Review', 'history_status':'History',
+              'ota_field_status':'OTA field status', 'price_status':'Price age', 'ota_status':'OTA coverage', 'review_status':'Review', 'history_status':'History',
               'meanIvPcnt':'Mean IV %', 'ivHi1YrPcnt':'1y IV high %', 'ivLow1YrPcnt':'1y IV low %',
               'meanIvPcnt_status':'Mean IV status', 'ivHi1YrPcnt_status':'IV high status', 'ivLow1YrPcnt_status':'IV low status', 'ivGauge':'IV gauge', 'spreadLiquidityPcnt':'OTA liquidity', 'totalOpenInterest':'Open interest',
               'totalOptionsVolume':'Options volume', 'daysToEarnings':'Days to earnings', 'avgVol30d':'Underlying avg volume (OTA 30d)'}

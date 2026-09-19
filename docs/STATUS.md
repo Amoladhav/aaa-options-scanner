@@ -86,7 +86,7 @@ workflow is prepared, not remotely verified.
 - OTA row parsing is tested with invented fixtures. Vendor fields remain separate
   from normalized IV metrics. Pagination defaults to 100 rows, up to 50 pages,
   and stops on a short page. Duplicates, page limits and mid-run failures
-  reject partial output. Live paging, timestamps and repeat-run validation remain pending.
+  retain incomplete raw captures without publishing completed results. Live paging, timestamps and repeat-run validation remain pending.
 - `ota-config` accepts complete pasted criteria, previews a versioned config and
   atomically replaces `config/ota-screener.json` with `--apply`. It uses shared
   progress/logging and never executes pasted code or makes provider requests.
@@ -118,3 +118,13 @@ workflow is prepared, not remotely verified.
    options-volume ETF universe. Current 50 ETF list remains a starter watchlist.
 5. Run prepared CI on user push; confirm native OS behavior. No performance or
    profitability validation is claimed.
+
+## OTA capture redesign
+
+Capture preserves bounded response bodies and original row values; field-type
+profiles and versioned normalization are separate outputs. `ota-process` replays
+local captures without network/authentication. Dashboard accepts completed raw
+captures and exposes processing statuses; incomplete runs cannot become reports.
+125 guarded offline tests passed, including byte preservation, mixed-field profile
+counts, partial failure retention, sanitized profile summaries and offline replay.
+Legacy files remain readable but cannot restore previously discarded values.

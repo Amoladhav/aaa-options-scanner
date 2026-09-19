@@ -1,7 +1,6 @@
 """Explicit user-run OTA pagination. No retries or redirects."""
 from datetime import datetime, timezone
 import getpass
-import hashlib
 import http.client
 import json
 import re
@@ -10,7 +9,7 @@ import uuid
 import warnings
 
 from .core import DataError
-from .ota import parse_response, OtaSchemaError
+from .ota import OtaSchemaError
 from .ota_config import MAX_INPUT, parse_config, pairs
 from .progress import RunProgress
 
@@ -63,7 +62,7 @@ def prompt_token():
             raise DataError('OTA_PROMPT_UNAVAILABLE') from None
 
 
-def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE):
+def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE, capture=None):
     path = request_path(page, page_size)
     if not isinstance(token, str) or not re.fullmatch(r'[\x21-\x7e]{1,8192}', token):
         raise DataError('OTA_TOKEN_INVALID')
@@ -93,11 +92,16 @@ def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE):
         raw = response.read(MAX_RESPONSE + 1)
         if len(raw) > MAX_RESPONSE:
             raise DataError('OTA_RESPONSE_TOO_LARGE')
+        if capture is not None:
+            capture(page, None, raw)
         try:
-            payload = json.loads(raw, object_pairs_hook=pairs)
+            payload = json.loads(raw, object_pairs_hook=pairs, parse_constant=lambda _: (_ for _ in ()).throw(ValueError()))
         except (ValueError, RecursionError):
             raise OtaSchemaError('response', 'invalid_json') from None
-        return parse_response(payload, max_rows=page_size)
+        if capture is not None:
+            capture(page, payload)
+        from .ota_pipeline import raw_rows
+        return raw_rows(payload, max_rows=page_size)
     except (OSError, http.client.HTTPException):
         raise DataError('OTA_NETWORK_ERROR') from None
     finally:
@@ -106,7 +110,7 @@ def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE):
 
 
 def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
-              progress=None, counts=None):
+              progress=None, counts=None, capture=None):
     request_path(1, page_size)
     if type(max_pages) is not int or not 1 <= max_pages <= 100:
         raise DataError('OTA_PAGINATION_INVALID')
@@ -115,12 +119,14 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
     rows, seen = [], set()
     for page in range(1, max_pages + 1):
         counts['pages_requested'] += 1
-        batch = fetch_page(criteria, token, page=page, page_size=page_size)
+        batch = fetch_page(criteria, token, page=page, page_size=page_size, **({'capture': capture} if capture is not None else {}))
         counts['pages_received'] += 1
         for row in batch:
-            if row['symbol'] in seen:
+            from .core import normalize_symbol
+            symbol = normalize_symbol(row['symbol'])
+            if symbol in seen:
                 raise DataError('OTA_DUPLICATE_PAGE_SYMBOL')
-            seen.add(row['symbol'])
+            seen.add(symbol)
         rows.extend(batch)
         counts['symbols_received'] = len(rows)
         if progress is not None:
@@ -138,6 +144,10 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
     revision = code_revision()
     progress, count, code = None, 0, None
     schema_diagnostic = None
+    snapshot, profile = None, None
+    from .dashboard import atomic_json
+    from .ota_pipeline import raw_rows, write_processing, profile_summary
+    destination = root / 'artifacts' / 'ota' / run_id
     pagination_counts = {'pages_requested': 0, 'pages_received': 0, 'symbols_received': 0}
     try:
         progress = RunProgress(root / 'artifacts' / 'logs', run_id, 'ota-fetch', 'ota', revision)
@@ -162,10 +172,31 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         else:
             token = prompt_token()
         progress.finish()
+        destination.mkdir(parents=True, exist_ok=False)
+        snapshot = {'schema_version': 2, 'source': 'ota', 'representation': 'ota_raw',
+                    'acquisition_status': 'incomplete', 'coverage': 'incomplete',
+                    'run_id': run_id, 'code_revision': revision,
+                    'retrieved_at': datetime.now(timezone.utc).isoformat(),
+                    'page_size': page_size, 'max_pages': max_pages, 'criteria': checked['criteria'],
+                    'observation_timestamp': None, 'methodology': 'unverified', 'rows': []}
+        atomic_json(destination / 'capture.json', snapshot)
+        def capture(page, payload, raw_body=None):
+            if raw_body is not None:
+                page_dir = destination / 'pages'
+                page_dir.mkdir(parents=True, exist_ok=True)
+                with (page_dir / f'{page:03}.body.json').open('xb') as stream:
+                    stream.write(raw_body)
+                return
+            # Persist the decoded JSON body before structural validation; no headers.
+            atomic_json(destination / 'pages' / f'{page:03}.json',
+                        {'page': page, 'retrieved_at': datetime.now(timezone.utc).isoformat(), 'payload': payload})
+            batch = raw_rows(payload, max_rows=page_size)
+            snapshot['rows'].extend(batch)
+            atomic_json(destination / 'capture.json', snapshot)
         progress.start('ota_fetch', total=max_pages)
         try:
             rows = fetch_all(checked['criteria'], token, page_size=page_size,
-                             max_pages=max_pages, progress=progress, counts=pagination_counts)
+                             max_pages=max_pages, progress=progress, counts=pagination_counts, capture=capture)
         finally:
             # No persistence; Python cannot promise secure erasure from memory.
             token = None
@@ -173,20 +204,17 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         # Once exhaustion is observed, the actual number of pages is known.
         progress.total = pagination_counts['pages_received']
         progress.finish(counts=pagination_counts)
-        progress.start('reports')
-        destination = root / 'artifacts' / 'ota' / run_id
-        destination.mkdir(parents=True, exist_ok=False)
-        output = {'schema_version': 1, 'source': 'ota',
-                  'retrieved_at': datetime.now(timezone.utc).isoformat(),
-                  'observation_timestamp': None, 'page_size': page_size,
-                  'pages_received': pagination_counts['pages_received'], 'coverage': 'short_page_observed',
-                  'methodology': 'unverified',
-                  'criteria_sha256': hashlib.sha256(json.dumps(checked['criteria'], sort_keys=True).encode()).hexdigest(),
-                  'rows': rows}
-        (destination / 'results.json').write_text(json.dumps(output, indent=2, allow_nan=False) + '\n', encoding='utf-8')
+        progress.start('ota_profile')
+        snapshot.update(rows=rows, acquisition_status='completed_short_page', coverage='short_page_observed',
+                        retrieved_at=datetime.now(timezone.utc).isoformat(), pages_received=pagination_counts['pages_received'])
+        profile = write_processing(snapshot, destination)
+        atomic_json(destination / 'capture.json', snapshot)
+        atomic_json(destination / 'results.json', snapshot)
         progress.finish()
         print(f'Fetched {count} rows; stopped on a short page after {pagination_counts["pages_received"]} pages. Full coverage remains unverified.')
-        print(f'User data: {destination / "results.json"}')
+        print(f'Raw data: {destination / "results.json"}')
+        print(f'Field profile: {destination / "field-profile.json"}')
+        print(f'Normalized data: {destination / "normalized.json"}')
     except (Exception, KeyboardInterrupt) as exc:
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'OTA_FETCH_FAILED'
         if isinstance(exc, DataError) and len(exc.args) == 1 and exc.args[0] in ERRORS:
@@ -195,19 +223,29 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
             schema_diagnostic = {'field': exc.field, 'reason': exc.reason}
             print(f'OTA schema check: {exc.field} / {exc.reason}')
         print(f'{code}: request stopped; no retry or synthetic fallback.')
+    if code and snapshot is not None:
+        try:
+            snapshot.update(acquisition_status='incomplete', coverage='incomplete', error_code=code)
+            atomic_json(destination / 'capture.json', snapshot)
+            profile = write_processing(snapshot, destination)
+            print(f'Incomplete capture retained: {destination / "capture.json"}')
+        except (OSError, ValueError, TypeError):
+            pass
     try:
         review = root / 'artifacts' / 'agent-review'
         review.mkdir(parents=True, exist_ok=True)
         report = {'schema_version': 1, 'run_id': run_id, 'code_revision': revision,
                   'profile': 'ota', 'checks': [{'name': 'ota_paginated_fetch', 'status': 'failed' if code else 'passed'}],
                   'counts': {'rows': count, **pagination_counts}, 'error_code': code}
+        if profile is not None:
+            report['data_profile'] = profile_summary(profile)
         if schema_diagnostic is not None:
             report['schema_diagnostic'] = schema_diagnostic
+        if progress:
+            progress.end(code, counts={'symbols_received': count})
         path = review / f'{run_id}.json'
         path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
         print(f'Agent review: {path}')
-        if progress:
-            progress.end(code, counts={'symbols_received': count})
     except OSError:
         code = code or 'OTA_FETCH_FAILED'
         print('OTA_FETCH_FAILED: could not finish diagnostic output.')

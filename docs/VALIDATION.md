@@ -253,3 +253,14 @@ to the three IV level fields. 119 guarded offline tests passed, including
 0/77/100/237/1837-row synthetic screeners and required-IV filter rejection.
 Live narrow/medium/broad screener comparison remains user-run; browser counts
 and sanitized reports are requested. Existing user criteria remain uncommitted.
+
+## Raw-first OTA capture and field profiling
+
+125 guarded offline tests passed on Ubuntu / Python 3.14.4. HTTP-200 bounded
+body bytes persist before decoding, arbitrary metric values survive acquisition,
+profiles describe types/ranges, and separate normalization retains signed parsed
+values plus usability reasons. Tests cover immutable replay, string/null/blank
+distinctions, malformed body retention, mid-run authentication failure retention,
+incomplete-result exclusion and fixed-field count-only agent-review profiles.
+The current user's screener config remains untouched/uncommitted. No live call
+or real capture inspection was performed; live validation remains user-run.

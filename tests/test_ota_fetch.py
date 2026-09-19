@@ -27,7 +27,7 @@ class OtaFetchTests(unittest.TestCase):
         connection = self.connection(body=b'[{"symbol":"SYNTH","values":{"totalOptionsVolume":12}}]')
         with patch('trading_scanner.ota_fetch.ssl.create_default_context', return_value=object()), patch('trading_scanner.ota_fetch.http.client.HTTPSConnection', return_value=connection) as constructor:
             rows = fetch_page(CRITERIA, 'synthetic-local-input')
-        self.assertEqual(rows[0]['totalOptionsVolume'], 12)
+        self.assertEqual(rows[0]['values']['totalOptionsVolume'], 12)
         self.assertEqual(constructor.call_args.args, (HOST,))
         self.assertEqual(constructor.call_args.kwargs['timeout'], 30)
         args, kwargs = connection.request.call_args
@@ -90,7 +90,7 @@ class OtaFetchTests(unittest.TestCase):
                 self.assertEqual(main(['ota-fetch','--profile','ota'], root), 0 if status == 200 else 1)
             report = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
             self.assertEqual(report['error_code'], None if status == 200 else 'OTA_AUTH_REJECTED')
-            self.assertEqual(set(report), {'schema_version','run_id','code_revision','profile','checks','counts','error_code'})
+            self.assertEqual(set(report), {'schema_version','run_id','code_revision','profile','checks','counts','error_code','data_profile'})
             self.assertNotIn('synthetic-local-input', output.getvalue())
             for path in root.glob('artifacts/**/*.json*'):
                 self.assertNotIn('synthetic-local-input', path.read_text())
@@ -107,7 +107,7 @@ class OtaFetchTests(unittest.TestCase):
         body = b'{"results":{"data":[{"symbol":"SYNTH","values":{"totalOptionsVolume":12}}],"total":1},"metadata":"synthetic-private-marker"}'
         with patch('trading_scanner.ota_fetch.ssl.create_default_context'), patch('trading_scanner.ota_fetch.http.client.HTTPSConnection', return_value=self.connection(body=body)):
             rows = fetch_page(CRITERIA, 'synthetic-local-input')
-        self.assertEqual(rows[0]['totalOptionsVolume'], 12)
+        self.assertEqual(rows[0]['values']['totalOptionsVolume'], 12)
         self.assertNotIn('synthetic-private-marker', str(rows))
 
     def test_reference_envelope_empty_and_invalid(self):
@@ -125,11 +125,14 @@ class OtaFetchTests(unittest.TestCase):
         body = b'{"results":{"data":[{"symbol":"SYNTH","values":{"totalOpenInterest":"synthetic-private-marker"}}]}}'
         output = io.StringIO()
         with patch('trading_scanner.ota_fetch.prompt_token', return_value='synthetic-local-input'), patch('trading_scanner.ota_fetch.ssl.create_default_context'), patch('trading_scanner.ota_fetch.http.client.HTTPSConnection', return_value=self.connection(body=body)), redirect_stdout(output):
-            self.assertEqual(main(['ota-fetch','--profile','ota'], root), 1)
+            self.assertEqual(main(['ota-fetch','--profile','ota'], root), 0)
         report = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
-        self.assertEqual(report['schema_diagnostic'], {'field':'totalOpenInterest','reason':'non_integer'})
+        self.assertIsNone(report['error_code'])
+        normalized = json.loads(next(root.glob('artifacts/ota/*/normalized.json')).read_text())
+        self.assertIsNone(normalized['rows'][0]['totalOpenInterest'])
+        self.assertEqual(normalized['rows'][0]['field_status']['totalOpenInterest'], 'non_numeric')
         self.assertNotIn('synthetic-private-marker', output.getvalue() + json.dumps(report))
-        self.assertFalse(list(root.glob('artifacts/ota/*/results.json')))
+        self.assertTrue(list(root.glob('artifacts/ota/*/results.json')))
 
     def test_paging_continues_past_full_pages_and_preserves_arguments(self):
         counts = {}

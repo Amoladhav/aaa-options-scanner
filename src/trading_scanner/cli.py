@@ -103,7 +103,12 @@ def main(argv=None, root: Path | None = None) -> int:
     probe.add_argument('--symbol', required=True)
     probe.add_argument('--prompt-token', action='store_true', help='Hidden key input for this run only; bypass OS storage')
     probe.add_argument('--as-of', help='Explicit New York date YYYY-MM-DD; otherwise uses America/New_York timezone data')
+    process = subs.add_parser('ota-process', help='USER-RUN: profile/reprocess saved raw OTA data without network')
+    process.add_argument('--input', type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.command == 'ota-process':
+        from .ota_pipeline import run_process
+        return run_process(root, args)
     if args.command == 'tradier-token':
         from .token_store import run_store
         return run_store(root, args.action, provider='tradier', profile=args.profile)

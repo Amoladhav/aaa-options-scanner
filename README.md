@@ -462,7 +462,7 @@ decoding is not implemented. These headers do not reproduce a browser's TLS stac
    a token into stdin or pass it on the command line.
 5. Give the agent only the printed `artifacts/agent-review/<run-id>.json` path.
    That report contains fixed status/error codes and counts, with no token,
-   headers, response body, identifiers or symbols. The normalized `results.json`
+   headers, response body, identifiers or symbols. The raw `results.json`
    under `artifacts/ota/` is for your local review, not agent intake.
 
 `OTA_AUTH_REJECTED` means 401/403: the token might have expired, or the request
@@ -473,18 +473,10 @@ envelope are supported. `OTA_ENVELOPE_UNSUPPORTED` means another outer structure
 share only its field names/nesting so the parser can be adjusted. Never share raw responses.
 An empty first page means zero matches for this request, not the entire market.
 
-`OTA_SCHEMA_INVALID` now prints a fixed field/reason pair and includes it as
-`schema_diagnostic` in the agent-review report. Examples are `totalOpenInterest /
-non_integer`, `rows / too_many_rows` or `response / invalid_json`. No response
-values or symbols are included. Share the report path to diagnose the exact issue;
-the tool does not silently coerce invalid metrics or publish a partial page.
-
-OTA numeric fields accept ordinary decimal strings and numbers. Counts/codes
-accept whole-number decimals such as `1200.0` or `"1200"`, but never truncate
-fractions. Booleans, negative/nonfinite values, blank strings, separators and
-placeholder text remain invalid. Integer metrics are capped at `2^53 - 1` to
-avoid accepting values outside the exact JSON floating-point integer range.
-Missing/null values remain unknown; no fake volume or IV substitutions are made.
+`OTA_SCHEMA_INVALID` now concerns invalid JSON or row structure, not an unusual
+metric value. Where available, a fixed diagnostic identifies the structural issue.
+Authentication, response-size, symbol identity and pagination checks remain strict.
+Unexpected metric types/values are retained for profiling and later interpretation.
 
 The owner verified on 2026-09-19 that the token expires with the OTA session.
 Treat it as session-bound, not a long-lived API key. Before fetching, open OTA,
@@ -505,7 +497,7 @@ saved OTA values to momentum rankings; unattended scheduling is not provided.
 The earlier single-page
 user-run check passed with 77 rows and no errors
 (review report `126d95ced37a4481b0e217b61b7d89e2`). Full coverage and metric
-interpretation remain unverified; the current offline suite passed 114 tests.
+interpretation remain unverified; the current offline suite passed 125 tests.
 
 ### Pagination and limits
 
@@ -564,14 +556,55 @@ until the updated diagnostic is returned. Curl can isolate transport issues,
 but this probe's sanitized report is sufficient for schema debugging; do not
 paste raw authenticated captures or headers into chat.
 
-### Unusable OTA IV values
+### Raw capture, profiles and processing
 
-Owner-run screeners returned negative `ivLow1YrPcnt` and `meanIvPcnt` values.
-Negative mean, annual high and annual low IV values now become null with a
-`<field>_status: negative_unusable` marker in saved rows and dashboard/CSV output.
-Their provider meaning is unverified. They are never replaced with zero; missing
-mean IV cannot pass an enabled mean-IV filter. Invalid counts, malformed rows,
-duplicates and other schema violations remain errors.
+`ota-fetch` preserves bounded HTTP-200 response bodies before JSON/row validation.
+It never stores the outgoing token or request/response headers. Each run has:
+
+| File | Meaning |
+| --- | --- |
+| `pages/001.body.json` | Original response bytes, including whitespace/numeric spelling; may contain malformed JSON if acquisition fails. |
+| `pages/001.json` | Decoded response plus page number and retrieval time, when JSON decoding succeeds. |
+| `capture.json` | Collected structurally accepted rows, original values, criteria and run metadata; starts incomplete. |
+| `results.json` | Raw rows published only after a short page completes acquisition. Completeness beyond this stopping rule remains unverified. |
+| `field-profile.json` | Per-field observed types, missing/null/blank counts, numeric/text string counts, negative counts, finite numeric min/max. |
+| `normalized.json` | Separate versioned typed/usable metrics with `parsed_values` and `field_status`; never overwrites raw data. |
+
+Profile fields come from the immediate `values` object. Nested objects and arrays
+are counted as those types and preserved intact in raw data, not recursively
+flattened. Present type counts partition present rows; blank/numeric/other string
+counts subdivide strings, while negative counts are subsets. Missing counts are
+relative to all captured valid rows. Numeric min/max combine finite JSON numbers
+and numeric strings using floating-point parsing; original response bytes remain
+the authority for exact numeric spelling/precision. Profiles omit raw examples.
+
+Negative IV, `"N/A"`, blanks, booleans, mixed types and previously unknown fields
+do not abort acquisition. Version-1 processing retains signed parsed numbers,
+then separately marks negative metrics unusable for existing filters. Count/code
+fractions or values beyond the exact-integer limit are also marked unusable.
+Blank, explicit null, missing and nonnumeric values have distinct statuses. No
+value is clamped to zero, and no provider sentinel meaning is assumed. Unknown
+fields remain available in raw data/profile for future processing rules.
+
+Dashboard automatically processes completed raw snapshots and displays field
+statuses. Existing legacy normalized snapshots remain readable, but original
+values discarded by older versions cannot be recovered. Incomplete captures
+are never selected by the default dashboard and explicit incomplete input is
+rejected. Failed fetches retain earlier pages and profile those valid rows;
+malformed pages remain available in original body files, outside the row profile.
+
+Reprocess a saved capture without a token or network request (use its printed path):
+
+```bash
+python3 -I -S run.py ota-process --input artifacts/ota/RUN_ID/results.json
+```
+
+PowerShell: `py -3 -I -S run.py ota-process --input artifacts/ota/RUN_ID/results.json`.
+Each replay writes a new `artifacts/ota-processing/<run-id>/` directory. An incomplete
+`capture.json` can be profiled, but cannot produce a normalized completed dataset.
+Raw files are user-local, ignored by Git. Share only the `agent-review` report:
+it includes type/count profiles for fixed known metric names, excluding ranges,
+unknown field names, samples, provider identifiers and credentials.
 
 ### Live screener test matrix (user-run)
 

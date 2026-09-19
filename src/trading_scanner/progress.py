@@ -21,7 +21,7 @@ SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHA
                "OTA_CONFIG_SYNTAX", "OTA_CONFIG_UNSUPPORTED_FILTER", "OTA_CONFIG_RANGE_REVERSED",
                "OTA_TOKEN_INVALID", "OTA_PROMPT_UNAVAILABLE", "OTA_AUTH_REJECTED", "OTA_RATE_LIMITED",
                "OTA_REDIRECT_REJECTED", "OTA_HTTP_ERROR", "OTA_NETWORK_ERROR", "OTA_RESPONSE_TOO_LARGE",
-               "OTA_SCHEMA_INVALID", "OTA_ENVELOPE_UNSUPPORTED", "OTA_FETCH_FAILED",
+               "OTA_PROCESS_INVALID", "OTA_SCHEMA_INVALID", "OTA_ENVELOPE_UNSUPPORTED", "OTA_FETCH_FAILED",
                "OTA_PAGINATION_INVALID", "OTA_DUPLICATE_PAGE_SYMBOL", "OTA_PAGE_LIMIT",
                "DASHBOARD_INPUT_INVALID", "DASHBOARD_INPUT_MISSING", "DASHBOARD_FAILED",
                "HISTORY_INVALID", "CANDIDATE_CONFIG_INVALID", "TOKEN_STORE_UNAVAILABLE", "TOKEN_STORE_EMPTY",
@@ -30,6 +30,7 @@ SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHA
                "TRADIER_NETWORK_ERROR", "TRADIER_RESPONSE_TOO_LARGE", "TRADIER_SCHEMA_INVALID",
                "TRADIER_MONTHLY_UNVERIFIED", "TRADIER_NO_ATM_PAIR", "TRADIER_FETCH_FAILED"}
 STAGES = {
+    "ota_profile": "Profiling captured fields and preparing typed data",
     "run": "Scanner",
     "synthetic_data": "Generating synthetic prices",
     "snapshot_load": "Loading cached snapshot",
@@ -52,7 +53,7 @@ STAGES = {
     "tradier_chain": "Fetching monthly option chain",
     "summary": "Writing sanitized review summary",
 }
-COUNT_KEYS = {"ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
+COUNT_KEYS = {"rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
 
 
 class RunProgress:
@@ -65,7 +66,7 @@ without terminal probing or environment reads. Events are flushed immediately.
                  revision: str, stream=None):
         if not re.fullmatch(r"[a-f0-9]{32}", run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
             raise ValueError("INVALID_LOG_METADATA")
-        if command not in {"demo", "cached", "refresh", "ota-config", "ota-fetch", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
+        if command not in {"demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
             raise ValueError("INVALID_LOG_METADATA")
         self.run_id, self.command, self.profile, self.revision = run_id, command, profile, revision
         self.stream = sys.stdout if stream is None else stream
