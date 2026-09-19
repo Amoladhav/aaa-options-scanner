@@ -67,6 +67,27 @@ snapshot but only ranked symbols appear in the joined report.
 
 # OTA access investigation: user-run only
 
+The observed screener request uses POST on `app.otatrade.com` at
+`/api/secure/screeners/criteria/results`, with header name `x-auth-token`.
+HTTP 200 was observed in the browser only. Independent token authentication,
+supported automation and token lifetime have not been verified.
+
+`trading_scanner.ota.parse_rows` validates one rows array containing `symbol` and
+`values`. It preserves `meanIvPcnt`, `ivHi1YrPcnt`, `ivLow1YrPcnt`,
+`spreadLiquidityPcnt`, `totalOpenInterest`, `totalOptionsVolume`, `ivGauge` and
+`optionable` under vendor names. Missing values remain null; invalid supplied
+metrics and duplicate symbols reject the page. Unneeded fields are dropped.
+Only invented fixtures are committed. This pure parser is not wired to a CLI,
+HTTP transport or generic options report yet.
+
+Do not map `ivGauge` or `meanIvPcnt` to IV rank/percentile, or interpret
+`spreadLiquidityPcnt` as bid/ask spread. Definitions remain unverified. The observed
+request has earnings, price-change, moving-average and liquidity filters: results
+are a selected subset, not the momentum universe. Omitted symbols cannot be treated
+as zero liquidity or non-optionable. The supplied payload was abbreviated, so it
+is not a reproducible request. Complete request shape, response envelope, pagination
+termination and observation timestamps remain pending. No raw captures are needed.
+
 The owner reports website access with a Chrome session token, but no API access.
 Public [OTA support information](https://www.otatrade.com/pricing/) identifies the
 User Menu support ticket system and support@tradetoolsupport.com. A supported

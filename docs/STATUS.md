@@ -26,7 +26,7 @@ Updated: 2026-09-18. Phase: momentum scanner with offline options enrichment.
 
 ## Verification
 
-On Ubuntu, Python 3.14.4: seven intake-tool tests and 45 offline application tests
+On Ubuntu, Python 3.14.4: seven intake-tool tests and 52 offline application tests
 passed. The offline runner denies network, subprocesses, real environment reads,
 and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
 Guards are installed before test discovery. Tests cover numeric reference parity
@@ -72,6 +72,9 @@ hooks, and WSL-specific checks remain pending.
 - Offline options enrichment supports separate supplied IV metrics, volume and open
   interest, synthetic examples, CSV/HTML output and deterministic snapshot replay.
   No live OTA, persistence/Conviction, order execution or performance claims.
+- OTA row parsing is tested with invented fixtures. Vendor fields remain separate
+  from normalized IV metrics. Transport, full request shape, pagination, timestamps
+  and authentication remain pending; see [options notes](OPTIONS.md).
 
 ## Next sequence
 

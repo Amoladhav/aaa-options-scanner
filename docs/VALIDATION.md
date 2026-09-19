@@ -67,3 +67,12 @@ redacted reference views were inspected; no additional source was imported or ru
 This implementation does not copy its internal endpoint/authentication flow or
 its metric aliases and missing-liquidity substitutions. A supported OTA method
 and metric definitions remain pending. Offline checks passed; live checks pending.
+
+## OTA row parser
+
+`python3 -I -S tools/test_offline.py`: 52 tests passed on Linux / Python 3.14.4.
+Seven new synthetic tests cover vendor field preservation, dropped unknown fields,
+missing/null/zero values, IV above 100%, invalid numeric types and nonfinite values,
+duplicate normalized symbols, unsupported envelopes and empty pages. No provider
+response values were copied into fixtures. No network or credential operations
+were performed. The parser is a foundation, not a working live OTA integration.
