@@ -73,7 +73,14 @@ Only keys are repaired; values and active/inactive flags retain their meaning.
         if not isinstance(kind, str) or kind not in FILTER_KEYS:
             fail('OTA_CONFIG_UNSUPPORTED_FILTER')
         required = {'field', 'valueFilter'} | FILTER_KEYS[kind]
-        if not required <= set(row) or set(row) - required - {'criteria'}:
+        optional = {'criteria'}
+        if kind in ('RANGE_INSIDE', 'RANGE_OUTSIDE'):
+            optional.add('valueChoices')
+        if not required <= set(row) or set(row) - required - optional:
+            fail()
+        # OTA repeats the range operator in this optional field. Preserve it
+        # for request replay, but reject a conflicting operator.
+        if kind in ('RANGE_INSIDE', 'RANGE_OUTSIDE') and 'valueChoices' in row and row['valueChoices'] != kind:
             fail()
         if 'criteria' in row and not (type(row['criteria']) is bool or
                                       type(row['criteria']) is str and row['criteria'] in ('true', 'false')):

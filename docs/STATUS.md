@@ -26,7 +26,7 @@ Updated: 2026-09-18. Phase: momentum scanner with offline options enrichment.
 
 ## Verification
 
-On Ubuntu, Python 3.14.4: seven intake-tool tests and 58 offline application tests
+On Ubuntu, Python 3.14.4: seven intake-tool tests and 60 offline application tests
 passed. The offline runner denies network, subprocesses, real environment reads,
 and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
 Guards are installed before test discovery. Tests cover numeric reference parity

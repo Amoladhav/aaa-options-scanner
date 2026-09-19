@@ -35,6 +35,20 @@ class OtaConfigTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(DataError):
                 parse_config(text)
 
+    def test_ota_range_operator_choices_preserved(self):
+        for kind in ('RANGE_INSIDE', 'RANGE_OUTSIDE'):
+            row = {'field': 'volume', 'valueFilter': kind, 'valueMin': 100,
+                   'valueMax': 1000, 'valueChoices': kind, 'criteria': 'false'}
+            self.assertEqual(parse_config(json.dumps([row]))['criteria'], [row])
+            row['valueChoices'] = 'SELECT'
+            with self.assertRaises(DataError):
+                parse_config(json.dumps([row]))
+
+    def test_chat_escaped_underscore_rejected_without_modification(self):
+        text = '[{"field":"sma\\_50","valueFilter":"COMPARE","valueChoices":"sma_200","valueComparison":"ABOVE"}]'
+        with self.assertRaises(DataError):
+            parse_config(text)
+
     def test_schema_rejection_and_duplicate_keys(self):
         base = json.loads(json.dumps(parse_config(PASTE)['criteria']))
         cases = [[], {'headers': {}}, base * 2,

@@ -273,6 +273,14 @@ unsupported filter types, repeated fields/keys and incomplete entries fail close
 Limits: 200,000 input characters and 100 criteria. New provider shapes require an
 explicit parser update rather than silently losing fields.
 
+OTA range objects may also include `valueChoices` equal to `RANGE_INSIDE` or
+`RANGE_OUTSIDE`; the tool preserves this optional field and checks that it matches
+`valueFilter`. Paste the original payload with plain underscores (`sma_50`,
+`RANGE_INSIDE`). Chat/Markdown escapes such as `sma\_50` are invalid JSON and are
+rejected. The saved configuration wraps the original array in `criteria`; that
+array is the future POST body, not the entire configuration object. Both `"true"`
+and `"false"` criteria flags are preserved; the tool does not activate every filter.
+
 Without `--apply`, the tool prints a preview and leaves configuration untouched.
 With `--apply`, it replaces the entire criteria list atomically; it does not merge
 with old filters. Invalid input leaves the existing file intact. The generated

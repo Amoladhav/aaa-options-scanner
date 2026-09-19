@@ -86,3 +86,9 @@ keys, bounded input, preview versus apply, failed update preservation, file inpu
 atomic replacement failure cleanup and absence of pasted values in run logs.
 The guard was reviewed before collection; no network, credentials or incoming
 code was used. Native Windows/macOS terminal behavior is documented but unverified.
+
+Payload compatibility correction: OTA range criteria can contain an optional
+`valueChoices` repeating the range operator. This field is now preserved and
+checked for consistency. Two regression tests cover both range operators,
+conflicting operators and rejecting chat-only underscore escapes without changing
+input semantics. `python3 -I -S tools/test_offline.py`: 60 tests passed.
