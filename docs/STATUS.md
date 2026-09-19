@@ -128,3 +128,19 @@ captures and exposes processing statuses; incomplete runs cannot become reports.
 125 guarded offline tests passed, including byte preservation, mixed-field profile
 counts, partial failure retention, sanitized profile summaries and offline replay.
 Legacy files remain readable but cannot restore previously discarded values.
+
+## Shared ingestion policy adoption
+
+Policy revision 3 applies capture/profile/normalize/business-rule separation to
+all external fetches, including public library adapters. OTA implements the first
+capture/profile/replay increment. Tradier and public price/constituent adapters
+still need adoption; cross-run schema-drift comparison and retention controls
+are requirements, not implemented features. Library-returned data cannot be
+claimed to preserve wire-level bytes unless the actual transport exposes them.
+Agents must explain applicable established practices and project-specific
+tradeoffs when analyzing requirements and recommending solutions.
+
+References: [layered raw/refined/business data](https://learn.microsoft.com/en-us/azure/databricks/lakehouse/medallion)
+and [schema evolution and rescued fields](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema).
+These are established architectural patterns, not a mandate to adopt Databricks
+or a universal requirement to accept unusable data into calculations.

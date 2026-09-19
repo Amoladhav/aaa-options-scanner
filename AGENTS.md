@@ -1,6 +1,6 @@
 # Shared development policy
 
-Policy revision: 2 (2026-09-13). Owner-maintained; collaboration is supported.
+Policy revision: 3 (2026-09-19). Owner-maintained; collaboration is supported.
 This workspace contains independent projects. Do not initialize one umbrella
 repository or move/import project files without reviewing the intended boundary.
 Keep project instructions self-contained when a project is cloned elsewhere.
@@ -32,6 +32,53 @@ policy repository and automated copy process are not yet configured.
   The intake scanner may process incoming files locally to detect and remove
   hardcoded credentials, with values suppressed; this does not authorize viewing
   those values, accessing personal secret stores, or using any credential.
+
+## Engineering guidance and external-data ingestion
+
+- When analyzing requirements or recommending a solution, explain the relevant
+  established engineering practice, its purpose, tradeoffs and how it applies
+  here. Distinguish common practice from a formal standard, provider-documented
+  behavior and project-specific choices. Keep the explanation proportional to
+  the task; cite authoritative documentation when claims need verification.
+- Apply the following ingestion design to every external fetch: public and
+  authenticated APIs, broker/data-provider adapters, downloaded files and library
+  wrappers. External schemas are observed contracts that can evolve, not proof
+  that every returned value matches our current assumptions.
+- Separate capture, profiling, normalization and business rules. Preserve source
+  values before interpreting them. Do not clamp, coerce, replace, drop fields or
+  reject an otherwise retrievable dataset merely because a metric is unexpected.
+  Unknown fields, mixed types, negatives, nulls and blanks belong in captured data.
+- Capture bounded source bodies/data in private user-local storage, excluded from
+  Git, logs and agent intake. Never persist authentication material, request
+  headers, cookies or session dumps. Define retention/access controls appropriate
+  to the provider/data. This does not authorize agents to inspect raw captures or
+  execute authenticated requests; the existing user-run boundary still applies.
+- Preserve original bytes where the transport exposes them safely. When a library
+  exposes only decoded objects/tables, preserve that boundary and document the
+  upstream transformations and precision already lost; never claim wire fidelity.
+  Keep immutable run/page artifacts with provenance: source, environment,
+  retrieval time, observation time if known, non-secret request settings,
+  code/processing versions, and explicit acquisition/completeness status.
+- Generate descriptive field profiles: observed types, presence/missing/null/blank
+  counts, numeric versus other strings, ranges and anomaly counts where useful.
+  Document overlapping/subset counters and numeric precision. Compare profiles
+  across runs to detect new/missing fields, type changes and distribution shifts;
+  alert or quarantine for review rather than silently changing downstream meaning.
+- Build versioned typed/derived datasets separately, retaining raw-value lineage,
+  conversion status and interpretation reasons. Distinguish absent, explicit null,
+  blank, unparseable and domain-unusable values. Apply financial eligibility,
+  freshness, units and aggregation rules only at the appropriate processing layer.
+  Reprocessing must not require a refetch or overwrite original captured data.
+- Preservation is not acceptance for calculation. Keep strict limits for response
+  size, authentication/transport errors, unsafe content, structural readability,
+  record identity, pagination and completeness. Preserve/quarantine retrievable
+  evidence where safe; never present an error body or incomplete capture as a
+  successful usable dataset. Stop dependent processing when its contract fails.
+- Test schema evolution with synthetic new/missing fields, mixed types, malformed
+  bodies, pagination failures and replay. Expose only allowlisted aggregate
+  diagnostics to agents, excluding raw values/identifiers and unknown field names.
+  Track each adapter's adoption and verification separately: documentation of this
+  rule is not evidence that every adapter already implements it.
 
 ## Intake from INBOX
 
@@ -186,7 +233,7 @@ This is guidance, not an active model configuration or a correctness guarantee.
   messages or exception text. Preserve the agent-review-only public intake boundary.
 - Offline tests run on Python 3.14.4 / Ubuntu. Real provider access, optional
   dependencies, and native Windows/macOS remain unverified. Hooks and CI are absent.
-- Shared policy revision 2 is copied above so standalone clones retain the rules.
+- Shared policy revision 3 is copied above so standalone clones retain the rules.
   Update copies by an explicit reviewed diff; do not weaken execution boundaries.
 
 ## Initial development mandate
