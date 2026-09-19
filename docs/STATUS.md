@@ -26,7 +26,7 @@ Updated: 2026-09-18. Phase: momentum scanner with offline options enrichment.
 
 ## Verification
 
-On Ubuntu, Python 3.14.4: seven intake-tool tests and 63 offline application tests
+On Ubuntu, Python 3.14.4: seven intake-tool tests and 69 offline application tests
 passed. The offline runner denies network, subprocesses, real environment reads,
 and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
 Guards are installed before test discovery. Tests cover numeric reference parity
@@ -71,15 +71,20 @@ hooks, and WSL-specific checks remain pending.
   offline. Incremental download merging is deferred to avoid stale adjustments.
 - Offline options enrichment supports separate supplied IV metrics, volume and open
   interest, synthetic examples, CSV/HTML output and deterministic snapshot replay.
-  No live OTA, persistence/Conviction, order execution or performance claims.
+  No verified live OTA access, persistence/Conviction, order execution or performance claims.
 - OTA row parsing is tested with invented fixtures. Vendor fields remain separate
-  from normalized IV metrics. Transport, full request shape, pagination, timestamps
-  and authentication remain pending; see [options notes](OPTIONS.md).
+  from normalized IV metrics. Single-page transport uses the saved request shape;
+  pagination, timestamps and live validation remain pending; see [options notes](OPTIONS.md).
 - `ota-config` accepts complete pasted criteria, previews a versioned config and
   atomically replaces `config/ota-screener.json` with `--apply`. It uses shared
   progress/logging and never executes pasted code or makes provider requests.
 
 ## Next sequence
+
+The owner has confirmed permission for personal scripted OTA access. `ota-fetch
+--profile ota` now performs a user-run single-page connection test with hidden
+token input, fixed-host HTTPS and sanitized diagnostics. Live execution is pending;
+pagination and integration into the momentum report are not yet implemented.
 
 1. User installs optional wheel dependencies and runs public refresh; inspect only
    the allowlisted agent-review report. Fix real schema/packaging issues if evidenced.

@@ -77,7 +77,12 @@ def main(argv=None, root: Path | None = None) -> int:
     config.add_argument("--input", type=Path, help="Read a criteria-only text file instead of stdin")
     config.formatter_class = lambda prog: argparse.RawDescriptionHelpFormatter(prog, width=88)
     config.add_argument("--apply", action="store_true", help="Replace config/ota-screener.json with validated criteria")
+    ota_fetch = subs.add_parser('ota-fetch', help='USER-RUN: fetch one OTA page with a hidden token prompt')
+    ota_fetch.add_argument('--profile', choices=['ota'], required=True)
     args = parser.parse_args(argv)
+    if args.command == 'ota-fetch':
+        from .ota_fetch import run_fetch
+        return run_fetch(root)
     if args.command == "ota-config":
         return configure_ota(args, root)
     run_id = uuid.uuid4().hex

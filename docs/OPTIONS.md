@@ -2,7 +2,7 @@
 
 This increment prepares a normalized input boundary for later OTA integration.
 It makes no OTA requests and does not implement Chrome session-token acquisition.
-Provider metric definitions, aggregation and supported authentication are unresolved.
+Provider metric definitions, aggregation and token lifetime are unresolved.
 Options values never change CRS scores, ranks or candidate labels.
 
 Run from the repository root (Bash/WSL; no dependencies required):
@@ -69,36 +69,39 @@ snapshot but only ranked symbols appear in the joined report.
 
 The observed screener request uses POST on `app.otatrade.com` at
 `/api/secure/screeners/criteria/results`, with header name `x-auth-token`.
-HTTP 200 was observed in the browser only. Independent token authentication,
-supported automation and token lifetime have not been verified.
+HTTP 200 was observed in the browser only. Permission for personal automation is
+owner-confirmed; independent token authentication and token lifetime remain unverified.
 
 `trading_scanner.ota.parse_rows` validates one rows array containing `symbol` and
 `values`. It preserves `meanIvPcnt`, `ivHi1YrPcnt`, `ivLow1YrPcnt`,
 `spreadLiquidityPcnt`, `totalOpenInterest`, `totalOptionsVolume`, `ivGauge` and
 `optionable` under vendor names. Missing values remain null; invalid supplied
 metrics and duplicate symbols reject the page. Unneeded fields are dropped.
-Only invented fixtures are committed. This pure parser is not wired to a CLI,
-HTTP transport or generic options report yet.
+Only invented fixtures are committed. The parser is now used by the single-page
+`ota-fetch` CLI transport; generic options-report integration remains pending.
 
 Do not map `ivGauge` or `meanIvPcnt` to IV rank/percentile, or interpret
 `spreadLiquidityPcnt` as bid/ask spread. Definitions remain unverified. The observed
 request has earnings, price-change, moving-average and liquidity filters: results
 are a selected subset, not the momentum universe. Omitted symbols cannot be treated
-as zero liquidity or non-optionable. The supplied payload was abbreviated, so it
-is not a reproducible request. Complete request shape, response envelope, pagination
-termination and observation timestamps remain pending. No raw captures are needed.
+as zero liquidity or non-optionable. The complete supplied payload is now saved
+in configuration. Response envelope, pagination termination and observation
+timestamps remain pending. No raw captures are needed.
+
+The owner confirms personal scripted access is permitted. The user-run `ota-fetch`
+command now probes one page with a hidden token prompt. See the README for exact
+commands and local acquisition steps. No authenticated request was run by agents.
 
 The owner reports website access with a Chrome session token, but no API access.
 Public [OTA support information](https://www.otatrade.com/pricing/) identifies the
-User Menu support ticket system and support@tradetoolsupport.com. A supported
-automation/authentication method has not been established.
+User Menu support ticket system and support@tradetoolsupport.com. Token-only
+authentication is ready for the user's first live test.
 
-Ask support whether personal scripted, read-only screener access is permitted and
-supported, and request the authentication method, expiry, renewal, revocation and
-rate limits. A website session persisting does not prove a token is long-lived:
+Permission is owner-confirmed; expiry, renewal, revocation and rate limits still
+need provider clarification. A website session persisting does not prove a token is long-lived:
 the browser might refresh it or use a separate cookie.
 
-Until that method is established, test only the normal website flow locally:
+Optional normal-website observations, separate from the scripted test:
 
 1. Sign in normally in Chrome. Open Developer Tools, Network, Fetch/XHR. Load a
    read-only screener you already use. Observe HTTP status and authentication
@@ -112,6 +115,7 @@ Until that method is established, test only the normal website flow locally:
 5. Sign back in normally. Share only the status/login-needed observations and any
    provider documentation, never token values or raw responses.
 
-Token extraction/storage and scripted expiry/revocation tests remain pending the
-supported method. Any later authenticated test will be explicitly user-run and
-produce an allowlisted report; agents will not execute it.
+The first user-run token-only test is now implemented; the earlier investigation
+notes describe the prior checkpoint. Tokens are not persisted. Expiry, renewal,
+revocation, response envelope and full coverage remain unverified. Agents will
+read only the allowlisted diagnostic, and will not execute authenticated requests.

@@ -216,7 +216,7 @@ ETF selection dataset, and options-candidate filters follow that increment.
 Run `python3 -I -S run.py demo --with-options` to preview separate IV rank,
 IV percentile, options volume and open interest alongside unchanged momentum ranks.
 Missing data remains unknown. See [input format and OTA access checks](docs/OPTIONS.md).
-This is an offline foundation; live OTA access is not implemented.
+This enrichment report is offline; the separate user-run OTA connection check is described below.
 
 ## Paste OTA screener criteria into configuration
 
@@ -295,5 +295,59 @@ is intentionally shown in the local terminal preview.
 
 This prepares the request configuration for OTA integration. **It does not yet
 connect to OTA or alter momentum calculations.** The row parser also exists, but
-live transport, pagination, timestamps and authorized authentication remain pending.
+the single-page transport is available below. Pagination, timestamps and real-access validation remain pending.
 README usage notes and project status are updated with each implemented feature.
+
+## OTA: first real connection test (user-run)
+
+The owner has confirmed permission for personal scripted access. The `ota-fetch`
+command now sends **one page-1 POST** using `config/ota-screener.json` and prompts
+for a token without echo. It uses standard-library HTTPS with certificate checking,
+a 30-second socket timeout, no cookies, redirects, retries or proxy-environment
+discovery. No dependency installation is needed. This is a connection check, not
+the full daily enrichment pipeline.
+
+1. Sign in to your own OTA account in Chrome. Open Developer Tools → Network →
+   Fetch/XHR, then load your screener normally.
+2. Select the successful POST to `/api/secure/screeners/criteria/results`.
+   Under Request Headers, copy only the **value** of `x-auth-token` locally.
+   Do not copy the header name, quotes, the whole request, cookies or a HAR export.
+3. In a normal local terminal at the project root, run:
+
+   ```bash
+   python3 -I -S run.py ota-fetch --profile ota
+   ```
+
+   Native Windows PowerShell:
+
+   ```powershell
+   py -3 -I -S run.py ota-fetch --profile ota
+   ```
+
+4. Paste at the hidden prompt and press Enter. No characters should display.
+   The token is used in memory and is not saved; clear it from your clipboard
+   afterward. If hidden input is unavailable, the command stops. Do not redirect
+   a token into stdin or pass it on the command line.
+5. Give the agent only the printed `artifacts/agent-review/<run-id>.json` path.
+   That report contains fixed status/error codes and counts, with no token,
+   headers, response body, identifiers or symbols. The normalized `page.json`
+   under `artifacts/ota/` is for your local review, not agent intake.
+
+`OTA_AUTH_REJECTED` means 401/403: the token might have expired, or the request
+may require different access. Sign in normally and obtain your current token for
+a deliberate retry; do not assume expiry is the cause. `OTA_RATE_LIMITED` stops
+without retry. `OTA_ENVELOPE_UNSUPPORTED` means the outer response is not an array;
+share only its field names so the parser can be adjusted. Never share raw responses.
+An empty successful page means zero matches for this request, not complete coverage.
+
+Token expiry, renewal and server-side revocation semantics remain unknown. This
+tool does not refresh tokens or automate login. Sign out through OTA when finished;
+sign-out alone has not been verified to revoke an already copied token. Use OTA's
+session-revocation/support mechanism if revocation is needed. Python does not
+guarantee secure erasure of in-memory strings.
+
+Results retain vendor metric names and a retrieval time; the market observation
+time is unknown. Only page 1 (up to 100 rows) is checked, using your selected
+filters. Pagination, once-daily automation and joining live OTA values to momentum
+rankings follow a successful user-run check. Offline tests passed; live checks
+remain pending until the sanitized diagnostic is reviewed.

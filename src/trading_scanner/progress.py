@@ -18,7 +18,10 @@ SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHA
                "INVALID_SYMBOL", "CONFLICTING_SYMBOL", "INVALID_GROUP", "INVALID_ETF_CONFIG",
                "LOG_UNAVAILABLE", "RUN_CANCELLED", "INVALID_OPTIONS_INPUT",
                "OTA_CONFIG_INVALID", "OTA_CONFIG_TOO_LARGE", "OTA_CONFIG_INCOMPLETE",
-               "OTA_CONFIG_SYNTAX", "OTA_CONFIG_UNSUPPORTED_FILTER", "OTA_CONFIG_RANGE_REVERSED"}
+               "OTA_CONFIG_SYNTAX", "OTA_CONFIG_UNSUPPORTED_FILTER", "OTA_CONFIG_RANGE_REVERSED",
+               "OTA_TOKEN_INVALID", "OTA_PROMPT_UNAVAILABLE", "OTA_AUTH_REJECTED", "OTA_RATE_LIMITED",
+               "OTA_REDIRECT_REJECTED", "OTA_HTTP_ERROR", "OTA_NETWORK_ERROR", "OTA_RESPONSE_TOO_LARGE",
+               "OTA_SCHEMA_INVALID", "OTA_ENVELOPE_UNSUPPORTED", "OTA_FETCH_FAILED"}
 STAGES = {
     "run": "Scanner",
     "synthetic_data": "Generating synthetic prices",
@@ -31,6 +34,8 @@ STAGES = {
     "options": "Validating and joining offline options metrics",
     "config_parse": "Reading and validating pasted screener criteria",
     "config_save": "Saving screener configuration",
+    "ota_auth": "Waiting for local hidden token input",
+    "ota_fetch": "Fetching one OTA screener page",
     "reports": "Writing snapshots and reports",
     "summary": "Writing sanitized review summary",
 }
@@ -47,7 +52,7 @@ without terminal probing or environment reads. Events are flushed immediately.
                  revision: str, stream=None):
         if not re.fullmatch(r"[a-f0-9]{32}", run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
             raise ValueError("INVALID_LOG_METADATA")
-        if command not in {"demo", "cached", "refresh", "ota-config"} or profile not in {"synthetic", "public", "unknown"}:
+        if command not in {"demo", "cached", "refresh", "ota-config", "ota-fetch"} or profile not in {"synthetic", "public", "unknown", "ota"}:
             raise ValueError("INVALID_LOG_METADATA")
         self.run_id, self.command, self.profile, self.revision = run_id, command, profile, revision
         self.stream = sys.stdout if stream is None else stream

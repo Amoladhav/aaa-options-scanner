@@ -98,3 +98,14 @@ on Enter without EOF. A synthetic open-terminal test fails if the reader asks
 for more input after the final newline. Tests also cover escaped strings/brackets,
 input limits, incomplete input at EOF, and help examples. The guarded offline
 suite passed 63 tests; native Windows terminal interaction remains unverified.
+
+## User-run OTA single-page transport
+
+`python3 -I -S tools/test_offline.py`: 69 tests passed. Six new tests verify the
+fixed host/path, exact POST body and headers, request timeout, connection closure,
+no redirect/retry or error-body reads, 401/403/429 handling, bounded responses,
+unsupported envelopes, hidden-prompt fail-closed behavior, invalid-token rejection,
+safe network errors and sanitized success/failure artifacts. Transport and token
+input were replaced with synthetic fixtures inside the existing offline guard.
+No real token was read and no authenticated request was made. The owner confirms
+permission, but real token-only access and response shape remain user-run checks.
