@@ -160,3 +160,16 @@ This evidences one successful user-run request and row parse, not complete
 pagination, metric semantics, session longevity or repeat-run reliability.
 No tokens, raw response files or request logs were inspected. Earlier pending
 live notes above describe their respective historical increments.
+
+## Session lifetime checkpoint: 2026-09-19
+
+The owner reports having verified that the OTA token expires with the session;
+a fresh token must be obtained after establishing a new active session. This is
+user-observed evidence, not an agent-executed expiry experiment or provider-defined
+timeout guarantee. The current hidden prompt and 401/403 stop behavior remain
+unchanged. No token persistence, automatic renewal/login or unattended daily
+execution is implemented. Local storage would not extend session validity.
+
+This checkpoint changes documentation only. Markdown links, policy consistency,
+the staged diff and value-suppressing staged scan were reviewed. Application
+tests were not rerun; the latest executed offline suite passed 75 tests.

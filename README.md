@@ -364,14 +364,22 @@ placeholder text remain invalid. Integer metrics are capped at `2^53 - 1` to
 avoid accepting values outside the exact JSON floating-point integer range.
 Missing/null values remain unknown; no fake volume or IV substitutions are made.
 
-Token expiry, renewal and server-side revocation semantics remain unknown. This
-tool does not refresh tokens or automate login. Sign out through OTA when finished;
-sign-out alone has not been verified to revoke an already copied token. Use OTA's
-session-revocation/support mechanism if revocation is needed. Python does not
+The owner verified on 2026-09-19 that the token expires with the OTA session.
+Treat it as session-bound, not a long-lived API key. Before fetching, open OTA,
+sign in and copy the current token into the hidden prompt. After the session
+expires, establish a new session and obtain a fresh token. On 401/403 the script
+stops; it never refreshes credentials or automates login. Other access failures
+can also produce 401/403, so renewal is not a guaranteed fix.
+
+The current implementation prompts on each run and does not save tokens. Future
+local storage could reduce pasting during an active session but would not extend
+its lifetime or enable unattended daily runs across expired sessions. Exact idle
+timeouts and server-side revocation mechanics remain unverified. Python does not
 guarantee secure erasure of in-memory strings.
 
 Results retain vendor metric names and a retrieval time; the market observation
 time is unknown. Only page 1 (up to 100 rows) is checked, using your selected
 filters. Pagination, once-daily automation and joining live OTA values to momentum
-rankings follow a successful user-run check. Offline tests passed; live checks
-remain pending until the sanitized diagnostic is reviewed.
+rankings are next steps. The first user-run check passed with 77 rows and no errors
+(review report `126d95ced37a4481b0e217b61b7d89e2`). Full coverage and metric
+interpretation remain unverified; the latest offline suite passed 75 tests.

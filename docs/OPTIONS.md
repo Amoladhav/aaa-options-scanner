@@ -2,7 +2,8 @@
 
 This increment prepares a normalized input boundary for later OTA integration.
 It makes no OTA requests and does not implement Chrome session-token acquisition.
-Provider metric definitions, aggregation and token lifetime are unresolved.
+Provider metric definitions and aggregation are unresolved. The token is
+session-bound according to the owner's verified observation on 2026-09-19.
 Options values never change CRS scores, ranks or candidate labels.
 
 Run from the repository root (Bash/WSL; no dependencies required):
@@ -70,7 +71,8 @@ snapshot but only ranked symbols appear in the joined report.
 The observed screener request uses POST on `app.otatrade.com` at
 `/api/secure/screeners/criteria/results`, with header name `x-auth-token`.
 HTTP 200 was observed in the browser only. Permission for personal automation is
-owner-confirmed; independent token authentication and token lifetime remain unverified.
+owner-confirmed. A user-run token-only fetch subsequently passed with 77 rows.
+The owner also verified that the token expires with the session.
 
 `trading_scanner.ota.parse_rows` validates one rows array containing `symbol` and
 `values`. It preserves `meanIvPcnt`, `ivHi1YrPcnt`, `ivLow1YrPcnt`,
@@ -95,10 +97,11 @@ commands and local acquisition steps. No authenticated request was run by agents
 The owner reports website access with a Chrome session token, but no API access.
 Public [OTA support information](https://www.otatrade.com/pricing/) identifies the
 User Menu support ticket system and support@tradetoolsupport.com. Token-only
-authentication is ready for the user's first live test.
+authentication has passed the first user-run live test.
 
-Permission is owner-confirmed; expiry, renewal, revocation and rate limits still
-need provider clarification. A website session persisting does not prove a token is long-lived:
+Permission is owner-confirmed. Session expiry requires a fresh sign-in/token;
+exact timeout, revocation and rate limits still need provider clarification.
+A website session persisting does not prove a token is long-lived:
 the browser might refresh it or use a separate cookie.
 
 Optional normal-website observations, separate from the scripted test:
@@ -116,6 +119,7 @@ Optional normal-website observations, separate from the scripted test:
    provider documentation, never token values or raw responses.
 
 The first user-run token-only test is now implemented; the earlier investigation
-notes describe the prior checkpoint. Tokens are not persisted. Expiry, renewal,
-revocation, response envelope and full coverage remain unverified. Agents will
+notes describe the prior checkpoint. The token-only test passed and `results.data`
+is supported. Tokens are not persisted; the user renews an expired session and
+copies the new token. Exact revocation behavior and full coverage remain unverified. Agents will
 read only the allowlisted diagnostic, and will not execute authenticated requests.

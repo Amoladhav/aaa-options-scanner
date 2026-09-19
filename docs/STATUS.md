@@ -5,8 +5,14 @@ Updated: 2026-09-19. Phase: momentum scanner with verified single-page OTA fetch
 OTA live checkpoint: user-run diagnostic `126d95ced37a4481b0e217b61b7d89e2`
 passed `ota_single_page_fetch`, returned 77 rows and reported no error. This
 confirms one successful authenticated fetch and parse with the saved filters.
-Pagination/full coverage, metric definitions, expiry and report integration
+Pagination/full coverage, metric definitions and report integration
 remain unverified. No authenticated request was executed by agents.
+
+The owner verified that the token expires with the OTA session. Fetches require
+an active signed-in session and its current token; after expiration the user
+signs in again and obtains a new token. The tool prompts on every run and stores
+no token. Local storage, if added later, cannot extend session lifetime. No
+unattended daily schedule or automatic login/renewal is implemented.
 
 ## Implemented
 
@@ -77,10 +83,11 @@ hooks, and WSL-specific checks remain pending.
   offline. Incremental download merging is deferred to avoid stale adjustments.
 - Offline options enrichment supports separate supplied IV metrics, volume and open
   interest, synthetic examples, CSV/HTML output and deterministic snapshot replay.
-  No verified live OTA access, persistence/Conviction, order execution or performance claims.
+  Single-page live OTA access is verified. No persistence/Conviction, order
+  execution or performance claims.
 - OTA row parsing is tested with invented fixtures. Vendor fields remain separate
   from normalized IV metrics. Single-page transport uses the saved request shape;
-  pagination, timestamps and live validation remain pending; see [options notes](OPTIONS.md).
+  pagination, timestamps and repeat-run validation remain pending; see [options notes](OPTIONS.md).
 - `ota-config` accepts complete pasted criteria, previews a versioned config and
   atomically replaces `config/ota-screener.json` with `--apply`. It uses shared
   progress/logging and never executes pasted code or makes provider requests.
@@ -89,12 +96,13 @@ hooks, and WSL-specific checks remain pending.
 
 The owner has confirmed permission for personal scripted OTA access. `ota-fetch
 --profile ota` now performs a user-run single-page connection test with hidden
-token input, fixed-host HTTPS and sanitized diagnostics. Live execution is pending;
+token input, fixed-host HTTPS and sanitized diagnostics. A 77-row live run passed;
 pagination and integration into the momentum report are not yet implemented.
 
 1. User installs optional wheel dependencies and runs public refresh; inspect only
    the allowlisted agent-review report. Fix real schema/packaging issues if evidenced.
-2. Verify an authorized OTA access method and exact IV/liquidity definitions before
-   enabling its isolated adapter. Offline tests use synthetic responses.
+2. Verify OTA pagination/full coverage, then join results to momentum rankings.
+   Confirm exact IV/liquidity definitions before using them as candidate filters.
+   Keep fetches explicitly user-run with a current session token.
 3. Add session-based history/rotation, then options shortlist filters with unknown
    inputs explicit. Research a verifiable options-volume ETF universe separately.
