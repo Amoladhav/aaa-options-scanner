@@ -13,6 +13,19 @@ PERCENT_FIELDS = ("meanIvPcnt", "ivHi1YrPcnt", "ivLow1YrPcnt", "spreadLiquidityP
 COUNT_FIELDS = ("totalOpenInterest", "totalOptionsVolume")
 CODE_FIELDS = ("ivGauge", "optionable")
 FIELDS = (*PERCENT_FIELDS, *COUNT_FIELDS, *CODE_FIELDS)
+SCHEMA_FIELDS = {*FIELDS, 'response', 'rows', 'row', 'symbol'}
+SCHEMA_REASONS = {'invalid_json', 'not_array', 'too_many_rows', 'invalid_structure',
+                  'invalid_symbol', 'duplicate_symbol', 'non_numeric', 'negative',
+                  'non_finite', 'non_integer'}
+
+
+class OtaSchemaError(DataError):
+    """Fixed diagnostic vocabulary only; never retain provider values."""
+    def __init__(self, field, reason):
+        if field not in SCHEMA_FIELDS or reason not in SCHEMA_REASONS:
+            raise ValueError('INVALID_DIAGNOSTIC')
+        super().__init__('OTA_SCHEMA_INVALID')
+        self.field, self.reason = field, reason
 
 
 def parse_response(payload):
@@ -37,21 +50,23 @@ The response envelope is not established, so this function accepts only the
 rows array. A short or empty page does not establish full-universe coverage.
 Missing/null fields stay unknown; malformed supplied metrics reject the page.
 """
-    def invalid():
-        raise DataError("OTA_SCHEMA_INVALID")
+    def invalid(field, reason):
+        raise OtaSchemaError(field, reason)
 
-    if not isinstance(rows, list) or len(rows) > 100:
-        invalid()
+    if not isinstance(rows, list):
+        invalid('rows', 'not_array')
+    if len(rows) > 100:
+        invalid('rows', 'too_many_rows')
     output, seen = [], set()
     for row in rows:
         if not isinstance(row, dict) or not isinstance(row.get("values"), dict):
-            invalid()
+            invalid('row', 'invalid_structure')
         try:
             symbol = normalize_symbol(row.get("symbol"))
         except (DataError, TypeError, AttributeError):
-            invalid()
+            invalid('symbol', 'invalid_symbol')
         if symbol in seen:
-            invalid()
+            invalid('symbol', 'duplicate_symbol')
         seen.add(symbol)
         values = row["values"]
         parsed = {"symbol": symbol}
@@ -61,16 +76,20 @@ Missing/null fields stay unknown; malformed supplied metrics reject the page.
                 if field in PERCENT_FIELDS:
                     # IV expressed in percent can exceed 100. The liquidity
                     # field's scale is unverified, so do not impose that ceiling.
-                    if type(value) not in (int, float) or value < 0:
-                        invalid()
+                    if type(value) not in (int, float):
+                        invalid(field, 'non_numeric')
+                    if value < 0:
+                        invalid(field, 'negative')
                     try:
                         finite = math.isfinite(value)
                     except OverflowError:
-                        invalid()
+                        invalid(field, 'non_finite')
                     if not finite:
-                        invalid()
-                elif type(value) is not int or value < 0:
-                    invalid()
+                        invalid(field, 'non_finite')
+                elif type(value) is not int:
+                    invalid(field, 'non_integer')
+                elif value < 0:
+                    invalid(field, 'negative')
             parsed[field] = value
         output.append(parsed)
     return output

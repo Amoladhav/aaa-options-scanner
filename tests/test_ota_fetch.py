@@ -117,3 +117,16 @@ class OtaFetchTests(unittest.TestCase):
                         {'results': []}, {'errors': []}, {'results': {'other': []}}):
             with self.assertRaises(DataError):
                 parse_response(payload)
+
+    def test_schema_diagnostic_contains_no_provider_values(self):
+        root = temp / 'ota-schema-diagnostic'
+        (root / 'config').mkdir(parents=True)
+        (root / 'config' / 'ota-screener.json').write_text(json.dumps(parse_config(json.dumps(CRITERIA))))
+        body = b'{"results":{"data":[{"symbol":"SYNTH","values":{"totalOpenInterest":"synthetic-private-marker"}}]}}'
+        output = io.StringIO()
+        with patch('trading_scanner.ota_fetch.prompt_token', return_value='synthetic-local-input'), patch('trading_scanner.ota_fetch.ssl.create_default_context'), patch('trading_scanner.ota_fetch.http.client.HTTPSConnection', return_value=self.connection(body=body)), redirect_stdout(output):
+            self.assertEqual(main(['ota-fetch','--profile','ota'], root), 1)
+        report = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
+        self.assertEqual(report['schema_diagnostic'], {'field':'totalOpenInterest','reason':'non_integer'})
+        self.assertNotIn('synthetic-private-marker', output.getvalue() + json.dumps(report))
+        self.assertFalse(list(root.glob('artifacts/ota/*/page.json')))

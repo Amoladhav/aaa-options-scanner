@@ -10,7 +10,7 @@ import uuid
 import warnings
 
 from .core import DataError
-from .ota import parse_response
+from .ota import parse_response, OtaSchemaError
 from .ota_config import MAX_INPUT, parse_config, pairs
 from .progress import RunProgress
 
@@ -84,7 +84,7 @@ def fetch_page(criteria, token):
         try:
             payload = json.loads(raw, object_pairs_hook=pairs)
         except (ValueError, RecursionError):
-            raise DataError('OTA_SCHEMA_INVALID') from None
+            raise OtaSchemaError('response', 'invalid_json') from None
         return parse_response(payload)
     except (OSError, http.client.HTTPException):
         raise DataError('OTA_NETWORK_ERROR') from None
@@ -98,6 +98,7 @@ def run_fetch(root):
     run_id = uuid.uuid4().hex
     revision = code_revision()
     progress, count, code = None, 0, None
+    schema_diagnostic = None
     try:
         progress = RunProgress(root / 'artifacts' / 'logs', run_id, 'ota-fetch', 'ota', revision)
         progress.begin()
@@ -142,6 +143,9 @@ def run_fetch(root):
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'OTA_FETCH_FAILED'
         if isinstance(exc, DataError) and len(exc.args) == 1 and exc.args[0] in ERRORS:
             code = exc.args[0]
+        if isinstance(exc, OtaSchemaError):
+            schema_diagnostic = {'field': exc.field, 'reason': exc.reason}
+            print(f'OTA schema check: {exc.field} / {exc.reason}')
         print(f'{code}: request stopped; no retry or synthetic fallback.')
     try:
         review = root / 'artifacts' / 'agent-review'
@@ -149,6 +153,8 @@ def run_fetch(root):
         report = {'schema_version': 1, 'run_id': run_id, 'code_revision': revision,
                   'profile': 'ota', 'checks': [{'name': 'ota_single_page_fetch', 'status': 'failed' if code else 'passed'}],
                   'counts': {'rows': count}, 'error_code': code}
+        if schema_diagnostic is not None:
+            report['schema_diagnostic'] = schema_diagnostic
         path = review / f'{run_id}.json'
         path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
         print(f'Agent review: {path}')

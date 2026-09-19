@@ -7,6 +7,15 @@ from trading_scanner.ota import parse_rows, FIELDS
 
 
 class OtaSchemaTests(unittest.TestCase):
+    def test_fixed_diagnostic_vocabulary(self):
+        from trading_scanner.ota import OtaSchemaError
+        for field, reason in [('symbol', 'invalid_symbol'), ('rows', 'too_many_rows')]:
+            error = OtaSchemaError(field, reason)
+            self.assertEqual(str(error), 'OTA_SCHEMA_INVALID')
+            self.assertEqual(error.reason, reason)
+        with self.assertRaises(ValueError):
+            OtaSchemaError('synthetic-private-marker', 'invalid_symbol')
+
     def setUp(self):
         # Invented values only; no copied authenticated response or token.
         self.rows = [{"symbol": "SYNTH", "values": {

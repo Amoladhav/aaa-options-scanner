@@ -351,6 +351,12 @@ envelope are supported. `OTA_ENVELOPE_UNSUPPORTED` means another outer structure
 share only its field names/nesting so the parser can be adjusted. Never share raw responses.
 An empty successful page means zero matches for this request, not complete coverage.
 
+`OTA_SCHEMA_INVALID` now prints a fixed field/reason pair and includes it as
+`schema_diagnostic` in the agent-review report. Examples are `totalOpenInterest /
+non_integer`, `rows / too_many_rows` or `response / invalid_json`. No response
+values or symbols are included. Share the report path to diagnose the exact issue;
+the tool does not silently coerce invalid metrics or publish a partial page.
+
 Token expiry, renewal and server-side revocation semantics remain unknown. This
 tool does not refresh tokens or automate login. Sign out through OTA when finished;
 sign-out alone has not been verified to revoke an already copied token. Use OTA's

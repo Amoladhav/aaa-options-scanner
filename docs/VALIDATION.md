@@ -132,3 +132,12 @@ Two synthetic regressions cover transport parsing, discarded metadata, empty row
 and malformed/unknown containers. All 71 guarded offline tests passed. No raw
 user response was inspected or authenticated request rerun. A successful live
 row parse remains pending the user's retry; cURL HTTP success alone does not prove it.
+
+## OTA schema diagnostics
+
+The user reported OTA_SCHEMA_INVALID after the envelope correction. The exact
+cause is not yet established. A fixed field/reason vocabulary now distinguishes
+JSON decoding, row shape/count, symbols, numeric types, negatives and nonfinite
+values without emitting response values. Two new tests cover vocabulary rejection
+and the sanitized CLI failure report. All 73 offline tests passed. Validation
+semantics remain unchanged; live diagnosis awaits the user's next report.
