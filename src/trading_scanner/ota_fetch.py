@@ -19,7 +19,21 @@ HOST = 'app.otatrade.com'
 # or a substitute for valid authentication. Keep deterministic for diagnostics.
 USER_AGENT = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
               'AppleWebKit/537.36 (KHTML, like Gecko) '
-              'Chrome/120.0.0.0 Safari/537.36')
+              'Chrome/153.0.0.0 Safari/537.36')
+BROWSER_HEADERS = {
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8,es;q=0.7',
+    'Origin': 'https://app.otatrade.com',
+    'Referer': 'https://app.otatrade.com/app/screener',
+    'Priority': 'u=1, i',
+    'Sec-CH-UA': '"Google Chrome";v="153", "Not_A Brand";v="8", "Chromium";v="153"',
+    'Sec-CH-UA-Mobile': '?0',
+    'Sec-CH-UA-Platform': '"Windows"',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+    'User-Agent': USER_AGENT,
+}
 PATH = '/api/secure/screeners/criteria/results?rows=100&realtime=true&type=NON_OTC&view=criteria&sortField=symbol&sortOrder=asc&page=1'
 MAX_RESPONSE = 2_000_000
 ERRORS = {'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
@@ -48,9 +62,12 @@ def fetch_page(criteria, token):
     try:
         connection = http.client.HTTPSConnection(HOST, timeout=30, context=ssl.create_default_context())
         connection.request('POST', PATH, body=body,
-                           headers={'x-auth-token': token, 'Content-Type': 'application/json',
-                                    'Accept': 'application/json', 'Accept-Encoding': 'identity',
-                                    'User-Agent': USER_AGENT})
+                           # HTTP/2 pseudo-headers are represented by the HTTPS
+                           # connection, method and path. http.client calculates
+                           # Host and Content-Length; never reuse captured values.
+                           headers={**BROWSER_HEADERS, 'x-auth-token': token,
+                                    'Content-Type': 'application/json',
+                                    'Accept-Encoding': 'identity'})
         response = connection.getresponse()
         status = response.status
         if status in (401, 403):

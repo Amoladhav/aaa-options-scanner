@@ -33,11 +33,18 @@ class OtaFetchTests(unittest.TestCase):
         args, kwargs = connection.request.call_args
         self.assertEqual(args, ('POST', PATH))
         self.assertEqual(json.loads(kwargs['body']), CRITERIA)
-        self.assertEqual(set(kwargs['headers']), {'x-auth-token','Content-Type','Accept','Accept-Encoding','User-Agent'})
+        self.assertEqual(set(kwargs['headers']), {'x-auth-token','Content-Type','Accept','Accept-Encoding','User-Agent',
+                         'Accept-Language','Origin','Referer','Priority','Sec-CH-UA','Sec-CH-UA-Mobile',
+                         'Sec-CH-UA-Platform','Sec-Fetch-Dest','Sec-Fetch-Mode','Sec-Fetch-Site'})
+        self.assertEqual(kwargs['headers']['Accept'], '*/*')
+        self.assertEqual(kwargs['headers']['Accept-Encoding'], 'identity')
+        self.assertEqual(kwargs['headers']['Origin'], 'https://app.otatrade.com')
+        self.assertEqual(kwargs['headers']['Referer'], 'https://app.otatrade.com/app/screener')
+        self.assertIn('v="153"', kwargs['headers']['Sec-CH-UA'])
         self.assertEqual(kwargs['headers']['User-Agent'],
                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                          'AppleWebKit/537.36 (KHTML, like Gecko) '
-                         'Chrome/120.0.0.0 Safari/537.36')
+                         'Chrome/153.0.0.0 Safari/537.36')
         connection.request.assert_called_once()
         connection.close.assert_called_once()
 

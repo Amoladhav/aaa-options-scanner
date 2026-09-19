@@ -114,3 +114,10 @@ Browser-style User-Agent increment: the existing request-contract test now check
 the exact owner-requested Chrome-style header and the complete header allowlist.
 `python3 -I -S tools/test_offline.py`: 69 tests passed. No authenticated request
 was executed; whether the header improves OTA compatibility remains unverified.
+
+Browser-header compatibility update: Chrome version 153, Accept, language, Origin,
+Referer, client hints, fetch metadata and priority are sent as fixed non-secret
+headers. The request test checks the complete header allowlist, excluding cookies,
+captured Content-Length and HTTP/2 pseudo-headers; compression remains identity.
+All 69 guarded offline tests passed. No captured credential values were stored or
+used, and no authenticated request was made. Live compatibility remains pending.

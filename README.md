@@ -308,9 +308,14 @@ discovery. No dependency installation is needed. This is a connection check, not
 the full daily enrichment pipeline.
 
 At the owner's request, OTA requests send a fixed Chrome-style `User-Agent`
-(`Chrome/120.0.0.0` on Windows) for compatibility. This does not reflect the actual
+(`Chrome/153.0.0.0` on Windows) for compatibility. This does not reflect the actual
 OS/browser, provide authentication, or guarantee acceptance by OTA. No browser
-cookies or other browser identity headers are copied automatically.
+cookies are copied. Fixed Origin, Referer, language, client hints, fetch metadata
+and priority headers match the requested browser profile. HTTP/2 pseudo-headers
+are represented by the HTTPS host, POST method and request path, not copied as
+literal headers into this HTTP/1.1 client. Content-Length is calculated from the
+encoded payload. Accept-Encoding stays `identity` because compressed response
+decoding is not implemented. These headers do not reproduce a browser's TLS stack.
 
 1. Sign in to your own OTA account in Chrome. Open Developer Tools → Network →
    Fetch/XHR, then load your screener normally.
