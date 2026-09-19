@@ -56,9 +56,9 @@ def run_dashboard(root, args):
         result = combine(snapshot, ota, filters, now=now, previous=previous)
         probes = [read_json(path) for path in getattr(args, 'tradier', [])]
         attach_tradier(result, probes)
-        if not result['ranked']:
+        if not result['combined']:
             raise DataError('NO_VALID_PEER_GROUP')
-        counts = {'tradier_matched': sum(r['tradier_status'] != 'not_supplied' for r in result['combined']),
+        counts = {'master_symbols': len(result['combined']), 'tradier_matched': sum(r['tradier_status'] == 'supplied_freshness_unverified' for r in result['combined']),
                   'ranked': len(result['ranked']), 'excluded': len(result['excluded']),
                   'matched': sum(r['ota_status'] == 'returned' for r in result['combined']),
                   'candidates': sum(r['review_status'] == 'matches_config_unverified' for r in result['combined'])}

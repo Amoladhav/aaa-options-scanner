@@ -157,3 +157,22 @@ HTML escaping, preserved Greek strings, missing legs' Greeks, profile separation
 and unchanged ranks. User-run combined dashboard validation remains pending.
 Automatic batch collection, daily Tradier orchestration and quote freshness
 validation remain pending.
+
+### Master-driven collection — 2026-09-19
+
+`tradier-fetch` now drives sequential, paced collection from all members of an
+explicit/latest public snapshot, independent of CRS and OTA filters. Shared probe
+capture/selection retains raw responses and profiles; a hidden key is loaded once.
+Per-symbol checkpoints preserve successful, failed and unattempted members. Local
+schema/selection errors continue; systemic failures stop. No automatic resume.
+
+Dashboard joins now retain every master member, including CRS exclusions, and
+accept explicit `batch.json` with matching master membership hash. Provider
+columns/statuses remain separate; no implicit universe expansion or quote-based
+ranking changes. `master.csv` is the enriched full-universe export.
+136 guarded offline tests passed locally, covering batch success, raw captures,
+share-class mapping, partial errors, auth-stop checkpoints, single credential
+prompt, paced requests, master mismatch and retention of unranked members.
+Live full-universe collection and dashboard batch validation remain user-run and
+pending. Daily orchestration of Tradier, resume, freshness validation and automatic
+cross-run profile drift comparisons remain pending.

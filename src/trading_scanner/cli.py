@@ -88,7 +88,7 @@ def main(argv=None, root: Path | None = None) -> int:
     dashboard.add_argument('--ota', type=Path)
     dashboard.add_argument('--filters', type=Path)
     dashboard.add_argument('--tradier', type=Path, action='append', default=[],
-                           help='Attach a saved atm-spreads.json; repeat for distinct symbols, one profile only')
+                           help='Attach saved atm-spreads.json or master-driven batch.json; one profile only')
     daily = subs.add_parser('daily', help='USER-RUN: refresh public prices, fetch OTA, write combined dashboard')
     daily.add_argument('--profile', choices=['public'], required=True)
     daily.add_argument('--page-size', type=int, choices=range(1,601), default=100, metavar='1..600', help='Rows per OTA page (default: 100)')
@@ -105,9 +105,17 @@ def main(argv=None, root: Path | None = None) -> int:
     probe.add_argument('--symbol', required=True)
     probe.add_argument('--prompt-token', action='store_true', help='Hidden key input for this run only; bypass OS storage')
     probe.add_argument('--as-of', help='Explicit New York date YYYY-MM-DD; otherwise uses America/New_York timezone data')
+    batch = subs.add_parser('tradier-fetch', help='USER-RUN: fetch ATM data for every master-universe symbol')
+    batch.add_argument('--profile', choices=['sandbox', 'production'], required=True)
+    batch.add_argument('--snapshot', type=Path, help='Public price snapshot containing master universe; defaults to latest saved')
+    batch.add_argument('--prompt-token', action='store_true', help='Hidden key input once for the entire batch')
+    batch.add_argument('--as-of', help='Explicit New York date YYYY-MM-DD')
     process = subs.add_parser('ota-process', help='USER-RUN: profile/reprocess saved raw OTA data without network')
     process.add_argument('--input', type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.command == 'tradier-fetch':
+        from .tradier_batch import run_batch
+        return run_batch(root, args)
     if args.command == 'ota-process':
         from .ota_pipeline import run_process
         return run_process(root, args)

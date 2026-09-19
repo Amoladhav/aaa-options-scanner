@@ -11,7 +11,7 @@ import re
 import sys
 from time import monotonic
 
-SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
+SAFE_ERRORS = {"TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
                "CONSTITUENTS_COUNT_INVALID", "CONSTITUENTS_RESPONSE_TOO_LARGE",
                "NO_VALID_PEER_GROUP", "INVALID_SNAPSHOT", "INSUFFICIENT_CALENDAR",
                "MISSING_SNAPSHOT", "INVALID_SESSION_ORDER", "WEEKEND_SESSION",
@@ -30,6 +30,7 @@ SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHA
                "TRADIER_NETWORK_ERROR", "TRADIER_RESPONSE_TOO_LARGE", "TRADIER_SCHEMA_INVALID",
                "TRADIER_MONTHLY_UNVERIFIED", "TRADIER_NO_ATM_PAIR", "TRADIER_FETCH_FAILED"}
 STAGES = {
+    "tradier_batch": "Fetching Tradier data for master-list symbols",
     "ota_profile": "Profiling captured fields and preparing typed data",
     "run": "Scanner",
     "synthetic_data": "Generating synthetic prices",
@@ -53,7 +54,7 @@ STAGES = {
     "tradier_chain": "Fetching monthly option chain",
     "summary": "Writing sanitized review summary",
 }
-COUNT_KEYS = {"tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
+COUNT_KEYS = {"master_symbols","symbols_failed", "requests","tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
 
 
 class RunProgress:
@@ -66,7 +67,7 @@ without terminal probing or environment reads. Events are flushed immediately.
                  revision: str, stream=None):
         if not re.fullmatch(r"[a-f0-9]{32}", run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
             raise ValueError("INVALID_LOG_METADATA")
-        if command not in {"demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
+        if command not in {"demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe", "tradier-fetch"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
             raise ValueError("INVALID_LOG_METADATA")
         self.run_id, self.command, self.profile, self.revision = run_id, command, profile, revision
         self.stream = sys.stdout if stream is None else stream
@@ -101,7 +102,7 @@ without terminal probing or environment reads. Events are flushed immediately.
         else:
             filled = percent // 5
             bar = f"[{'#' * filled}{'-' * (20 - filled)}] {percent:3}%"
-        units = "batches" if self.stage_name == "prices" else "pages" if self.stage_name == "ota_fetch" else "steps"
+        units = "symbols" if self.stage_name == "tradier_batch" else "batches" if self.stage_name == "prices" else "pages" if self.stage_name == "ota_fetch" else "steps"
         count_text = "" if self.total is None else f" ({self.completed}/{self.total} {units})"
         self.stream.write(f"{level:<7} {bar} {message}{count_text} | elapsed {elapsed:.1f}s\n")
         self.stream.flush()

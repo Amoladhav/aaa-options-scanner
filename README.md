@@ -706,5 +706,91 @@ CRS scores and candidate eligibility are unchanged by these display fields.
 The output directory also saves `tradier-inputs.json` for provenance. It is
 private user data like the other dashboard inputs, not an agent review report.
 The sanitized report exposes only the aggregate `tradier_matched` count.
-This increment supports explicit saved single-symbol probes; automatic batch
-fetching and daily Tradier orchestration remain pending.
+Saved single-symbol probes and master-driven batches are supported. Daily Tradier
+orchestration remains a separate explicit user-run step (see below).
+
+### Master list drives every provider join
+
+The versioned `universe` in the public price snapshot is the master list: S&P 500
+constituents, sector ETFs and the configured ETF watchlist. It drives Tradier
+collection independently of CRS eligibility and OTA screening. Each refresh
+records the membership observed at that time. The ETF watchlist is a starter list,
+not a verified top-50 list by options volume.
+
+```mermaid
+flowchart LR
+    M[Versioned master universe] --> P[Price data and CRS]
+    M --> T[Tradier ATM collection]
+    M --> J[Left joins by canonical symbol]
+    P --> J
+    O[OTA screener results] --> J
+    T --> J
+    J --> D[All master rows in HTML and CSV]
+```
+
+A left join retains every master symbol when a provider has no match. Provider
+fields remain separate: OTA screener absence is not zero liquidity; unavailable
+CRS is not a missing security. `combined.csv`, `master.csv` and dashboard HTML
+now retain price-excluded members with `crs_status=excluded`, their exclusion
+reason and no rank. `rankings.csv` contains only eligible CRS members. Provider
+results outside this master list remain in their original captures and do not
+expand the master implicitly. Symbols use a canonical share-class notation, with
+Tradier's slash notation mapped at the adapter boundary. Stable security IDs and
+historical corporate-action identity mapping are not implemented.
+
+Fetch Tradier data for **every master symbol**, including unranked members:
+
+```bash
+.venv/bin/python -I run.py tradier-fetch --profile production --prompt-token
+```
+
+```powershell
+.\.venv\Scripts\python.exe -I run.py tradier-fetch --profile production --prompt-token
+```
+
+This chooses the latest saved public price snapshot. To freeze the driver across
+collection and reporting, pass `--snapshot artifacts/runs/public/PRICE_RUN_ID/snapshot.json`
+to both `tradier-fetch` and `dashboard`. Without `--prompt-token`, the command uses
+the OS store for the explicitly selected profile. The hidden prompt occurs once
+for the whole batch. Sandbox is available through `--profile sandbox`; no profile
+switch happens automatically. Agents do not execute these requests.
+
+The batch reuses the tested nearest standard-monthly ATM selection and requests
+Greeks. Every underlying gets separate expiration, quote and chain requests;
+weekly chains can require multiple requests before finding the first monthly.
+Request starts are spaced at least 0.65 seconds in production and 1.1 seconds in
+sandbox, below the documented [120/60 market-data requests per minute](https://docs.tradier.com/docs/rate-limiting).
+Other clients using the same token share its quota. A full universe may take tens
+of minutes or over an hour, depending on expirations and response latency. There
+is no parallel flood, automatic retry or fallback to old quotes.
+
+Each symbol writes raw response bodies and field profiles under an indexed
+`symbols/` directory. `master.json` records membership; its content hash is carried
+in `batch.json`, along with the run, profile, processing date and per-symbol
+results/status. `batch.json` is atomically checkpointed after each attempt.
+Symbol-specific schema/selection failures do not prevent remaining symbols from
+being attempted. Authentication, throttling and other systemic failures stop the
+batch; remaining rows stay `not_attempted`. A completed batch with failed symbols
+returns nonzero with `TRADIER_BATCH_PARTIAL`. Interrupted runs preserve completed
+work but automatic resume/retry is not implemented. Captures are private ignored
+user files; monitor disk space and remove old runs locally when no longer needed.
+
+Attach the printed batch path using the same master snapshot:
+
+```bash
+.venv/bin/python -I run.py dashboard --snapshot artifacts/runs/public/PRICE_RUN_ID/snapshot.json --tradier artifacts/tradier/production/TRADIER_RUN_ID/batch.json
+```
+
+```powershell
+.\.venv\Scripts\python.exe -I run.py dashboard --snapshot artifacts/runs/public/PRICE_RUN_ID/snapshot.json --tradier artifacts/tradier/production/TRADIER_RUN_ID/batch.json
+```
+
+Replace the two run directory placeholders with your local run IDs. Master
+membership must match the batch hash; the dashboard rejects an accidental join
+against a different universe. Explicit partial batches are supported: failed and
+unattempted symbols stay visible, with no fabricated values. No automatic partial
+batch selection occurs. `tradier_matched` counts successful joined results only;
+`master_symbols` counts all master members. The sanitized batch report contains
+aggregate counts and safe errors, never symbols, quotes or credentials. Retrieval
+time is not proof of quote freshness, and data collected sequentially is not a
+simultaneous market snapshot. CRS and candidate rules do not use these quotes yet.

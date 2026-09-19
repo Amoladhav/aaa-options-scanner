@@ -153,13 +153,15 @@ def chain_rows(payload, symbol, expiration):
         raise DataError('TRADIER_SCHEMA_INVALID') from None
 
 
-def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=None, diagnostic=None, capture=None):
+def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=None, diagnostic=None, capture=None, before_request=None):
     from .chain_spreads import select_atm_spreads
     symbol = symbol_checked(symbol)
     counts = {} if counts is None else counts
     diagnostic = {} if diagnostic is None else diagnostic
 
     def fetch(endpoint, params):
+        if before_request is not None:
+            before_request()
         diagnostic.clear()
         diagnostic.update(endpoint=endpoint, http_status=None)
         payload = request_json(profile, endpoint, params, credential, diagnostic=diagnostic, **({'capture': capture} if capture is not None else {}))
@@ -223,15 +225,9 @@ def observation_date(override=None):
     return new_york_date()
 
 
-def run_probe(root, args):
-    from .cli import code_revision
+def capture_writer(destination, profile, run_id, revision):
     from .dashboard import atomic_json
-    from .token_store import load_token, prompt_api_key, valid_token
-    run_id, revision = uuid.uuid4().hex, code_revision()
-    progress, code, counts = None, None, {'chains_received': 0, 'rows': 0}
-    diagnostic = {}
-    destination = root / 'artifacts' / 'tradier' / args.profile / run_id if args.profile in HOSTS else None
-    capture_state = {'schema_version': 1, 'source': 'tradier', 'profile': args.profile if args.profile in HOSTS else 'unknown',
+    capture_state = {'schema_version': 1, 'source': 'tradier', 'profile': profile,
                      'run_id': run_id, 'code_revision': revision, 'status': 'incomplete', 'requests': []}
     def capture(endpoint, params, raw):
         from .ota_pipeline import profile_rows
@@ -258,6 +254,18 @@ def run_probe(root, args):
         except (ValueError, TypeError, AttributeError):
             # Body remains authoritative even if a profile cannot be prepared.
             pass
+    return capture, capture_state
+
+
+def run_probe(root, args):
+    from .cli import code_revision
+    from .dashboard import atomic_json
+    from .token_store import load_token, prompt_api_key, valid_token
+    run_id, revision = uuid.uuid4().hex, code_revision()
+    progress, code, counts = None, None, {'chains_received': 0, 'rows': 0}
+    diagnostic = {}
+    destination = root / 'artifacts' / 'tradier' / args.profile / run_id if args.profile in HOSTS else None
+    capture, capture_state = capture_writer(destination, args.profile, run_id, revision)
     try:
         if args.profile not in HOSTS:
             raise DataError('TRADIER_INVALID_INPUT')

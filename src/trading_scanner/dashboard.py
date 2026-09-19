@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 import tempfile
 
-from .core import DataError, calculate, normalize_symbol
+from .core import DataError, calculate, normalize_symbol, normalize_universe
 from .ota import FIELDS as OTA_FIELDS, IV_FIELDS, normalize_metric
 from .report import FIELDS as CRS_FIELDS, write_csv, write_reports
 
@@ -15,13 +15,13 @@ FILTER_DEFAULTS = {'schema_version': 1, 'min_open_interest': 10000,
                    'min_option_volume': 90000, 'min_spread_liquidity': 85,
                    'min_days_to_earnings': None, 'min_mean_iv': None,
                    'max_mean_iv': None, 'max_ota_age_hours': 36, 'max_price_age_days': 4}
-EXTRA_FIELDS = ('price_status', 'ota_status', 'review_status', 'rank_change', 'history_status',
+EXTRA_FIELDS = ('crs_status', 'crs_exclusion_reason', 'price_status', 'ota_status', 'review_status', 'rank_change', 'history_status',
                 'meanIvPcnt', 'ivHi1YrPcnt', 'ivLow1YrPcnt', 'ivGauge',
                 'spreadLiquidityPcnt', 'totalOpenInterest', 'totalOptionsVolume',
                 'daysToEarnings', 'avgVol30d', 'ota_field_status', *(field + '_status' for field in IV_FIELDS))
 
 
-TRADIER_FIELDS = ('tradier_status', 'tradier_profile', 'tradier_retrieved_at',
+TRADIER_FIELDS = ('tradier_status', 'tradier_error_code', 'tradier_profile', 'tradier_retrieved_at',
                   'tradier_expiration', 'tradier_atm_strike', 'tradier_underlying_price',
                   'tradier_underlying_average_volume', 'tradier_average_volume_period',
                   *(f'tradier_{side}_{field}' for side in ('call', 'put') for field in
@@ -36,15 +36,56 @@ def attach_tradier(result, probes):
     overwriting it. Production, sandbox and synthetic outputs cannot be mixed.
     """
     from .chain_spreads import number
-    lookup, profiles = {}, set()
-    for probe in probes:
+    lookup, profiles, supplied, failures, flattened = {}, set(), set(), {}, []
+    for item in probes:
+        if isinstance(item, dict) and item.get('representation') == 'tradier_batch':
+            if (item.get('schema_version') != 1 or item.get('source') != 'tradier'
+                    or item.get('profile') not in ('production', 'sandbox')
+                    or item.get('master_id') != result.get('master_id')
+                    or item.get('status') not in ('completed', 'completed_with_errors', 'incomplete')
+                    or not isinstance(item.get('rows'), list)):
+                raise DataError('DASHBOARD_INPUT_INVALID')
+            profiles.add(item['profile'])
+            batch_symbols = set()
+            for entry in item['rows']:
+                symbol = normalize_symbol(entry['symbol'])
+                if symbol in batch_symbols or symbol in supplied:
+                    raise DataError('DASHBOARD_INPUT_INVALID')
+                batch_symbols.add(symbol)
+                supplied.add(symbol)
+                if entry['status'] == 'returned':
+                    probe = entry['result']
+                    if (normalize_symbol(probe['symbol'].replace('/', '-')) != symbol
+                            or probe['profile'] != item['profile']):
+                        raise DataError('DASHBOARD_INPUT_INVALID')
+                    flattened.append(probe)
+                elif entry['status'] in ('failed', 'not_attempted', 'in_progress'):
+                    from .progress import SAFE_ERRORS
+                    error = entry.get('error_code')
+                    if error is not None and error not in SAFE_ERRORS:
+                        raise DataError('DASHBOARD_INPUT_INVALID')
+                    failures[symbol] = {'tradier_status': entry['status'], 'tradier_profile': item['profile'],
+                                        'tradier_error_code': error}
+                else:
+                    raise DataError('DASHBOARD_INPUT_INVALID')
+            if batch_symbols != {row['symbol'] for row in result['combined']}:
+                raise DataError('DASHBOARD_INPUT_INVALID')
+        else:
+            symbol = normalize_symbol(item['symbol'].replace('/', '-'))
+            if symbol in supplied:
+                raise DataError('DASHBOARD_INPUT_INVALID')
+            supplied.add(symbol)
+            flattened.append(item)
+    if len(profiles) > 1 or profiles and result['profile'] == 'synthetic':
+        raise DataError('DASHBOARD_INPUT_INVALID')
+    for probe in flattened:
         if not isinstance(probe, dict) or probe.get('schema_version') != 1 or probe.get('source') != 'tradier':
             raise DataError('DASHBOARD_INPUT_INVALID')
         profile = probe.get('profile')
         if result['profile'] == 'synthetic' or profile not in ('sandbox', 'production'):
             raise DataError('DASHBOARD_INPUT_INVALID')
         profiles.add(profile)
-        symbol = normalize_symbol(probe['symbol'])
+        symbol = normalize_symbol(probe['symbol'].replace('/', '-'))
         stamp = datetime.fromisoformat(probe['retrieved_at'])
         strike = probe.get('atm_strike')
         if symbol in lookup or len(profiles) > 1 or stamp.tzinfo is None or not number(strike) or strike <= 0:
@@ -69,7 +110,7 @@ def attach_tradier(result, probes):
     for row in result['combined']:
         row.update({key: None for key in TRADIER_FIELDS})
         row['tradier_status'] = 'not_supplied'
-        row.update(lookup.get(row['symbol'], {}))
+        row.update(lookup.get(row['symbol'], failures.get(row['symbol'], {})))
     return result
 
 
@@ -166,18 +207,24 @@ def combine(snapshot, ota, filters=None, *, now=None, previous=None):
         previous_rows = {(r['group'], r['symbol']): r for r in previous['rows']}
     consecutive = history_ok and previous['as_of'] == snapshot['sessions'][-2]
     combined = []
-    for row in result['ranked']:
+    master = normalize_universe(snapshot['universe'])
+    ranks = {row['symbol']: row for row in result['ranked']}
+    exclusions = {row['symbol']: row['reason'] for row in result['excluded']}
+    for member in master:
+        row = ranks.get(member['symbol'], {**member, 'rank': None, 'score': None, 'bias': 'unranked'})
         matched = lookup.get(row['symbol'])
         joined = {**row, **{key: matched.get(key) if matched else None for key in OTA_FIELDS},
                   **{field + '_status': matched.get(field + '_status') if matched else None for field in IV_FIELDS},
                   'ota_field_status': json.dumps(matched.get('field_status', {}), sort_keys=True) if matched else None,
+                  'crs_status': 'ranked' if row['symbol'] in ranks else 'excluded',
+                  'crs_exclusion_reason': exclusions.get(row['symbol']),
                   'price_status': price_status,
                   'ota_status': timing if matched else 'not_returned_by_screener',
                   'rank_change': None, 'history_status': 'no_prior_session'}
         if history_ok:
             prior = previous_rows.get((row['group'], row['symbol']))
             joined['history_status'] = 'new_to_ranked_universe' if prior is None else 'previous_session' if consecutive else 'history_gap'
-            if prior is not None:
+            if prior is not None and row['rank'] is not None:
                 joined['rank_change'] = prior['rank'] - row['rank']
         checks = []
         for setting, metric, is_min in [('min_open_interest','totalOpenInterest',True),
@@ -188,12 +235,13 @@ def combine(snapshot, ota, filters=None, *, now=None, previous=None):
             threshold, value = filters[setting], joined.get(metric)
             if threshold is not None:
                 checks.append(None if value is None else value >= threshold if is_min else value <= threshold)
-        joined['review_status'] = ('not_tail' if row['bias'] == 'neutral' else
+        joined['review_status'] = ('unranked' if row['rank'] is None else 'not_tail' if row['bias'] == 'neutral' else
                                    'unknown' if price_status != 'within_age_limit' or joined['ota_status'] != 'returned' or None in checks else
                                    'matches_config_unverified' if all(checks) else 'below_config')
         combined.append(joined)
     keys = {(r['group'], r['symbol']) for r in result['ranked']}
-    result.update(combined=combined, ota_metadata={k: v for k, v in ota.items() if k != 'rows'},
+    from .tradier_batch import master_id
+    result.update(master_id=master_id(master), combined=combined, ota_metadata={k: v for k, v in ota.items() if k != 'rows'},
                   filters=filters, generated_at=now.isoformat(), price_status=price_status,
                   previous_session=previous['as_of'] if history_ok else None,
                   departed=[r for key, r in previous_rows.items() if key not in keys])
@@ -243,6 +291,7 @@ def synthetic_ota(snapshot):
 def write_dashboard(result, destination):
     write_reports(result, destination)
     fields = (*CRS_FIELDS, *EXTRA_FIELDS, *TRADIER_FIELDS)
+    write_csv(destination / 'master.csv', result['combined'], fields)
     write_csv(destination / 'combined.csv', result['combined'], fields)
     write_csv(destination / 'candidates.csv', [r for r in result['combined'] if r['review_status'] == 'matches_config_unverified'], fields)
     write_csv(destination / 'departed.csv', result['departed'], ('symbol','group','rank','score','bias'))
@@ -276,8 +325,8 @@ def write_dashboard(result, destination):
     html += '<div class="cards">' + ''.join(f'<div class="card"><b>{n}</b>{caption}</div>' for n,caption in [(len(result['ranked']),'Ranked symbols'),(matched,'Freshly retrieved OTA matches'),(shortlist,'Tail rows matching config'),(len(result['excluded']),'Price exclusions')]) + '</div>'
     html += '<p class="muted">CRS ranks stocks and ETFs separately. OTA metrics do not change CRS scores. IV rank and IV percentile are not available here; provider mean IV and gauge retain their original meaning. Green rows match your numeric settings, not a validated trading signal. Quote time and metric methodology are unverified. Not returned means absent from the filtered screener, not zero liquidity.</p>'
     html += '<p class="muted">Tradier ATM quotes: explicitly supplied saved results; freshness unverified. * marks the selected standard monthly expiry. Bid, ask and spread are dollars per share; spread_pct is percent of midpoint. Call/put volume is current contract volume, not an average. Underlying average volume retains its provider period. Greeks retain provider values and update times; missing results are not zero.</p>'
-    html += '<p><a href="combined.csv">Combined CSV</a> · <a href="candidates.csv">Review candidates CSV</a> · <a href="report.html">CRS calculation detail</a> · <a href="departed.csv">Departed symbols</a></p>'
-    html += '<div class="toolbar"><input id="search" placeholder="Search symbol or company" aria-label="Search"><select id="group" aria-label="Group"><option value="all">All groups</option><option value="stock">Stocks</option><option value="etf">ETFs</option></select><select id="bias" aria-label="CRS bias"><option value="all">All CRS labels</option><option>long</option><option>short</option><option>neutral</option></select><select id="review" aria-label="Review status"><option value="all">All review statuses</option><option value="matches_config_unverified">Matches settings</option><option value="unknown">Unknown</option><option value="below_config">Below settings</option></select><span id="visible"></span></div>'
+    html += '<p><a href="master.csv">Enriched master CSV</a> · <a href="combined.csv">Combined CSV</a> · <a href="candidates.csv">Review candidates CSV</a> · <a href="report.html">CRS calculation detail</a> · <a href="departed.csv">Departed symbols</a></p>'
+    html += '<div class="toolbar"><input id="search" placeholder="Search symbol or company" aria-label="Search"><select id="group" aria-label="Group"><option value="all">All groups</option><option value="stock">Stocks</option><option value="etf">ETFs</option></select><select id="bias" aria-label="CRS bias"><option value="all">All CRS labels</option><option>long</option><option>short</option><option>neutral</option><option>unranked</option></select><select id="review" aria-label="Review status"><option value="all">All review statuses</option><option value="matches_config_unverified">Matches settings</option><option value="unknown">Unknown</option><option value="below_config">Below settings</option></select><span id="visible"></span></div>'
     html += '<div class="table"><table><thead><tr>' + th + '</tr></thead><tbody>' + ''.join(body) + '</tbody></table></div>'
     html += '<details><summary>Method, freshness and history</summary><p class="muted">21/63/126-session adjusted returns; 50/25/25 weights; cross-sectional z-scores. Price age is a calendar-day limit, not proof of the latest completed exchange session. Retrieval freshness is not quote freshness. Coverage: ' + escape(result['ota_metadata']['coverage']) + '. Positive rank change means improvement since the prior recorded session; history gaps are labeled. Universe changes can alter ranks without a price change. Daily history overwrites the same session rather than inventing additional streak days. No backtest or profitability claim.</p><pre>' + escape(json.dumps(result['filters'], indent=2)) + '</pre></details>'
     html += '''<script>
