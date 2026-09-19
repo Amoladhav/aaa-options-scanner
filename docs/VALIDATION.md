@@ -264,3 +264,13 @@ distinctions, malformed body retention, mid-run authentication failure retention
 incomplete-result exclusion and fixed-field count-only agent-review profiles.
 The current user's screener config remains untouched/uncommitted. No live call
 or real capture inspection was performed; live validation remains user-run.
+
+## Explicit Tradier ATM strike and Greeks
+
+127 guarded offline tests passed. Added top-level ATM strike and per-leg strike,
+greeks=true chain requests, verbatim Greek values/statuses, raw-response capture
+and per-response/Greek-field profiling. Synthetic integration verifies no unknown
+Greek names or values enter the sanitized report, original bodies persist, and
+missing/mixed-type Greeks do not reject a valid pair. No live provider operation
+was executed. Production Greeks remain user-validation pending; documented sandbox
+entitlement does not include Greeks. Existing user's screener config is untouched.

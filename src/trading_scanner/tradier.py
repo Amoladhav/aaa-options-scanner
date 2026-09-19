@@ -32,7 +32,7 @@ def symbol_checked(value):
     return value.upper().replace('.', '/').replace('-', '/')
 
 
-def request_json(profile, endpoint, params, credential, *, diagnostic=None):
+def request_json(profile, endpoint, params, credential, *, diagnostic=None, capture=None):
     allowed = {'expirations': ('options/expirations', {'symbol', 'includeAllRoots', 'expirationType'}),
                'quote': ('quotes', {'symbols', 'greeks'}),
                'chain': ('options/chains', {'symbol', 'expiration', 'greeks'})}
@@ -61,6 +61,8 @@ def request_json(profile, endpoint, params, credential, *, diagnostic=None):
         raw = response.read(MAX_RESPONSE + 1)
         if len(raw) > MAX_RESPONSE:
             raise DataError('TRADIER_RESPONSE_TOO_LARGE')
+        if capture is not None:
+            capture(endpoint, params, raw)
         try:
             result = json.loads(raw, object_pairs_hook=pairs)
             if not isinstance(result, dict):
@@ -141,13 +143,17 @@ def chain_rows(payload, symbol, expiration):
                     raise ValueError()
             if not isinstance(row.get('symbol'), str) or not re.fullmatch(r'[A-Z0-9./]{1,40}', row['symbol']):
                 raise ValueError()
-            result.append({key: row.get(key) for key in keys})
+            selected = {key: row.get(key) for key in keys}
+            if 'greeks' in row:
+                from copy import deepcopy
+                selected['greeks'] = deepcopy(row['greeks'])
+            result.append(selected)
         return result
     except (KeyError, TypeError, ValueError):
         raise DataError('TRADIER_SCHEMA_INVALID') from None
 
 
-def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=None, diagnostic=None):
+def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=None, diagnostic=None, capture=None):
     from .chain_spreads import select_atm_spreads
     symbol = symbol_checked(symbol)
     counts = {} if counts is None else counts
@@ -156,7 +162,7 @@ def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=Non
     def fetch(endpoint, params):
         diagnostic.clear()
         diagnostic.update(endpoint=endpoint, http_status=None)
-        payload = request_json(profile, endpoint, params, credential, diagnostic=diagnostic)
+        payload = request_json(profile, endpoint, params, credential, diagnostic=diagnostic, **({'capture': capture} if capture is not None else {}))
         diagnostic['shape'] = response_shape(payload)
         return payload
     if progress:
@@ -172,7 +178,7 @@ def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=Non
         progress.start('tradier_chain', total=max(1, min(MAX_CHAINS, len(expirations))))
     for index, expiration in enumerate(expirations[:MAX_CHAINS], 1):
         rows = chain_rows(fetch('chain',
-            {'symbol': symbol, 'expiration': expiration, 'greeks': 'false'}), symbol, expiration)
+            {'symbol': symbol, 'expiration': expiration, 'greeks': 'true'}), symbol, expiration)
         counts['chains_received'] = index
         if progress:
             progress.advance(index)
@@ -188,7 +194,9 @@ def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=Non
         return {'schema_version': 1, 'source': 'tradier', 'profile': profile, 'symbol': symbol,
                 'retrieved_at': datetime.now(timezone.utc).isoformat(),
                 'market_data_mode': 'delayed_15_minutes' if profile == 'sandbox' else 'brokerage_feed',
-                'quote_freshness': 'unverified', 'underlying_trade_date': quote['trade_date'],
+                'quote_freshness': 'unverified',
+                'greeks_requested': True, 'greeks_source': 'Tradier / ORATS',
+                'greeks_availability': 'unavailable_in_sandbox' if profile == 'sandbox' else 'provider_hourly', 'underlying_trade_date': quote['trade_date'],
                 'underlying_average_volume': quote['average_volume'],
                 'underlying_average_volume_period': 'provider_90_day', **result}
     raise DataError('TRADIER_MONTHLY_UNVERIFIED')
@@ -222,6 +230,34 @@ def run_probe(root, args):
     run_id, revision = uuid.uuid4().hex, code_revision()
     progress, code, counts = None, None, {'chains_received': 0, 'rows': 0}
     diagnostic = {}
+    destination = root / 'artifacts' / 'tradier' / args.profile / run_id if args.profile in HOSTS else None
+    capture_state = {'schema_version': 1, 'source': 'tradier', 'profile': args.profile if args.profile in HOSTS else 'unknown',
+                     'run_id': run_id, 'code_revision': revision, 'status': 'incomplete', 'requests': []}
+    def capture(endpoint, params, raw):
+        from .ota_pipeline import profile_rows
+        index = len(capture_state['requests']) + 1
+        request_dir = destination / 'capture'
+        request_dir.mkdir(parents=True, exist_ok=True)
+        name = f'{index:03}-{endpoint}'
+        (request_dir / (name + '.body.json')).write_bytes(raw)
+        capture_state['requests'].append({'endpoint': endpoint, 'params': params, 'body': name + '.body.json',
+                                         'retrieved_at': datetime.now(timezone.utc).isoformat()})
+        atomic_json(request_dir / 'manifest.json', capture_state)
+        try:
+            payload = json.loads(raw)
+            rows = payload.get('options', {}).get('option') if endpoint == 'chain' else payload.get('quotes', {}).get('quote') if endpoint == 'quote' else payload.get('expirations', {})
+            rows = rows if isinstance(rows, list) else [rows]
+            fields = []
+            for row in rows:
+                if isinstance(row, dict):
+                    fields.append({'values': row})
+            atomic_json(request_dir / (name + '.profile.json'), profile_rows(fields))
+            greek_rows = [{'values': row['greeks']} for row in rows if isinstance(row, dict) and isinstance(row.get('greeks'), dict)]
+            if greek_rows:
+                atomic_json(request_dir / (name + '.greeks-profile.json'), profile_rows(greek_rows))
+        except (ValueError, TypeError, AttributeError):
+            # Body remains authoritative even if a profile cannot be prepared.
+            pass
     try:
         if args.profile not in HOSTS:
             raise DataError('TRADIER_INVALID_INPUT')
@@ -237,12 +273,14 @@ def run_probe(root, args):
         try:
             # Same-day expiry is excluded using the New York trading date.
             result = fetch_probe(args.profile, symbol, credential, as_of=as_of,
-                                 progress=progress, counts=counts, diagnostic=diagnostic)
+                                 progress=progress, counts=counts, diagnostic=diagnostic, capture=capture)
         finally:
             credential = None
         progress.start('reports')
-        output = root / 'artifacts' / 'tradier' / args.profile / run_id / 'atm-spreads.json'
+        output = destination / 'atm-spreads.json'
         atomic_json(output, result)
+        capture_state['status'] = 'completed_probe'
+        atomic_json(destination / 'capture/manifest.json', capture_state)
         counts['rows'] = 2
         progress.finish()
         print(f'User data: {output}')
@@ -281,7 +319,8 @@ def response_shape(payload):
     paths = (('expirations',), ('expirations', 'date'), ('expirations', 'expiration'),
              ('quotes', 'quote'), ('quotes', 'quote', 'type'), ('quotes', 'quote', 'last'),
              ('options', 'option'), ('options', 'option', 'expiration_type'),
-             ('options', 'option', 'underlying'), ('options', 'option', 'bid_date'))
+             ('options', 'option', 'underlying'), ('options', 'option', 'bid_date'),
+             ('options', 'option', 'greeks'), ('options', 'option', 'greeks', 'updated_at'))
     output = {}
     for path in paths:
         value = payload

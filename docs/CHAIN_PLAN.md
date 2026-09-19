@@ -79,7 +79,7 @@ redirect, alternate provider or synthetic-data fallback on failure.
    `includeAllRoots=false`, `expirationType=false`. The current probe confirms
    monthly status from chain metadata and bounds inspection to 32 upcoming chains.
 2. `GET /v1/markets/options/chains` with `symbol`, selected `expiration`,
-   `greeks=false`. Retain verified standard contracts and exclude unsupported
+   `greeks=true`. Retain verified standard contracts and exclude unsupported
    adjusted roots/deliverables. The live enhanced-expiration response shape must
    still be validated; do not invent fields from the query parameter names.
 3. `GET /v1/markets/quotes` for the underlying, retaining price/time needed for
@@ -116,3 +116,10 @@ allowlisted counts/status/error report for agent review. Never share raw respons
 headers or the key. Offline fixtures must cover holiday shifts, ties, missing
 legs, adjusted contracts, invalid/crossed/zero quotes, stale quotes and wrong
 environment authentication. Dashboard integration follows user approval.
+
+## Implemented validation additions
+
+ATM strike is explicit at the top level and on each selected leg. Returned Greeks
+are retained verbatim with status and provider cadence labels, not used as ranking
+inputs. Sandbox cannot validate Greek availability; production user testing is
+pending. Raw response bodies and field profiles now precede strict selection.

@@ -1,5 +1,6 @@
 """Pure, provider-independent ATM selection; never loads credentials or fetches data."""
 
+from copy import deepcopy
 from datetime import date
 import math
 
@@ -35,6 +36,9 @@ def quote_spread(row):
         counts[field] = None if value is None else int(value)
     return {
         'symbol': row.get('symbol'),
+        'strike': row.get('strike'),
+        'greeks': deepcopy(row.get('greeks')),
+        'greeks_status': ('missing' if 'greeks' not in row else 'null' if row['greeks'] is None else 'returned_unverified' if isinstance(row['greeks'], dict) else 'unexpected_type'),
         'bid': bid if number(bid) else None,
         'ask': ask if number(ask) else None,
         'spread': ask - bid if usable else None,
@@ -107,7 +111,7 @@ def select_atm_spreads(rows, *, underlying_price, as_of):
     return {
         'expiration': expiration.isoformat(), 'expiration_type': 'standard',
         'expiration_marker': '*', 'underlying_price': underlying_price,
-        'strike': strike, 'as_of': as_of.isoformat(),
+        'strike': strike, 'atm_strike': strike, 'as_of': as_of.isoformat(),
         'selection': 'nearest_shared_strike_lower_tie',
         'call': quote_spread(pairs[strike]['call']),
         'put': quote_spread(pairs[strike]['put']),

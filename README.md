@@ -625,3 +625,46 @@ termination. Compare counts with the same filters; realtime changes can cause
 mismatches. Do not treat a short page alone as proof of complete coverage.
 Existing per-run files are preserved. Applying criteria replaces the current
 local screener config, so save desired settings before switching screeners.
+
+### Tradier ATM validation and Greeks
+
+The selected monthly pair now has explicit top-level `atm_strike` (the existing
+`strike` remains compatible) and `call.strike`/`put.strike`. Compare these with
+`expiration`, `underlying_price` and each contract symbol in `atm-spreads.json`.
+ATM uses the nearest shared strike, lower strike on a tie; it is not delta-based.
+
+Chain requests include `greeks=true`. Each leg retains its returned `greeks`
+object as supplied, including delta, gamma, theta, vega, rho, phi, bid/mid/ask IV,
+smv_vol and updated_at when available, plus future fields and unexpected types.
+No units are rescaled and no Greeks affect current ranking or filters. The
+`greeks_status` distinguishes missing, null, returned and unexpected type.
+[Tradier documents](https://docs.tradier.com/docs/market-data) Greeks as unavailable
+in sandbox and updated hourly in production; missing values are not zeros and
+an hourly Greek is not a contemporaneous bid/ask observation.
+
+User-run production check, with the matching key:
+
+```bash
+.venv/bin/python -I run.py tradier-probe --profile production --symbol SPY --prompt-token
+```
+
+PowerShell uses `.\.venv\Scripts\python.exe` with the same arguments. Sandbox
+still supports the delayed price/strike check; missing Greeks there are expected.
+New runs preserve bounded successful response bytes under `capture/`, with a
+request manifest, per-response field profiles and separate Greek-field profiles
+where present. No headers or credentials are saved. Source bodies survive later
+parsing failure; manifest status remains incomplete until the probe succeeds.
+This is the first Tradier capture/profile increment; standalone replay and
+cross-run schema comparison remain pending. Share only `agent-review` reports.
+
+### OTA displayed volume versus response fields
+
+A browser table can combine screener data with separate quote requests, streaming
+updates or cached data. Our earlier normalized-only adapter also omitted fields
+outside its allowlist, including stock `volume`. Therefore inspect the current
+raw capture, not an old normalized file, before concluding the API omitted it.
+`avgVol30d`, current underlying share volume and `totalOptionsVolume` are separate
+metrics; none can substitute for another. If the browser's actual screener response
+lacks volume, inspect other Fetch/XHR and WebSocket messages locally and identify
+the endpoint category and field names, without sharing headers, keys or captures.
+The source and observation time must be established before adding a joined metric.

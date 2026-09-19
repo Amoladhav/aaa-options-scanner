@@ -146,3 +146,39 @@ class TradierTests(unittest.TestCase):
         self.assertEqual(diagnostic['shape']['expirations.date'], 'missing')
         self.assertNotIn('private-value', json.dumps(diagnostic))
         self.assertNotIn('unexpected-secret', json.dumps(diagnostic))
+
+    def test_atm_strike_greeks_and_raw_capture_end_to_end(self):
+        root = temp / 'tradier-greeks'
+        rows = contracts()
+        rows[0]['greeks'] = {'delta': '0.51', 'theta': -0.04, 'updated_at': 'synthetic-time', 'future_field': {'value': 'unknown'}}
+        rows[1]['greeks'] = {'delta': -0.49, 'gamma': '', 'vega': None}
+        bodies = [json.dumps({'expirations':{'date':['2026-10-16']}}).encode(),
+                  json.dumps({'quotes':{'quote':{'symbol':'SYNTH','type':'stock','last':101}}}).encode(),
+                  json.dumps({'options':{'option':rows}}).encode()]
+        connections = [self.connection(body=body) for body in bodies]
+        with patch('trading_scanner.token_store.load_token',return_value='synthetic-local-input'), patch('trading_scanner.tradier.ssl.create_default_context'), patch('trading_scanner.tradier.http.client.HTTPSConnection',side_effect=connections), redirect_stdout(io.StringIO()):
+            self.assertEqual(run_probe(root,SimpleNamespace(profile='production',symbol='SYNTH',as_of='2026-09-19')),0)
+        path = next(root.glob('artifacts/tradier/production/*/atm-spreads.json'))
+        result = json.loads(path.read_text())
+        self.assertEqual(result['atm_strike'],100)
+        self.assertEqual(result['call']['strike'],100)
+        self.assertEqual(result['put']['strike'],100)
+        self.assertEqual(result['call']['greeks'],rows[0]['greeks'])
+        self.assertEqual(result['put']['greeks'],rows[1]['greeks'])
+        self.assertEqual(result['greeks_availability'],'provider_hourly')
+        self.assertIn('greeks=true',connections[-1].request.call_args.args[1])
+        self.assertEqual((path.parent/'capture/003-chain.body.json').read_bytes(),bodies[-1])
+        self.assertTrue((path.parent/'capture/003-chain.greeks-profile.json').exists())
+        report=json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
+        self.assertNotIn('future_field',json.dumps(report))
+        self.assertNotIn('synthetic-time',json.dumps(report))
+
+    def test_missing_or_unexpected_greeks_do_not_reject_chain(self):
+        from trading_scanner.chain_spreads import select_atm_spreads
+        for value in (None, '', 'N/A', -1, {'theta': -0.1}):
+            rows = contracts()
+            rows[0]['greeks'] = value
+            checked = chain_rows({'options':{'option':rows}},'SYNTH','2026-10-16')
+            result = select_atm_spreads(checked,underlying_price=100,as_of=date(2026,9,19))
+            self.assertEqual(result['call']['greeks'],value)
+            self.assertEqual(result['put']['greeks_status'],'missing')

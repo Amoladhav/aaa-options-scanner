@@ -20,7 +20,7 @@
     },
     {
       "path": "docs/CHAIN_PLAN.md",
-      "sha256": "4b6a9ac2a92dcf8a80f0709165a5658e44f780dc163c37b9f107af74f450f3b1",
+      "sha256": "05ed2086d191b50369bf3c764b5022ae55fcb3381a2a640a445131c2416661ed",
       "findings": [
         {
           "line": 75,
@@ -31,7 +31,7 @@
     },
     {
       "path": "src/trading_scanner/tradier.py",
-      "sha256": "8ac3716006b2783416c0836baa4564aee69dd6038b4bec4e5d26027e8fa45507",
+      "sha256": "cfeec87717b02f690cf8e87e7181e2296cda0e6957802f9cfe90e538e20c3d95",
       "findings": [
         {
           "line": 47,

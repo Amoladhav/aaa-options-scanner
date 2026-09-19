@@ -133,8 +133,8 @@ Legacy files remain readable but cannot restore previously discarded values.
 
 Policy revision 3 applies capture/profile/normalize/business-rule separation to
 all external fetches, including public library adapters. OTA implements the first
-capture/profile/replay increment. Tradier and public price/constituent adapters
-still need adoption; cross-run schema-drift comparison and retention controls
+capture/profile/replay increment. Tradier now has initial raw-body capture and field profiles; replay and broader
+normalization remain pending. Public price/constituent adapters still need adoption; cross-run schema-drift comparison and retention controls
 are requirements, not implemented features. Library-returned data cannot be
 claimed to preserve wire-level bytes unless the actual transport exposes them.
 Agents must explain applicable established practices and project-specific
