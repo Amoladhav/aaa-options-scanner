@@ -231,7 +231,7 @@ From the project directory, preview a paste in Bash/Linux/WSL:
 python3 -I -S run.py ota-config
 ```
 
-Paste the complete array, press Enter, then Ctrl-D to finish input. To validate
+Paste the complete array and press Enter; no EOF or Ctrl-D is required. To validate
 and save in one run, use `python3 -I -S run.py ota-config --apply` instead.
 
 Native Windows PowerShell:
@@ -240,8 +240,11 @@ Native Windows PowerShell:
 py -3 -I -S run.py ota-config --apply
 ```
 
-Paste the array, then press Ctrl-Z followed by Enter to finish input. If terminal
-paste/EOF is inconvenient, save only the criteria in a UTF-8 text file under
+Paste the array and press Enter. Multiline pastes submit after the closing `]`
+and Enter; brackets inside quoted values do not end input. Press Ctrl-C to cancel
+an unfinished paste. For help with a pasteable example, run
+`python3 -I -S run.py ota-config --help` (PowerShell: `py -3 -I -S run.py ota-config --help`).
+Alternatively, save only the criteria in a UTF-8 text file under
 ignored `artifacts/`, then preview and apply the same file:
 
 ```bash

@@ -71,8 +71,11 @@ def main(argv=None, root: Path | None = None) -> int:
     refresh.add_argument("--profile", choices=["public"], required=True)
     for command in (cached, refresh):
         command.add_argument("--options-file", type=Path, help="Normalized local options JSON; no provider request")
-    config = subs.add_parser("ota-config", help="Paste screener criteria to preview or save local configuration; offline")
+    config = subs.add_parser("ota-config", help="Paste screener criteria to preview or save local configuration; offline",
+                            description='Paste a complete OTA criteria array and press Enter. Multiline arrays are accepted; no EOF is needed. Omit --apply to preview only.',
+                            epilog='Example to paste: [{"field":"optionable","valueFilter":"BOOLEAN","valueChoices":"Yes","criteria":"true"}]\nRun: python3 -I -S run.py ota-config --apply\nPaste criteria only, never headers or tokens. Abbreviated (...) entries are rejected.')
     config.add_argument("--input", type=Path, help="Read a criteria-only text file instead of stdin")
+    config.formatter_class = lambda prog: argparse.RawDescriptionHelpFormatter(prog, width=88)
     config.add_argument("--apply", action="store_true", help="Replace config/ota-screener.json with validated criteria")
     args = parser.parse_args(argv)
     if args.command == "ota-config":
@@ -196,7 +199,7 @@ def main(argv=None, root: Path | None = None) -> int:
 
 
 def configure_ota(args, root):
-    from .ota_config import parse_config, save_config, MAX_INPUT
+    from .ota_config import parse_config, save_config, read_paste, MAX_INPUT
     progress = None
     try:
         progress = RunProgress(root / 'artifacts' / 'logs', uuid.uuid4().hex,
@@ -207,8 +210,9 @@ def configure_ota(args, root):
             with args.input.open(encoding='utf-8') as stream:
                 pasted = stream.read(MAX_INPUT + 1)
         else:
-            print('Paste complete criteria only, then EOF: Ctrl-D (Bash) or Ctrl-Z then Enter (Windows).', flush=True)
-            pasted = sys.stdin.read(MAX_INPUT + 1)
+            print('Paste the complete criteria array, then press Enter. Multiline paste works; no EOF needed.', flush=True)
+            print('Example: [{"field":"optionable","valueFilter":"BOOLEAN","valueChoices":"Yes","criteria":"true"}]', flush=True)
+            pasted = read_paste(sys.stdin)
         config = parse_config(pasted)
         progress.finish()
         print(json.dumps(config, indent=2, allow_nan=False))

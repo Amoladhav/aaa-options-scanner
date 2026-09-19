@@ -7,12 +7,41 @@ from unittest.mock import patch
 from offline_boundary import temp
 from trading_scanner.cli import main
 from trading_scanner.core import DataError
-from trading_scanner.ota_config import parse_config, save_config, MAX_INPUT
+from trading_scanner.ota_config import parse_config, save_config, read_paste, MAX_INPUT
 
 PASTE = '[{field: "optionable", valueFilter: "BOOLEAN", valueChoices: "Yes", criteria: "true"}]'
 
 
 class OtaConfigTests(unittest.TestCase):
+    def test_enter_submits_without_reading_eof(self):
+        class OpenTerminal:
+            def __init__(self, lines):
+                self.lines = iter(lines)
+            def readline(self, limit):
+                try:
+                    return next(self.lines)
+                except StopIteration:
+                    raise AssertionError('Attempted to wait for EOF')
+        for text in (PASTE + '\n', json.dumps(parse_config(PASTE)['criteria'], indent=2) + '\n'):
+            self.assertEqual(parse_config(read_paste(OpenTerminal(text.splitlines(keepends=True)))), parse_config(PASTE))
+
+    def test_paste_string_brackets_escapes_and_limits(self):
+        row = {'field':'sector', 'valueFilter':'SELECT', 'valueChoices':'bracket ] and quote " and slash \\'}
+        text = json.dumps([row], indent=2) + '\n'
+        self.assertEqual(parse_config(read_paste(io.StringIO(text)))['criteria'], [row])
+        with self.assertRaises(DataError):
+            read_paste(io.StringIO('[' + ' ' * MAX_INPUT))
+        with self.assertRaises(DataError):
+            parse_config(read_paste(io.StringIO('[\n')))
+
+    def test_help_includes_paste_example(self):
+        output = io.StringIO()
+        with redirect_stdout(output), self.assertRaises(SystemExit) as stopped:
+            main(['ota-config', '--help'])
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertIn('no EOF is needed', output.getvalue())
+        self.assertIn('"field":"optionable"', output.getvalue())
+
     def test_devtools_keys_and_json_roundtrip(self):
         config = parse_config(PASTE)
         self.assertEqual(config['criteria'][0]['criteria'], 'true')

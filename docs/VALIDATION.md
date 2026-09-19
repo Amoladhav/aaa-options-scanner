@@ -92,3 +92,9 @@ Payload compatibility correction: OTA range criteria can contain an optional
 checked for consistency. Two regression tests cover both range operators,
 conflicting operators and rejecting chat-only underscore escapes without changing
 input semantics. `python3 -I -S tools/test_offline.py`: 60 tests passed.
+
+Paste usability correction: complete single-line or multiline arrays now submit
+on Enter without EOF. A synthetic open-terminal test fails if the reader asks
+for more input after the final newline. Tests also cover escaped strings/brackets,
+input limits, incomplete input at EOF, and help examples. The guarded offline
+suite passed 63 tests; native Windows terminal interaction remains unverified.

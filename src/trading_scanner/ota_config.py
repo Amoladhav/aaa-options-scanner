@@ -18,6 +18,41 @@ FILTER_KEYS = {
 }
 
 
+def read_paste(stream):
+    """Read through the newline completing the outer array, ignoring quoted brackets.
+
+This only finds the end of a paste; parse_config still validates all syntax.
+Read line by line so interactive users never need to signal EOF.
+"""
+    chunks, size, depth = [], 0, 0
+    quoted = escaped = started = False
+    while True:
+        line = stream.readline(MAX_INPUT + 1 - size)
+        if not line:
+            return ''.join(chunks)
+        chunks.append(line)
+        size += len(line)
+        if size > MAX_INPUT:
+            fail('OTA_CONFIG_TOO_LARGE')
+        for char in line:
+            if quoted:
+                if escaped:
+                    escaped = False
+                elif char == '\\':
+                    escaped = True
+                elif char == '"':
+                    quoted = False
+            elif char == '"':
+                quoted = True
+            elif char in '[{':
+                started = True
+                depth += 1
+            elif char in ']}':
+                depth -= 1
+        if (started and depth <= 0 and not quoted) or not started and line.strip():
+            return ''.join(chunks)
+
+
 def fail(code='OTA_CONFIG_INVALID'):
     raise DataError(code)
 
