@@ -1,0 +1,2 @@
+# Optional user-run OS credential storage. Direct pin; transitive lock pending.
+keyring==25.7.0

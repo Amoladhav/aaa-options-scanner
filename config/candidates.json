@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "min_open_interest": 10000,
+  "min_option_volume": 90000,
+  "min_spread_liquidity": 85,
+  "min_days_to_earnings": null,
+  "min_mean_iv": null,
+  "max_mean_iv": null,
+  "max_ota_age_hours": 36,
+  "max_price_age_days": 4
+}

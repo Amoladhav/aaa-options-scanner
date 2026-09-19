@@ -42,7 +42,8 @@ ERRORS = {'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
           'OTA_AUTH_REJECTED', 'OTA_RATE_LIMITED', 'OTA_REDIRECT_REJECTED',
           'OTA_HTTP_ERROR', 'OTA_NETWORK_ERROR', 'OTA_RESPONSE_TOO_LARGE',
           'OTA_SCHEMA_INVALID', 'OTA_ENVELOPE_UNSUPPORTED', 'OTA_FETCH_FAILED', 'RUN_CANCELLED',
-          'OTA_PAGINATION_INVALID', 'OTA_DUPLICATE_PAGE_SYMBOL', 'OTA_PAGE_LIMIT'}
+          'OTA_PAGINATION_INVALID', 'OTA_DUPLICATE_PAGE_SYMBOL', 'OTA_PAGE_LIMIT',
+          'TOKEN_STORE_UNAVAILABLE', 'TOKEN_STORE_EMPTY'}
 
 
 def request_path(page, page_size):
@@ -131,7 +132,7 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
     raise DataError('OTA_PAGE_LIMIT')
 
 
-def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES):
+def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES, use_stored_token=False):
     from .cli import code_revision
     run_id = uuid.uuid4().hex
     revision = code_revision()
@@ -155,7 +156,11 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES)
             raise DataError('OTA_CONFIG_INVALID') from None
         progress.finish()
         progress.start('ota_auth')
-        token = prompt_token()
+        if use_stored_token:
+            from .token_store import load_token
+            token = load_token()
+        else:
+            token = prompt_token()
         progress.finish()
         progress.start('ota_fetch', total=max_pages)
         try:

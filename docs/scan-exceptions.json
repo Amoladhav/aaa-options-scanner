@@ -1,6 +1,6 @@
 {
   "scanner_version": "1",
-  "reviewed_at": "2026-09-13",
+  "reviewed_at": "2026-09-19",
   "exceptions": [
     {
       "path": "tools/test_intake_scan.py",
@@ -15,6 +15,28 @@
           "line": 55,
           "rule": "credential-assignment",
           "reason": "Dynamic bearer-header test expression references the synthetic fixture above. No provider credential."
+        }
+      ]
+    },
+    {
+      "path": "docs/CHAIN_PLAN.md",
+      "sha256": "a60c5b9476aa538f2565471801eb65178f24880f64ce67af5b1b7d4b7f894859",
+      "findings": [
+        {
+          "line": 75,
+          "rule": "bearer-value",
+          "reason": "Documentation describes an HTTP authentication scheme; no credential value."
+        }
+      ]
+    },
+    {
+      "path": "src/trading_scanner/tradier.py",
+      "sha256": "078ebaf8b1af33ce7185d922cc814c2fe3e1ed585b1fea77df5b3d096be0187a",
+      "findings": [
+        {
+          "line": 47,
+          "rule": "credential-assignment",
+          "reason": "Authorization header concatenates its scheme with the user-supplied runtime credential variable; no literal credential."
         }
       ]
     }

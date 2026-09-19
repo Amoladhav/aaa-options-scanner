@@ -197,3 +197,22 @@ second request with the 600-row default. Existing pagination tests still exercis
 full pages, limits and mid-run expiry. All 81 offline tests passed. Coverage is
 labeled `short_page_observed`, not guaranteed complete: server caps, ignored page
 numbers and realtime membership changes remain unresolved. Live retry is user-run.
+
+## 2026-09-19 combined dashboard and isolated chain probe
+
+- Ubuntu / Python 3.14.4: 108 guarded offline application tests passed; seven
+  intake scanner synthetic tests passed. No provider request, OS keyring access,
+  or optional package installation was performed by agents.
+- Synthetic combined dashboard generated: 60 ranked, 48 OTA matches, nine tail
+  rows matching settings. New tests cover joins, missing/stale inputs, same-session
+  history replacement/gaps, escaped display, daily failure behavior, credential
+  profile separation, monthly/ATM selection and Tradier transport/privacy.
+- Source inventory reviewed in parallel by explicit user request. INBOX scan
+  covered 435 files and 599 archive entries, 40 findings, zero coverage gaps;
+  only redacted application material was inspected. No incoming code executed.
+- Standalone Tradier probe is prepared, not integrated into dashboard/daily.
+  Live enhanced-expiration schema, quote times, native OS keyring and Windows/macOS
+  execution remain pending user validation after draft approval.
+- Prepared CI matrix has not run remotely. Browser interaction remains unverified.
+  No strategy performance claim; cached price-age checks are calendar-day limits,
+  not a verified latest-session calendar check.

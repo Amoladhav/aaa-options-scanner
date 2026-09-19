@@ -81,10 +81,47 @@ def main(argv=None, root: Path | None = None) -> int:
     ota_fetch.add_argument('--profile', choices=['ota'], required=True)
     ota_fetch.add_argument('--page-size', type=int, choices=range(1, 601), default=600, metavar='1..600')
     ota_fetch.add_argument('--max-pages', type=int, choices=range(1, 101), default=50, metavar='1..100')
+    ota_fetch.add_argument('--use-stored-token', action='store_true', help='USER-RUN: read the token from the OS credential store')
+    subs.add_parser('dashboard-demo', help='Create a synthetic combined dashboard with prior-session history')
+    dashboard = subs.add_parser('dashboard', help='USER-RUN: join cached prices and OTA; defaults to latest successful files')
+    dashboard.add_argument('--snapshot', type=Path)
+    dashboard.add_argument('--ota', type=Path)
+    dashboard.add_argument('--filters', type=Path)
+    daily = subs.add_parser('daily', help='USER-RUN: refresh public prices, fetch OTA, write combined dashboard')
+    daily.add_argument('--profile', choices=['public'], required=True)
+    daily.add_argument('--page-size', type=int, choices=range(1,601), default=600, metavar='1..600')
+    daily.add_argument('--max-pages', type=int, choices=range(1,101), default=50, metavar='1..100')
+    daily.add_argument('--use-stored-token', action='store_true')
+    daily.add_argument('--filters', type=Path)
+    token = subs.add_parser('ota-token', help='USER-RUN: set or delete the session token in the OS credential store')
+    token.add_argument('action', choices=['set','delete'])
+    tradier_token = subs.add_parser('tradier-token', help='USER-RUN: store/delete a Tradier key in the OS credential store')
+    tradier_token.add_argument('action', choices=['set','delete'])
+    tradier_token.add_argument('--profile', choices=['sandbox','production'], required=True)
+    probe = subs.add_parser('tradier-probe', help='USER-RUN: standalone monthly ATM spread probe; no dashboard integration')
+    probe.add_argument('--profile', choices=['sandbox','production'], required=True)
+    probe.add_argument('--symbol', required=True)
+    probe.add_argument('--as-of', help='Explicit New York date YYYY-MM-DD; otherwise uses America/New_York timezone data')
     args = parser.parse_args(argv)
+    if args.command == 'tradier-token':
+        from .token_store import run_store
+        return run_store(root, args.action, provider='tradier', profile=args.profile)
+    if args.command == 'tradier-probe':
+        from .tradier import run_probe
+        return run_probe(root, args)
+
+    if args.command == 'ota-token':
+        from .token_store import run_store
+        return run_store(root, args.action)
+    if args.command in ('dashboard', 'dashboard-demo'):
+        from .workflow import run_dashboard
+        return run_dashboard(root, args)
+    if args.command == 'daily':
+        from .workflow import run_daily
+        return run_daily(root, args)
     if args.command == 'ota-fetch':
         from .ota_fetch import run_fetch
-        return run_fetch(root, page_size=args.page_size, max_pages=args.max_pages)
+        return run_fetch(root, page_size=args.page_size, max_pages=args.max_pages, use_stored_token=args.use_stored_token)
     if args.command == "ota-config":
         return configure_ota(args, root)
     run_id = uuid.uuid4().hex

@@ -1,9 +1,111 @@
 # AAA Options Scanner
 
-Cross-sectional momentum first; OTA Trade enrichment is the next increment.
-The offline demo works without third-party packages or credentials. Public-data
-download code is prepared and tested with synthetic transports; real Yahoo and
-Wikipedia access remain unverified.
+Cross-sectional momentum with a combined OTA research dashboard, session history,
+configurable shortlist filters and a user-run daily workflow. Synthetic examples
+need no packages or credentials. Authenticated requests remain user-run.
+
+## First combined output
+
+From the project root, generate the draft with invented data:
+
+```bash
+python3 -I -S run.py dashboard-demo
+```
+
+For your already saved public prices and OTA results (no request or token needed):
+
+```bash
+python3 -I -S run.py dashboard
+```
+
+Windows equivalents: `py -3.11 -I -S run.py dashboard-demo` and
+`py -3.11 -I -S run.py dashboard`. Open the printed `dashboard.html` path.
+The table joins CRS and OTA by normalized symbol, with search, sorting, stock/ETF
+and long/short filters. It exports combined/candidate CSVs and departed symbols.
+OTA does not alter CRS scores. Missing matches mean absent from the filtered
+screener, not zero volume. Provider definitions remain unverified.
+
+`dashboard` selects the newest saved files by modification time. Use
+`--snapshot PATH --ota PATH` to select exact inputs. Synthetic/public profiles
+cannot mix. Output includes copies of inputs and settings for reproduction.
+Each profile stores one history record per price session; repeated runs replace
+that session, never add streak days. Rank change is against the prior recorded
+session, with gaps and newly ranked symbols labeled. First real run has no prior
+history. Universe changes can also change ranks.
+
+Edit [config/candidates.json](config/candidates.json), or pass `--filters PATH`.
+Defaults retain tail rows with open interest >=10,000, options volume >=90,000
+and vendor liquidity >=85. Optional earnings/mean-IV thresholds default to null
+(disabled). Missing required values or stale inputs cannot match. Defaults allow
+OTA retrieval age <=36 hours and price age <=4 calendar days. The price-age limit
+is not proof of the latest exchange session; use a refresh for a current report.
+Green rows mean numeric settings match, with metric definitions still unverified.
+
+## One-command daily run
+
+After public dependency setup below, with an active OTA browser session:
+
+```bash
+.venv/bin/python -I run.py daily --profile public
+```
+
+```powershell
+.\.venv\Scripts\python.exe -I run.py daily --profile public
+```
+
+This refreshes prices, prompts for the current OTA token, fetches pages (600 rows
+by default), then writes the combined dashboard. Each stage has standard progress
+and its own log/review report. A failed stage stops the workflow; it never silently
+uses yesterday's output. `--page-size` and `--max-pages` are available. Cached
+`dashboard` is the no-download reuse path; daily refresh deliberately downloads
+full adjusted histories to avoid incorrect incremental split/dividend merging.
+This is a manual command, not an unattended login or scheduler.
+
+## Optional local credential storage
+
+Use your OS credential store, outside Git. Install the reviewed optional direct
+pin using wheels; transitive dependencies remain unlocked:
+
+```bash
+.venv/bin/python -m pip install --only-binary=:all: -r requirements-keyring.txt
+.venv/bin/python -I run.py ota-token set
+.venv/bin/python -I run.py daily --profile public --use-stored-token
+```
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --only-binary=:all: -r requirements-keyring.txt
+.\.venv\Scripts\python.exe -I run.py ota-token set
+.\.venv\Scripts\python.exe -I run.py daily --profile public --use-stored-token
+```
+
+`ota-token set` takes hidden input; `ota-token delete` removes the local copy.
+Storage does not extend OTA session lifetime. After expiry, sign in locally and
+set the new token. Default fetch still prompts and never consults stored tokens.
+The explicit native backends are Windows Credential Locker, macOS Keychain and
+Linux Secret Service; there is no plaintext fallback. Linux/WSL requires an
+available, unlocked Secret Service and session D-Bus; otherwise setup fails with
+`TOKEN_STORE_UNAVAILABLE`. See [keyring documentation](https://keyring.readthedocs.io/en/stable/).
+Native store execution remains user-validation pending.
+
+For your Tradier key, choose the profile matching the key and run locally:
+
+```bash
+.venv/bin/python -I run.py tradier-token set --profile production
+```
+
+```powershell
+.\.venv\Scripts\python.exe -I run.py tradier-token set --profile production
+```
+
+Use `sandbox` instead for a sandbox key. Paste only into the hidden terminal prompt,
+never chat, command arguments or a tracked file. Profiles have separate OS entries.
+`tradier-token delete --profile production` removes the local copy; revoke at
+Tradier separately if needed. After approving the draft, the standalone user-run
+probe is `.venv/bin/python -I run.py tradier-probe --profile production --symbol SPY`; on Windows use `.\.venv\Scripts\python.exe`.
+It is not part of `daily` or the dashboard. If New York timezone data is missing,
+the probe stops with `DEPENDENCY_UNAVAILABLE`; supply `--as-of YYYY-MM-DD` using
+the current New York date as an explicit portable alternative. See [source access](docs/SOURCES.md)
+and [monthly ATM plan](docs/CHAIN_PLAN.md) before live testing.
 
 ## Run the demo now
 
@@ -29,7 +131,7 @@ earlier snapshots. Public and synthetic artifacts are separated and ignored by G
 
 ## Standard progress and run logs
 
-All scan commands (`demo`, `cached`, `refresh`) print progress to **stdout** by
+All scan commands (including dashboard, OTA and standalone probes) print progress to **stdout** by
 default. Each stage announces `Currently running: ...` before work begins, then
 prints completion. Price downloads update after each batch, including empty
 responses. Bars show **per-stage** completion, not an estimated percentage of
@@ -196,7 +298,7 @@ check local disk space and permissions. A scan does not start if log creation fa
 
 Offline checks passed; live checks pending. Native Windows/macOS, browser
 interaction, optional dependency installation, and real provider responses remain
-unverified. CI and Git hooks are not configured yet.
+unverified for this new increment. Cross-platform CI is prepared but has not run; Git hooks remain unconfigured.
 
 ## Sources and next increment
 
@@ -206,10 +308,10 @@ unverified. CI and Git hooks are not configured yet.
 - [Select Sector SPDR issuer list](https://www.ssga.com/uk/en_gb/intermediary/capabilities/equities/sector-investing/select-sector-etfs)
 - [Intake ledger](docs/INTAKE.md) and [project status](docs/STATUS.md)
 
-Next: verify the first public run, then add OTA enrichment through an isolated
-adapter after verifying supported authentication and field definitions. Missing
-OTA access will not block momentum ranking. Daily persistence, an options-volume
-ETF selection dataset, and options-candidate filters follow that increment.
+The combined dashboard, history and candidate filters are now implemented.
+Next: review the draft, validate the user-run daily workflow and standalone
+Tradier probe. A verified options-volume ETF selection dataset and exact OTA
+metric definitions remain pending. See [source access](docs/SOURCES.md).
 
 ## Offline options enrichment
 
@@ -371,18 +473,19 @@ expires, establish a new session and obtain a fresh token. On 401/403 the script
 stops; it never refreshes credentials or automates login. Other access failures
 can also produce 401/403, so renewal is not a guaranteed fix.
 
-The current implementation prompts on each run and does not save tokens. Future
-local storage could reduce pasting during an active session but would not extend
-its lifetime or enable unattended daily runs across expired sessions. Exact idle
+Default fetch prompts without saving. Optional OS storage, described above,
+reduces pasting during an active session but cannot extend its lifetime or enable
+unattended daily runs across expired sessions. Exact idle
 timeouts and server-side revocation mechanics remain unverified. Python does not
 guarantee secure erasure of in-memory strings.
 
 Results retain vendor metric names and a retrieval time; the market observation
-time is unknown. Pages use your selected filters. Once-daily automation and joining
-live OTA values to momentum rankings remain future work. The earlier single-page
+time is unknown. Pages use your selected filters. `daily` and `dashboard` join
+saved OTA values to momentum rankings; unattended scheduling is not provided.
+The earlier single-page
 user-run check passed with 77 rows and no errors
 (review report `126d95ced37a4481b0e217b61b7d89e2`). Full coverage and metric
-interpretation remain unverified; the latest offline suite passed 81 tests.
+interpretation remain unverified; the current offline suite passed 108 tests.
 
 ### Pagination and limits
 
@@ -415,3 +518,11 @@ file records `coverage: short_page_observed`. This is not guaranteed completenes
 the provider may cap page size or ignore page numbers; realtime membership may change
 between pages. Pagination has passed offline tests; live validation of page size
 and server paging behavior remains pending your next user-run report.
+
+## Cross-platform checks
+
+The prepared [GitHub Actions workflow](.github/workflows/offline.yml) runs guarded
+synthetic tests on Ubuntu, Windows and macOS, Python 3.11 and 3.14, after a user
+push. It has not run remotely yet. It installs no application dependencies and
+does not use provider credentials. Local Git hooks and a transitive dependency
+lock remain pending. Native OS credential stores require separate user-run checks.

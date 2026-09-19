@@ -21,7 +21,7 @@ class OtaSchemaTests(unittest.TestCase):
         self.rows = [{"symbol": "SYNTH", "values": {
             "meanIvPcnt": 45.0, "ivHi1YrPcnt": 80.0, "ivLow1YrPcnt": 20.0,
             "spreadLiquidityPcnt": 90.0, "totalOpenInterest": 10000,
-            "totalOptionsVolume": 1200, "ivGauge": 2, "optionable": 1}}]
+            "totalOptionsVolume": 1200, "ivGauge": 2, "optionable": 1, "daysToEarnings": None, "avgVol30d": None}}]
 
     def test_vendor_fields_preserved_without_metric_aliases(self):
         before = deepcopy(self.rows)

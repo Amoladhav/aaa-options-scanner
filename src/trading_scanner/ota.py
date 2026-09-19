@@ -12,9 +12,9 @@ from .core import DataError, normalize_symbol
 # Keep vendor names: an IV level, categorical gauge and liquidity score cannot
 # safely be substituted for IV rank, IV percentile or bid/ask spread.
 PERCENT_FIELDS = ("meanIvPcnt", "ivHi1YrPcnt", "ivLow1YrPcnt", "spreadLiquidityPcnt")
-COUNT_FIELDS = ("totalOpenInterest", "totalOptionsVolume")
+COUNT_FIELDS = ("totalOpenInterest", "totalOptionsVolume", "daysToEarnings")
 CODE_FIELDS = ("ivGauge", "optionable")
-FIELDS = (*PERCENT_FIELDS, *COUNT_FIELDS, *CODE_FIELDS)
+FIELDS = (*PERCENT_FIELDS, *COUNT_FIELDS, *CODE_FIELDS, "avgVol30d")
 SCHEMA_FIELDS = {*FIELDS, 'response', 'rows', 'row', 'symbol'}
 SCHEMA_REASONS = {'invalid_json', 'not_array', 'too_many_rows', 'invalid_structure',
                   'invalid_symbol', 'duplicate_symbol', 'non_numeric', 'negative',

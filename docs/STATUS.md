@@ -1,18 +1,15 @@
 # Project status
 
-Updated: 2026-09-19. Phase: momentum scanner with verified single-page OTA fetch.
+Updated: 2026-09-19. Phase: combined CRS/OTA dashboard and standalone Tradier probe prepared.
 
-OTA live checkpoint: user-run diagnostic `126d95ced37a4481b0e217b61b7d89e2`
-passed `ota_single_page_fetch`, returned 77 rows and reported no error. This
-confirms one successful authenticated fetch and parse with the saved filters.
-Live pagination/full coverage, metric definitions and report integration
-remain unverified. No authenticated request was executed by agents.
+OTA live checkpoint: the user's short-page run returned 77 rows after one page
+with no error (`ec8d6c0cf18743e38ef32fa4f0832993`). This proves the observed
+single-page result, not complete coverage or multi-page production behavior.
+No authenticated request was executed by agents.
 
-The owner verified that the token expires with the OTA session. Fetches require
-an active signed-in session and its current token; after expiration the user
-signs in again and obtains a new token. The tool prompts on every run and stores
-no token. Local storage, if added later, cannot extend session lifetime. No
-unattended daily schedule or automatic login/renewal is implemented.
+The token expires with the OTA session. Default fetch prompts each time; optional
+native OS storage can save the current token but cannot extend its lifetime.
+Daily runs are explicitly user-started; no login automation or scheduler exists.
 
 ## Implemented
 
@@ -38,8 +35,8 @@ unattended daily schedule or automatic login/renewal is implemented.
 
 ## Verification
 
-On Ubuntu, Python 3.14.4: seven intake-tool tests and 81 offline application tests
-passed. The offline runner denies network, subprocesses, real environment reads,
+On Ubuntu, Python 3.14.4: seven intake-tool tests passed at the prior checkpoint. The current guarded
+application-suite result is recorded in VALIDATION.md. The offline runner denies network, subprocesses, real environment reads,
 and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
 Guards are installed before test discovery. Tests cover numeric reference parity
 on complete untied inputs, ties, weights, endpoints, missing/nonfinite prices,
@@ -66,8 +63,9 @@ have been installed by the agent. Direct dependency pins are documented; a full
 transitive lock and installation verification remain pending.
 
 Offline checks passed; live checks pending. Tests do not prove real provider
-access or strategy performance. Native Windows/macOS, browser interaction, CI,
-hooks, and WSL-specific checks remain pending.
+access or strategy performance. Native Windows/macOS, browser interaction, remote CI execution,
+hooks, and WSL-specific checks remain pending. A cross-platform offline CI
+workflow is prepared, not remotely verified.
 
 ## Decisions and limits
 
@@ -83,7 +81,7 @@ hooks, and WSL-specific checks remain pending.
   offline. Incremental download merging is deferred to avoid stale adjustments.
 - Offline options enrichment supports separate supplied IV metrics, volume and open
   interest, synthetic examples, CSV/HTML output and deterministic snapshot replay.
-  Single-page live OTA access is verified. No persistence/Conviction, order
+  Single-page live OTA access is verified. Session rank history is implemented; no Conviction score, order
   execution or performance claims.
 - OTA row parsing is tested with invented fixtures. Vendor fields remain separate
   from normalized IV metrics. Pagination defaults to 600 rows, up to 50 pages,
@@ -93,17 +91,30 @@ hooks, and WSL-specific checks remain pending.
   atomically replaces `config/ota-screener.json` with `--apply`. It uses shared
   progress/logging and never executes pasted code or makes provider requests.
 
-## Next sequence
+## Current increment
 
-The owner has confirmed permission for personal scripted OTA access. `ota-fetch
---profile ota` now performs a user-run paginated fetch with hidden
-token input, fixed-host HTTPS and sanitized diagnostics. A 77-row live run passed;
-pagination is offline-tested; integration into the momentum report is not yet implemented.
+- Combined cached CRS/OTA HTML and CSV report, explicit missing/stale states,
+  unchanged CRS scores, settings-based unverified shortlist.
+- Configurable volume/OI/vendor-liquidity/earnings/mean-IV thresholds; preserved
+  vendor fields and separate price-age/retrieval-age limits.
+- Session history with rank movement, entrants/departures and gaps; repeated
+  runs replace the same session. Synthetic and public histories stay separate.
+- Daily user-run refresh/fetch/report workflow stops on failure without old-data
+  fallback. Cached dashboard reuses local data without downloads.
+- Optional native OS storage for OTA and separately profiled Tradier credentials.
+- Standalone monthly ATM Tradier probe prepared with pure selection/spread tests;
+  dashboard integration waits for the user's draft approval. Bid, ask, OI and
+  current volume per leg; average contract volume unavailable.
+- Source access inventory: [SOURCES.md](SOURCES.md). Metric definitions stay
+  explicitly unverified. [CHAIN_PLAN.md](CHAIN_PLAN.md) records monthly rules.
 
-1. User installs optional wheel dependencies and runs public refresh; inspect only
-   the allowlisted agent-review report. Fix real schema/packaging issues if evidenced.
-2. Verify OTA pagination/full coverage, then join results to momentum rankings.
-   Confirm exact IV/liquidity definitions before using them as candidate filters.
-   Keep fetches explicitly user-run with a current session token.
-3. Add session-based history/rotation, then options shortlist filters with unknown
-   inputs explicit. Research a verifiable options-volume ETF universe separately.
+## Remaining external validation
+
+1. User reviews the synthetic dashboard and runs cached dashboard on real files.
+2. User validates fresh daily output and optional OS credential store locally.
+3. After draft approval, user tests the isolated Tradier probe; integrate its
+   contract metrics only after schema, expiration, delay and quote times check out.
+4. Verify live OTA full-page continuation, metric definitions and a defensible
+   options-volume ETF universe. Current 50 ETF list remains a starter watchlist.
+5. Run prepared CI on user push; confirm native OS behavior. No performance or
+   profitability validation is claimed.
