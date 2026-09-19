@@ -16,7 +16,9 @@ SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHA
                "NO_VALID_PEER_GROUP", "INVALID_SNAPSHOT", "INSUFFICIENT_CALENDAR",
                "MISSING_SNAPSHOT", "INVALID_SESSION_ORDER", "WEEKEND_SESSION",
                "INVALID_SYMBOL", "CONFLICTING_SYMBOL", "INVALID_GROUP", "INVALID_ETF_CONFIG",
-               "LOG_UNAVAILABLE", "RUN_CANCELLED", "INVALID_OPTIONS_INPUT"}
+               "LOG_UNAVAILABLE", "RUN_CANCELLED", "INVALID_OPTIONS_INPUT",
+               "OTA_CONFIG_INVALID", "OTA_CONFIG_TOO_LARGE", "OTA_CONFIG_INCOMPLETE",
+               "OTA_CONFIG_SYNTAX", "OTA_CONFIG_UNSUPPORTED_FILTER", "OTA_CONFIG_RANGE_REVERSED"}
 STAGES = {
     "run": "Scanner",
     "synthetic_data": "Generating synthetic prices",
@@ -27,6 +29,8 @@ STAGES = {
     "prices": "Downloading adjusted daily prices",
     "ranking": "Calculating cross-sectional momentum",
     "options": "Validating and joining offline options metrics",
+    "config_parse": "Reading and validating pasted screener criteria",
+    "config_save": "Saving screener configuration",
     "reports": "Writing snapshots and reports",
     "summary": "Writing sanitized review summary",
 }
@@ -43,7 +47,7 @@ without terminal probing or environment reads. Events are flushed immediately.
                  revision: str, stream=None):
         if not re.fullmatch(r"[a-f0-9]{32}", run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
             raise ValueError("INVALID_LOG_METADATA")
-        if command not in {"demo", "cached", "refresh"} or profile not in {"synthetic", "public", "unknown"}:
+        if command not in {"demo", "cached", "refresh", "ota-config"} or profile not in {"synthetic", "public", "unknown"}:
             raise ValueError("INVALID_LOG_METADATA")
         self.run_id, self.command, self.profile, self.revision = run_id, command, profile, revision
         self.stream = sys.stdout if stream is None else stream

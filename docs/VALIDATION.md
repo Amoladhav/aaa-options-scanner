@@ -76,3 +76,13 @@ missing/null/zero values, IV above 100%, invalid numeric types and nonfinite val
 duplicate normalized symbols, unsupported envelopes and empty pages. No provider
 response values were copied into fixtures. No network or credential operations
 were performed. The parser is a foundation, not a working live OTA integration.
+
+## Screener paste-to-config tool
+
+`python3 -I -S tools/test_offline.py`: 58 tests passed on Linux / Python 3.14.4.
+Six new tests cover JSON/DevTools key syntax, all six supported filters, preserving
+values and flags, rejecting abbreviated/executable/invalid inputs and duplicate
+keys, bounded input, preview versus apply, failed update preservation, file input,
+atomic replacement failure cleanup and absence of pasted values in run logs.
+The guard was reviewed before collection; no network, credentials or incoming
+code was used. Native Windows/macOS terminal behavior is documented but unverified.

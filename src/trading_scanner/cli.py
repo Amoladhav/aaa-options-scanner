@@ -71,7 +71,12 @@ def main(argv=None, root: Path | None = None) -> int:
     refresh.add_argument("--profile", choices=["public"], required=True)
     for command in (cached, refresh):
         command.add_argument("--options-file", type=Path, help="Normalized local options JSON; no provider request")
+    config = subs.add_parser("ota-config", help="Paste screener criteria to preview or save local configuration; offline")
+    config.add_argument("--input", type=Path, help="Read a criteria-only text file instead of stdin")
+    config.add_argument("--apply", action="store_true", help="Replace config/ota-screener.json with validated criteria")
     args = parser.parse_args(argv)
+    if args.command == "ota-config":
+        return configure_ota(args, root)
     run_id = uuid.uuid4().hex
     profile = "public" if args.command != "demo" else "synthetic"
     artifact_root = root / "artifacts"
@@ -188,3 +193,48 @@ def main(argv=None, root: Path | None = None) -> int:
                 progress.close()
             except OSError:
                 print("LOG_UNAVAILABLE: unable to close run log.")
+
+
+def configure_ota(args, root):
+    from .ota_config import parse_config, save_config, MAX_INPUT
+    progress = None
+    try:
+        progress = RunProgress(root / 'artifacts' / 'logs', uuid.uuid4().hex,
+                               'ota-config', 'unknown', code_revision())
+        progress.begin()
+        progress.start('config_parse')
+        if args.input:
+            with args.input.open(encoding='utf-8') as stream:
+                pasted = stream.read(MAX_INPUT + 1)
+        else:
+            print('Paste complete criteria only, then EOF: Ctrl-D (Bash) or Ctrl-Z then Enter (Windows).', flush=True)
+            pasted = sys.stdin.read(MAX_INPUT + 1)
+        config = parse_config(pasted)
+        progress.finish()
+        print(json.dumps(config, indent=2, allow_nan=False))
+        if args.apply:
+            progress.start('config_save')
+            save_config(config, root / 'config' / 'ota-screener.json')
+            progress.finish()
+            print('Saved config/ota-screener.json. No provider request was made.')
+        else:
+            print('Preview only. Use --apply to replace config/ota-screener.json.')
+        progress.end()
+        return 0
+    except (Exception, KeyboardInterrupt) as exc:
+        code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'OTA_CONFIG_INVALID'
+        if isinstance(exc, DataError) and len(exc.args) == 1 and exc.args[0] in SAFE_ERRORS:
+            code = exc.args[0]
+        if progress:
+            try:
+                progress.end(code)
+            except OSError:
+                pass
+        print(f'{code}: use a complete criteria array; no raw input or exception details logged.')
+        return 130 if code == 'RUN_CANCELLED' else 1
+    finally:
+        if progress:
+            try:
+                progress.close()
+            except OSError:
+                print('LOG_UNAVAILABLE: unable to close run log.')

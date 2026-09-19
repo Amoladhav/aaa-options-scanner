@@ -217,3 +217,72 @@ Run `python3 -I -S run.py demo --with-options` to preview separate IV rank,
 IV percentile, options volume and open interest alongside unchanged momentum ranks.
 Missing data remains unknown. See [input format and OTA access checks](docs/OPTIONS.md).
 This is an offline foundation; live OTA access is not implemented.
+
+## Paste OTA screener criteria into configuration
+
+Use this whenever you change filters in OTA's screener. The offline `ota-config`
+tool validates a pasted **complete request-body criteria array** and produces
+`config/ota-screener.json`. It changes configuration, not Python source. No account,
+token, clipboard package or third-party dependency is required.
+
+From the project directory, preview a paste in Bash/Linux/WSL:
+
+```bash
+python3 -I -S run.py ota-config
+```
+
+Paste the complete array, press Enter, then Ctrl-D to finish input. To validate
+and save in one run, use `python3 -I -S run.py ota-config --apply` instead.
+
+Native Windows PowerShell:
+
+```powershell
+py -3 -I -S run.py ota-config --apply
+```
+
+Paste the array, then press Ctrl-Z followed by Enter to finish input. If terminal
+paste/EOF is inconvenient, save only the criteria in a UTF-8 text file under
+ignored `artifacts/`, then preview and apply the same file:
+
+```bash
+python3 -I -S run.py ota-config --input artifacts/ota-criteria.txt
+python3 -I -S run.py ota-config --input artifacts/ota-criteria.txt --apply
+```
+
+In PowerShell use `py -3 -I -S` in place of `python3 -I -S`.
+
+Example accepted input (complete JSON also works):
+
+```text
+[
+  {field: "optionable", valueFilter: "BOOLEAN", valueChoices: "Yes", criteria: "true"},
+  {field: "last", valueFilter: "RANGE_INSIDE", valueMin: 15, valueMax: 200, criteria: "true"}
+]
+```
+
+The input must contain complete objects with double-quoted strings. DevTools
+abbreviations (`…` or `...`), numbered display rows (`0: {...}`), Markdown bullets,
+comments, trailing commas and executable expressions are rejected. Copy only the
+complete criteria array, never headers, tokens, cookies, cURL or HAR exports.
+
+Supported filter types: `SELECT`, `SELECT_CODED`, `BOOLEAN`, `RANGE_INSIDE`,
+`RANGE_OUTSIDE`, `COMPARE`. Selection values must be strings; Boolean choices are
+`Yes`/`No`. Optional `criteria` flags retain their Boolean or `"true"`/`"false"`
+form. Range bounds must be finite numbers in ascending order. Unknown keys,
+unsupported filter types, repeated fields/keys and incomplete entries fail closed.
+Limits: 200,000 input characters and 100 criteria. New provider shapes require an
+explicit parser update rather than silently losing fields.
+
+Without `--apply`, the tool prints a preview and leaves configuration untouched.
+With `--apply`, it replaces the entire criteria list atomically; it does not merge
+with old filters. Invalid input leaves the existing file intact. The generated
+non-secret configuration can be reviewed with `git diff -- config/ota-screener.json`
+once tracked; a newly created file initially appears as untracked in `git status`.
+Progress and fixed-metadata JSONL logs use the standard `artifacts/logs/` location;
+pasted text and filter values are not written to those logs. Validated configuration
+is intentionally shown in the local terminal preview.
+
+This prepares the request configuration for OTA integration. **It does not yet
+connect to OTA or alter momentum calculations.** The row parser also exists, but
+live transport, pagination, timestamps and authorized authentication remain pending.
+README usage notes and project status are updated with each implemented feature.
