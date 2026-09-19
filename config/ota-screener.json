@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "provider": "ota",
+  "criteria": [
+    {
+      "field": "sector",
+      "valueFilter": "SELECT",
+      "valueChoices": "Consumer Discretionary,Consumer Staples,Energy,ETF,Finance,Healthcare,Industrials,Materials,Media,Real Estate,Technology,Utilities",
+      "criteria": "false"
+    },
+    {
+      "field": "industry",
+      "valueFilter": "SELECT",
+      "valueChoices": "Aerospace & Defense,Agriculture,Apparel & Luxury,Asset Management Services,Banking,Beverages - Alcoholic,Beverages - Non-Alcoholic,Biotechnology & Life Sciences,Bond,Broad Market,Capital Markets,Chemicals,Construction,Construction Materials,Consumer Products - Foods,Consumer Products - Healthcare,Consumer Products - Household & Personal,Containers & Packaging,Corporate Services,Credit Finance,Currency,Diversified Financial Services,Education,Emerging,Emerging Markets,Forestry,Fossil Fuels,Global,Hardware & Equipment,Healthcare Providers & Services,Home and Homeware,Hotels, Lodging & Leisure,Independent Power Producers,Industrial Conglomerates,Industrial Equipment Distributors,Industrial Goods,Industrial Machinery,Insurance,Interactive Multi-Media,International,Leveraged 2X,Leveraged 3X,Medical Diagnostics & Screening,Medical Distributors,Medical Equipment & Supplies,Medical Service Plans,Metals,Mining,Mortgage REITs,Other Energy Sources,Personal Services,Pharmaceuticals,Real Estate,Regulated Utilities,REITs,Renewable Energy Producers,Residential Construction,Restaurants & Bars,Retail - Discretionary,Retailers - Staples,Sector,Semiconductors and Equipment,Short ETF,Short Leveraged 2X,Short Leveraged 3X,Software & IT Services,Steel,Target Date,Telecommunications,Tobacco,Traditional Media,Transportation,Vehicles,Waste Management",
+      "criteria": "false"
+    },
+    {
+      "field": "daysToEarnings",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 120,
+      "valueMin": 29,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "false"
+    },
+    {
+      "field": "ivGauge",
+      "valueFilter": "SELECT_CODED",
+      "valueChoices": "2,1,4,0,5,6",
+      "criteria": "false"
+    },
+    {
+      "field": "changePercent",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": -3,
+      "valueMin": -99,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "false"
+    },
+    {
+      "field": "last",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 4000,
+      "valueMin": 15,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "false"
+    },
+    {
+      "field": "sma_50",
+      "valueFilter": "COMPARE",
+      "valueChoices": "sma_200",
+      "valueComparison": "ABOVE",
+      "criteria": "false"
+    },
+    {
+      "field": "marketcap",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 400000000000000,
+      "valueMin": 2000000000,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "true"
+    },
+    {
+      "field": "volume",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 505000000000,
+      "valueMin": 2000000,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "true"
+    },
+    {
+      "field": "spreadLiquidityPcnt",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 99.56,
+      "valueMin": 85,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "true"
+    },
+    {
+      "field": "totalOpenInterest",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 21555623,
+      "valueMin": 10000,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "true"
+    },
+    {
+      "field": "totalOptionsVolume",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 110900000,
+      "valueMin": 90000,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "true"
+    },
+    {
+      "field": "optionable",
+      "valueFilter": "BOOLEAN",
+      "valueChoices": "Yes",
+      "criteria": "true"
+    }
+  ]
+}
