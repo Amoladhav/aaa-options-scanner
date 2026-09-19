@@ -235,3 +235,12 @@ unknown provider keys/values cannot enter this diagnostic. User-reported schema
 failure has not yet been reproduced with real data; live retest remains user-run.
 OTA fetch and daily default to 100 rows; regression covers 237 rows across three
 pages, retaining the 600 maximum override and existing duplicate/page-limit checks.
+
+## OTA negative annual IV low
+
+Report 59beb424b73f499ba8fdbd1c6abcdd32 identifies ivLow1YrPcnt/negative on
+the first requested page. Only the allowlisted report was inspected. Added
+field-specific unknown handling with an explicit reason marker, preserved
+through cached dashboard joins. Other negative metrics remain rejected.
+116 guarded offline tests passed; user-run fetch retest remains pending. The
+user's modified screener config was excluded from the commit.

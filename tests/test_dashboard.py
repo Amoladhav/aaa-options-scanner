@@ -101,3 +101,14 @@ class DashboardTests(unittest.TestCase):
         path.write_text(json.dumps(prior))
         with self.assertRaisesRegex(DataError, 'HISTORY_INVALID'):
             history_previous(directory, self.snapshot)
+
+    def test_negative_iv_low_marker_survives_cached_join(self):
+        from trading_scanner.dashboard import ota_checked
+        self.ota['rows'][0]['ivLow1YrPcnt'] = -1
+        cached = ota_checked(self.ota, 'synthetic')
+        self.assertIsNone(cached['rows'][0]['ivLow1YrPcnt'])
+        self.assertEqual(cached['rows'][0]['ivLow1YrPcnt_status'], 'negative_unusable')
+        result = combine(self.snapshot, cached, now=self.now)
+        row = next(r for r in result['combined'] if r['symbol'] == cached['rows'][0]['symbol'])
+        self.assertIsNone(row['ivLow1YrPcnt'])
+        self.assertEqual(row['ivLow1YrPcnt_status'], 'negative_unusable')

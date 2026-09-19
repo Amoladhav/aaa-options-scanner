@@ -84,3 +84,17 @@ class OtaSchemaTests(unittest.TestCase):
             self.rows[0]['values']['totalOptionsVolume'] = value
             with self.subTest(value=value), self.assertRaises(DataError):
                 parse_rows(self.rows)
+
+    def test_negative_iv_low_is_unknown_with_reason_and_preserves_row(self):
+        for value in (-1, '-0.25', '-1e1000'):
+            self.rows[0]['values']['ivLow1YrPcnt'] = value
+            rows = parse_rows(self.rows)
+            self.assertEqual(rows[0]['symbol'], 'SYNTH')
+            self.assertIsNone(rows[0]['ivLow1YrPcnt'])
+            self.assertEqual(rows[0]['ivLow1YrPcnt_status'], 'negative_unusable')
+            self.assertEqual(rows[0]['totalOpenInterest'], 10000)
+        for field in ('ivHi1YrPcnt', 'meanIvPcnt', 'spreadLiquidityPcnt', 'totalOpenInterest'):
+            rows = deepcopy(self.rows)
+            rows[0]['values'][field] = -1
+            with self.assertRaises(DataError):
+                parse_rows(rows)

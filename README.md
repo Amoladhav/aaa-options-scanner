@@ -563,3 +563,12 @@ rejects ambiguous envelopes. The earlier failure's exact cause remains unverifie
 until the updated diagnostic is returned. Curl can isolate transport issues,
 but this probe's sanitized report is sufficient for schema debugging; do not
 paste raw authenticated captures or headers into chat.
+
+### Unusable OTA annual IV low
+
+An owner-run screener returned a negative `ivLow1YrPcnt`. Its provider meaning
+is unverified. The parser now keeps that symbol, stores the IV low as null and
+adds `ivLow1YrPcnt_status: negative_unusable`, preserved in dashboard/CSV output.
+It does not substitute zero or use the negative value in calculations. Other
+invalid metrics still fail validation. This exception does not verify IV rank
+or percentile definitions.

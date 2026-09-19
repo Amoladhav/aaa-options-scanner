@@ -18,7 +18,7 @@ FILTER_DEFAULTS = {'schema_version': 1, 'min_open_interest': 10000,
 EXTRA_FIELDS = ('price_status', 'ota_status', 'review_status', 'rank_change', 'history_status',
                 'meanIvPcnt', 'ivHi1YrPcnt', 'ivLow1YrPcnt', 'ivGauge',
                 'spreadLiquidityPcnt', 'totalOpenInterest', 'totalOptionsVolume',
-                'daysToEarnings', 'avgVol30d')
+                'daysToEarnings', 'avgVol30d', 'ivLow1YrPcnt_status')
 
 
 def read_json(path, limit=30_000_000):
@@ -75,6 +75,13 @@ def ota_checked(payload, profile):
             raise DataError('DASHBOARD_INPUT_INVALID')
         seen.add(symbol)
         metrics = {key: normalize_metric(row[key], key) if row.get(key) is not None else None for key in OTA_FIELDS}
+        status = row.get('ivLow1YrPcnt_status')
+        if status not in (None, 'negative_unusable'):
+            raise DataError('DASHBOARD_INPUT_INVALID')
+        if status == 'negative_unusable' or row.get('ivLow1YrPcnt') is not None and metrics['ivLow1YrPcnt'] is None:
+            if metrics['ivLow1YrPcnt'] is not None:
+                raise DataError('DASHBOARD_INPUT_INVALID')
+            metrics['ivLow1YrPcnt_status'] = 'negative_unusable'
         rows.append({'symbol': symbol, **metrics})
     # Persist only this allowlist, never arbitrary provider properties.
     return {'source': payload['source'], 'retrieved_at': stamp.isoformat(),
@@ -101,6 +108,7 @@ def combine(snapshot, ota, filters=None, *, now=None, previous=None):
     for row in result['ranked']:
         matched = lookup.get(row['symbol'])
         joined = {**row, **{key: matched.get(key) if matched else None for key in OTA_FIELDS},
+                  'ivLow1YrPcnt_status': matched.get('ivLow1YrPcnt_status') if matched else None,
                   'price_status': price_status,
                   'ota_status': timing if matched else 'not_returned_by_screener',
                   'rank_change': None, 'history_status': 'no_prior_session'}
@@ -180,7 +188,7 @@ def write_dashboard(result, destination):
               'rank':'Rank', 'score':'CRS score', 'percentile':'Percentile', 'rank_change':'Rank change ↑',
               'price_status':'Price age', 'ota_status':'OTA coverage', 'review_status':'Review', 'history_status':'History',
               'meanIvPcnt':'Mean IV %', 'ivHi1YrPcnt':'1y IV high %', 'ivLow1YrPcnt':'1y IV low %',
-              'ivGauge':'IV gauge', 'spreadLiquidityPcnt':'OTA liquidity', 'totalOpenInterest':'Open interest',
+              'ivLow1YrPcnt_status':'IV low status', 'ivGauge':'IV gauge', 'spreadLiquidityPcnt':'OTA liquidity', 'totalOpenInterest':'Open interest',
               'totalOptionsVolume':'Options volume', 'daysToEarnings':'Days to earnings', 'avgVol30d':'Underlying avg volume (OTA 30d)'}
     columns = ('symbol','company','group','rank','score','bias', *EXTRA_FIELDS)
     numeric = {'rank','score','rank_change', *OTA_FIELDS}
