@@ -3,6 +3,7 @@ import csv
 from html import escape
 import json
 from pathlib import Path
+from .options_data import FIELDS as OPTIONS_FIELDS
 
 FIELDS = ("group", "rank", "symbol", "company", "sector", "adjusted_close",
           "r21", "r63", "r126", "z21", "z63", "z126", "score", "percentile", "bias")
@@ -66,4 +67,15 @@ const numeric=[1,5,6,7,8,9,10,11,12,13].includes(col);
 const rows=Array.from(tbody.rows);rows.sort((a,b)=>{const x=a.cells[col].dataset.value,y=b.cells[col].dataset.value;
 return (numeric?Number(x)-Number(y):x.localeCompare(y))*(ascending?1:-1);});rows.forEach(r=>tbody.appendChild(r));}));
 </script></html>"""
+    if "options" in result:
+        options = result["options"]
+        write_csv(destination / "options.csv", options["rows"], OPTIONS_FIELDS)
+        title = "SYNTHETIC OPTIONS" if options["source"] == "synthetic" else "USER-SUPPLIED OPTIONS"
+        table = f'<h2>{title}</h2><p class="note">Definitions and aggregation are unverified. IV rank and IV percentile use separate 0–100 fields. Volume and open interest are contract counts. Session alignment does not verify intraday freshness or historical availability. Missing, stale and future values cannot qualify a trade. Momentum scores are unchanged.</p><p><a href="options.csv">Options CSV</a></p>'
+        table += '<div class="table"><table><thead><tr>' + ''.join(f'<th>{escape(k)}</th>' for k in OPTIONS_FIELDS) + '</tr></thead><tbody>'
+        for row in options["rows"]:
+            table += '<tr>' + ''.join('<td>' + ("Unknown" if row[k] is None else escape(str(row[k]))) + '</td>' for k in OPTIONS_FIELDS) + '</tr>'
+        table += '</tbody></table></div>'
+        html = html.replace("No OTA enrichment yet.", "Offline options summary below; no live OTA connection.")
+        html = html.replace('</script></html>', '</script>' + table + '</html>')
     (destination / "report.html").write_text(html, encoding="utf-8")

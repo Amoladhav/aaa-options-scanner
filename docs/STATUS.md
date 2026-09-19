@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-09-13. Phase: first momentum implementation.
+Updated: 2026-09-18. Phase: momentum scanner with offline options enrichment.
 
 ## Implemented
 
@@ -26,7 +26,7 @@ Updated: 2026-09-13. Phase: first momentum implementation.
 
 ## Verification
 
-On Ubuntu, Python 3.14.4: seven intake-tool tests and 37 offline application tests
+On Ubuntu, Python 3.14.4: seven intake-tool tests and 45 offline application tests
 passed. The offline runner denies network, subprocesses, real environment reads,
 and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
 Guards are installed before test discovery. Tests cover numeric reference parity
@@ -69,7 +69,9 @@ hooks, and WSL-specific checks remain pending.
 - Current membership snapshots are not historical universes for backtesting.
 - Current snapshot acquisition gets a full history each refresh; cached replay is
   offline. Incremental download merging is deferred to avoid stale adjustments.
-- No OTA, IV metrics, persistence/Conviction, order execution or performance claims.
+- Offline options enrichment supports separate supplied IV metrics, volume and open
+  interest, synthetic examples, CSV/HTML output and deterministic snapshot replay.
+  No live OTA, persistence/Conviction, order execution or performance claims.
 
 ## Next sequence
 

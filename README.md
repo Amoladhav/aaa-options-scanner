@@ -210,3 +210,10 @@ Next: verify the first public run, then add OTA enrichment through an isolated
 adapter after verifying supported authentication and field definitions. Missing
 OTA access will not block momentum ranking. Daily persistence, an options-volume
 ETF selection dataset, and options-candidate filters follow that increment.
+
+## Offline options enrichment
+
+Run `python3 -I -S run.py demo --with-options` to preview separate IV rank,
+IV percentile, options volume and open interest alongside unchanged momentum ranks.
+Missing data remains unknown. See [input format and OTA access checks](docs/OPTIONS.md).
+This is an offline foundation; live OTA access is not implemented.

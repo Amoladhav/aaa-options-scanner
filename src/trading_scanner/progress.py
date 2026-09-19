@@ -16,7 +16,7 @@ SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHA
                "NO_VALID_PEER_GROUP", "INVALID_SNAPSHOT", "INSUFFICIENT_CALENDAR",
                "MISSING_SNAPSHOT", "INVALID_SESSION_ORDER", "WEEKEND_SESSION",
                "INVALID_SYMBOL", "CONFLICTING_SYMBOL", "INVALID_GROUP", "INVALID_ETF_CONFIG",
-               "LOG_UNAVAILABLE", "RUN_CANCELLED"}
+               "LOG_UNAVAILABLE", "RUN_CANCELLED", "INVALID_OPTIONS_INPUT"}
 STAGES = {
     "run": "Scanner",
     "synthetic_data": "Generating synthetic prices",
@@ -26,6 +26,7 @@ STAGES = {
     "calendar": "Preparing completed trading sessions",
     "prices": "Downloading adjusted daily prices",
     "ranking": "Calculating cross-sectional momentum",
+    "options": "Validating and joining offline options metrics",
     "reports": "Writing snapshots and reports",
     "summary": "Writing sanitized review summary",
 }

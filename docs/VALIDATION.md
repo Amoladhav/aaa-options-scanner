@@ -51,3 +51,19 @@ that all provider data arrived. There is no periodic heartbeat during a blocking
 request. The shared component and required usage for future commands are recorded
 in the project instructions and README. Full staged-index scanning and exact diff
 review precede the local commit; existing hash-bound synthetic exceptions apply.
+
+## Offline options enrichment: 2026-09-18
+
+On Linux / Python 3.14.4, `python3 -I -S tools/test_offline.py` passed 45 guarded
+tests. Eight new tests cover unchanged rankings, missing/partial coverage, distinct
+IV fields, stale/future withholding, zero values, invalid schemas/units/duplicates,
+profile separation, safe failure, progress and deterministic demo/cached replay.
+No new third-party dependency, network call or credential access was introduced.
+Browser rendering, Windows/macOS and live OTA behavior remain unverified.
+
+The incoming reference was rescanned with the reviewed value-suppressing tool:
+435 filesystem files, 599 archive members, 40 findings, zero coverage gaps. Only
+redacted reference views were inspected; no additional source was imported or run.
+This implementation does not copy its internal endpoint/authentication flow or
+its metric aliases and missing-liquidity substitutions. A supported OTA method
+and metric definitions remain pending. Offline checks passed; live checks pending.

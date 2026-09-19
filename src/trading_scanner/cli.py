@@ -13,6 +13,7 @@ from .core import calculate, DataError, normalize_universe
 from .demo import make_snapshot
 from .report import write_reports, write_csv
 from .progress import RunProgress, SAFE_ERRORS
+from .options_data import enrich, synthetic_options, validate_options
 
 
 class DiscardOutput:
@@ -62,11 +63,14 @@ def main(argv=None, root: Path | None = None) -> int:
     root = root or Path(__file__).resolve().parents[2]
     parser = OfflineArgumentParser(description="Cross-sectional momentum: offline demo, cached replay, or explicit public refresh.")
     subs = parser.add_subparsers(dest="command", required=True)
-    subs.add_parser("demo", help="Invented prices; no third-party dependencies or network")
+    demo = subs.add_parser("demo", help="Invented prices; no third-party dependencies or network")
+    demo.add_argument("--with-options", action="store_true", help="Include explicitly synthetic options metrics")
     cached = subs.add_parser("cached", help="Replay a local snapshot; never refresh")
     cached.add_argument("--snapshot", type=Path, required=True)
     refresh = subs.add_parser("refresh", help="USER-RUN: download public prices and current constituents")
     refresh.add_argument("--profile", choices=["public"], required=True)
+    for command in (cached, refresh):
+        command.add_argument("--options-file", type=Path, help="Normalized local options JSON; no provider request")
     args = parser.parse_args(argv)
     run_id = uuid.uuid4().hex
     profile = "public" if args.command != "demo" else "synthetic"
@@ -112,6 +116,23 @@ def main(argv=None, root: Path | None = None) -> int:
         progress.finish(counts={"ranked": ranked, "excluded": excluded})
         if excluded:
             progress.exclusions(excluded)
+        if getattr(args, "options_file", None) or getattr(args, "with_options", False) or "options_input" in snapshot:
+            progress.start("options")
+            payload = snapshot.get("options_input")
+            if getattr(args, "options_file", None):
+                try:
+                    with args.options_file.open("rb") as stream:
+                        raw = stream.read(2_000_001)
+                    if len(raw) > 2_000_000:
+                        raise DataError("INVALID_OPTIONS_INPUT")
+                    payload = json.loads(raw)
+                except (OSError, ValueError):
+                    raise DataError("INVALID_OPTIONS_INPUT") from None
+            elif getattr(args, "with_options", False):
+                payload = synthetic_options(result)
+            snapshot["options_input"] = validate_options(payload, profile)
+            result = enrich(result, snapshot["options_input"])
+            progress.finish()
         progress.start("reports")
         destination = artifact_root / ("replay" if args.command == "cached" else "runs") / profile / run_id
         destination.mkdir(parents=True, exist_ok=False)
