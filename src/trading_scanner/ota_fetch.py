@@ -34,9 +34,9 @@ BROWSER_HEADERS = {
     'Sec-Fetch-Site': 'same-origin',
     'User-Agent': USER_AGENT,
 }
-DEFAULT_PAGE_SIZE = 600
+DEFAULT_PAGE_SIZE = 100
 DEFAULT_MAX_PAGES = 50
-PATH = '/api/secure/screeners/criteria/results?rows=600&realtime=true&type=NON_OTC&view=criteria&sortField=symbol&sortOrder=asc&page=1'
+PATH = '/api/secure/screeners/criteria/results?rows=100&realtime=true&type=NON_OTC&view=criteria&sortField=symbol&sortOrder=asc&page=1'
 MAX_RESPONSE = 2_000_000
 ERRORS = {'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
           'OTA_AUTH_REJECTED', 'OTA_RATE_LIMITED', 'OTA_REDIRECT_REJECTED',

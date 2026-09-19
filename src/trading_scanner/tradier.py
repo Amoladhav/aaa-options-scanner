@@ -32,7 +32,7 @@ def symbol_checked(value):
     return value.upper().replace('.', '/').replace('-', '/')
 
 
-def request_json(profile, endpoint, params, credential):
+def request_json(profile, endpoint, params, credential, *, diagnostic=None):
     allowed = {'expirations': ('options/expirations', {'symbol', 'includeAllRoots', 'expirationType'}),
                'quote': ('quotes', {'symbols', 'greeks'}),
                'chain': ('options/chains', {'symbol', 'expiration', 'greeks'})}
@@ -48,6 +48,8 @@ def request_json(profile, endpoint, params, credential):
                            'Accept': 'application/json', 'Accept-Encoding': 'identity',
                            'User-Agent': 'aaa-options-scanner/1'})
         response = connection.getresponse()
+        if diagnostic is not None:
+            diagnostic['http_status'] = response.status if type(response.status) is int and 100 <= response.status <= 599 else None
         if response.status in (401, 403):
             raise DataError('TRADIER_AUTH_REJECTED')
         if response.status == 429:
@@ -76,7 +78,10 @@ def request_json(profile, endpoint, params, credential):
 def expiration_dates(payload, as_of):
     """Accept date list or enriched date records; contract metadata is final proof."""
     try:
-        values = payload['expirations']['date']
+        envelope = payload['expirations']
+        if not isinstance(envelope, dict) or ('date' in envelope) == ('expiration' in envelope):
+            raise ValueError()
+        values = envelope['date'] if 'date' in envelope else envelope['expiration']
         if isinstance(values, (str, dict)):
             values = [values]
         if not isinstance(values, list) or not values or len(values) > 1000:
@@ -142,24 +147,32 @@ def chain_rows(payload, symbol, expiration):
         raise DataError('TRADIER_SCHEMA_INVALID') from None
 
 
-def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=None):
+def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=None, diagnostic=None):
     from .chain_spreads import select_atm_spreads
     symbol = symbol_checked(symbol)
     counts = {} if counts is None else counts
+    diagnostic = {} if diagnostic is None else diagnostic
+
+    def fetch(endpoint, params):
+        diagnostic.clear()
+        diagnostic.update(endpoint=endpoint, http_status=None)
+        payload = request_json(profile, endpoint, params, credential, diagnostic=diagnostic)
+        diagnostic['shape'] = response_shape(payload)
+        return payload
     if progress:
         progress.start('tradier_expirations')
-    expirations = expiration_dates(request_json(profile, 'expirations',
-        {'symbol': symbol, 'includeAllRoots': 'false', 'expirationType': 'true'}, credential), as_of)
+    expirations = expiration_dates(fetch('expirations',
+        {'symbol': symbol, 'includeAllRoots': 'false', 'expirationType': 'false'}), as_of)
     if progress:
         progress.finish()
         progress.start('tradier_quote')
-    quote = underlying_quote(request_json(profile, 'quote', {'symbols': symbol, 'greeks': 'false'}, credential), symbol)
+    quote = underlying_quote(fetch('quote', {'symbols': symbol, 'greeks': 'false'}), symbol)
     if progress:
         progress.finish()
         progress.start('tradier_chain', total=max(1, min(MAX_CHAINS, len(expirations))))
     for index, expiration in enumerate(expirations[:MAX_CHAINS], 1):
-        rows = chain_rows(request_json(profile, 'chain',
-            {'symbol': symbol, 'expiration': expiration, 'greeks': 'false'}, credential), symbol, expiration)
+        rows = chain_rows(fetch('chain',
+            {'symbol': symbol, 'expiration': expiration, 'greeks': 'false'}), symbol, expiration)
         counts['chains_received'] = index
         if progress:
             progress.advance(index)
@@ -208,6 +221,7 @@ def run_probe(root, args):
     from .token_store import load_token, prompt_api_key, valid_token
     run_id, revision = uuid.uuid4().hex, code_revision()
     progress, code, counts = None, None, {'chains_received': 0, 'rows': 0}
+    diagnostic = {}
     try:
         if args.profile not in HOSTS:
             raise DataError('TRADIER_INVALID_INPUT')
@@ -223,7 +237,7 @@ def run_probe(root, args):
         try:
             # Same-day expiry is excluded using the New York trading date.
             result = fetch_probe(args.profile, symbol, credential, as_of=as_of,
-                                 progress=progress, counts=counts)
+                                 progress=progress, counts=counts, diagnostic=diagnostic)
         finally:
             credential = None
         progress.start('reports')
@@ -246,7 +260,7 @@ def run_probe(root, args):
         report = {'schema_version': 1, 'run_id': run_id, 'code_revision': revision,
                   'profile': args.profile if args.profile in HOSTS else 'unknown',
                   'checks': [{'name': 'tradier_atm_probe', 'status': 'failed' if code else 'passed'}],
-                  'counts': counts, 'error_code': code}
+                  'counts': counts, 'error_code': code, 'diagnostic': diagnostic}
         path = root / 'artifacts' / 'agent-review' / f'{run_id}.json'
         atomic_json(path, report)
         print(f'Agent review: {path}')
@@ -260,3 +274,26 @@ def run_probe(root, args):
             except OSError:
                 code = code or 'TRADIER_FETCH_FAILED'
     return 130 if code == 'RUN_CANCELLED' else 1 if code else 0
+
+
+def response_shape(payload):
+    """Only fixed schema paths and type names; never provider keys or values."""
+    paths = (('expirations',), ('expirations', 'date'), ('expirations', 'expiration'),
+             ('quotes', 'quote'), ('quotes', 'quote', 'type'), ('quotes', 'quote', 'last'),
+             ('options', 'option'), ('options', 'option', 'expiration_type'),
+             ('options', 'option', 'underlying'), ('options', 'option', 'bid_date'))
+    output = {}
+    for path in paths:
+        value = payload
+        missing = False
+        for key in path:
+            if isinstance(value, list):
+                value = value[0] if value else None
+            if not isinstance(value, dict) or key not in value:
+                missing = True
+                break
+            value = value[key]
+        kind = 'missing' if missing else {dict:'object', list:'array', str:'string',
+                 int:'integer', float:'number', bool:'boolean', type(None):'null'}.get(type(value), 'unsupported')
+        output['.'.join(path)] = kind
+    return output

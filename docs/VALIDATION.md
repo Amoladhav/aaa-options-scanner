@@ -225,3 +225,13 @@ mode with regression checks proving it bypasses OS-store reads/writes. The user'
 reported storage failure occurred locally and does not establish invalid Tradier
 credentials. Actual native-store availability and provider access remain user-run
 checks; no real credentials were inspected or requests executed.
+
+## Tradier schema diagnostics and OTA 100-row pages
+
+114 guarded offline tests passed. Tradier now requests the simple expiration-date
+response, supports structured expiration records and reports only fixed endpoint,
+HTTP status and allowlisted field-type diagnostics. Synthetic tests verify that
+unknown provider keys/values cannot enter this diagnostic. User-reported schema
+failure has not yet been reproduced with real data; live retest remains user-run.
+OTA fetch and daily default to 100 rows; regression covers 237 rows across three
+pages, retaining the 600 maximum override and existing duplicate/page-limit checks.

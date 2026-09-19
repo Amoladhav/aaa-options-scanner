@@ -76,7 +76,7 @@ authentication and `Accept: application/json`. No automatic environment switch,
 redirect, alternate provider or synthetic-data fallback on failure.
 
 1. `GET /v1/markets/options/expirations` with `symbol`,
-   `includeAllRoots=false`, `expirationType=true`. The current probe confirms
+   `includeAllRoots=false`, `expirationType=false`. The current probe confirms
    monthly status from chain metadata and bounds inspection to 32 upcoming chains.
 2. `GET /v1/markets/options/chains` with `symbol`, selected `expiration`,
    `greeks=false`. Retain verified standard contracts and exclude unsupported

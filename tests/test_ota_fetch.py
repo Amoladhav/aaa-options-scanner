@@ -190,5 +190,23 @@ class OtaFetchTests(unittest.TestCase):
         counts = {}
         with patch('trading_scanner.ota_fetch.fetch_page', return_value=batch) as fetch:
             self.assertEqual(fetch_all(CRITERIA, 'synthetic-local-input', counts=counts), batch)
-        fetch.assert_called_once_with(CRITERIA, 'synthetic-local-input', page=1, page_size=600)
+        fetch.assert_called_once_with(CRITERIA, 'synthetic-local-input', page=1, page_size=100)
         self.assertEqual(counts['pages_requested'], 1)
+
+    def test_default_pages_collect_hundreds_without_truncation(self):
+        batches = [[{'symbol': f'S{i}'} for i in range(start, stop)]
+                   for start, stop in ((0, 100), (100, 200), (200, 237))]
+        with patch('trading_scanner.ota_fetch.fetch_page', side_effect=batches) as fetch:
+            rows = fetch_all(CRITERIA, 'synthetic-local-input')
+        self.assertEqual(len(rows), 237)
+        self.assertEqual(len({row['symbol'] for row in rows}), 237)
+        self.assertEqual([call.kwargs for call in fetch.call_args_list],
+                         [{'page': page, 'page_size': 100} for page in (1, 2, 3)])
+
+    def test_cli_defaults_to_hundred_for_fetch_and_daily(self):
+        with patch('trading_scanner.ota_fetch.run_fetch', return_value=0) as fetch:
+            self.assertEqual(main(['ota-fetch', '--profile', 'ota'], temp), 0)
+        self.assertEqual(fetch.call_args.kwargs['page_size'], 100)
+        with patch('trading_scanner.workflow.run_daily', return_value=0) as daily:
+            self.assertEqual(main(['daily', '--profile', 'public'], temp), 0)
+        self.assertEqual(daily.call_args.args[1].page_size, 100)

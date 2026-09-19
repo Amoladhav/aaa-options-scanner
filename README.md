@@ -53,7 +53,7 @@ After public dependency setup below, with an active OTA browser session:
 .\.venv\Scripts\python.exe -I run.py daily --profile public
 ```
 
-This refreshes prices, prompts for the current OTA token, fetches pages (600 rows
+This refreshes prices, prompts for the current OTA token, fetches pages (100 rows
 by default), then writes the combined dashboard. Each stage has standard progress
 and its own log/review report. A failed stage stops the workflow; it never silently
 uses yesterday's output. `--page-size` and `--max-pages` are available. Cached
@@ -505,11 +505,11 @@ saved OTA values to momentum rankings; unattended scheduling is not provided.
 The earlier single-page
 user-run check passed with 77 rows and no errors
 (review report `126d95ced37a4481b0e217b61b7d89e2`). Full coverage and metric
-interpretation remain unverified; the current offline suite passed 108 tests.
+interpretation remain unverified; the current offline suite passed 114 tests.
 
 ### Pagination and limits
 
-The default page size is **600**, with at most **50 requests**, including the final
+The default page size is **100**, with at most **50 requests**, including the final
 short-page response. Page numbers start at 1 and increase; the payload and symbol-ascending
 sort remain unchanged. Fetching stops when a page has fewer rows than requested,
 matching the reference adapter. For 77 matches with the default size, only one
@@ -518,7 +518,7 @@ request is made. Full pages continue to the next page.
 Override limits when needed:
 
 ```bash
-python3 -I -S run.py ota-fetch --profile ota --page-size 600 --max-pages 50
+python3 -I -S run.py ota-fetch --profile ota --page-size 100 --max-pages 50
 ```
 
 PowerShell uses `py -3 -I -S` instead of `python3 -I -S`. Allowed page sizes are
@@ -546,3 +546,20 @@ synthetic tests on Ubuntu, Windows and macOS, Python 3.11 and 3.14, after a user
 push. It has not run remotely yet. It installs no application dependencies and
 does not use provider credentials. Local Git hooks and a transitive dependency
 lock remain pending. Native OS credential stores require separate user-run checks.
+
+### Tradier schema diagnostics
+
+If a probe reports `TRADIER_SCHEMA_INVALID`, rerun the same user-run command
+with the current code and share only its `artifacts/agent-review` report. The
+report now includes the last endpoint category, HTTP status when received and
+a fixed allowlist of schema paths with type names (no response values, arbitrary
+provider keys, URLs, symbols or headers). Zero parsed chains does not identify
+which request failed. A 200 HTTP response alone does not prove a valid schema.
+
+The expiration request uses `expirationType=false` for the simple date list;
+monthly classification still comes from option-chain `expiration_type` metadata.
+The parser also accepts the structured `expirations.expiration` envelope and
+rejects ambiguous envelopes. The earlier failure's exact cause remains unverified
+until the updated diagnostic is returned. Curl can isolate transport issues,
+but this probe's sanitized report is sufficient for schema debugging; do not
+paste raw authenticated captures or headers into chat.

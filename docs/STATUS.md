@@ -84,7 +84,7 @@ workflow is prepared, not remotely verified.
   Single-page live OTA access is verified. Session rank history is implemented; no Conviction score, order
   execution or performance claims.
 - OTA row parsing is tested with invented fixtures. Vendor fields remain separate
-  from normalized IV metrics. Pagination defaults to 600 rows, up to 50 pages,
+  from normalized IV metrics. Pagination defaults to 100 rows, up to 50 pages,
   and stops on a short page. Duplicates, page limits and mid-run failures
   reject partial output. Live paging, timestamps and repeat-run validation remain pending.
 - `ota-config` accepts complete pasted criteria, previews a versioned config and

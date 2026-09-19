@@ -85,7 +85,7 @@ class TradierTests(unittest.TestCase):
         self.assertEqual(output['underlying_average_volume'],2000000)
         self.assertEqual(output['underlying_average_volume_period'],'provider_90_day')
         self.assertEqual(request.call_count,4)
-        self.assertTrue(request.call_args_list[0].args[2]['expirationType']=='true')
+        self.assertTrue(request.call_args_list[0].args[2]['expirationType']=='false')
 
     def test_local_date_and_invalid_timestamps(self):
         self.assertEqual(observation_date('2026-09-19'),date(2026,9,19))
@@ -108,7 +108,7 @@ class TradierTests(unittest.TestCase):
                 self.assertEqual(run_probe(root,SimpleNamespace(profile='sandbox',symbol='SYNTH',as_of='2026-09-19')),0 if success else 1)
             load.assert_called_once_with(provider='tradier',profile='sandbox')
             report=json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
-            self.assertEqual(set(report),{'schema_version','run_id','code_revision','profile','checks','counts','error_code'})
+            self.assertEqual(set(report),{'schema_version','run_id','code_revision','profile','checks','counts','error_code','diagnostic'})
             self.assertEqual(report['counts']['rows'],2 if success else 0)
             self.assertEqual(bool(list(root.glob('artifacts/tradier/*/*/atm-spreads.json'))),success)
             for path in root.glob('artifacts/**/*.json*'):
@@ -123,3 +123,26 @@ class TradierTests(unittest.TestCase):
         load.assert_not_called()
         store.assert_not_called()
         self.assertNotIn('synthetic-local-input', output.getvalue())
+
+    def test_enhanced_expiration_envelope_and_safe_shape(self):
+        from trading_scanner.tradier import response_shape
+        payload = {'expirations': {'expiration': [{'date': '2026-10-16', 'secret-extra': 'private-value'}]}}
+        self.assertEqual(expiration_dates(payload, date(2026,9,19)), ['2026-10-16'])
+        shape = response_shape(payload)
+        self.assertEqual(shape['expirations.expiration'], 'array')
+        self.assertEqual(shape['expirations.date'], 'missing')
+        self.assertNotIn('private-value', json.dumps(shape))
+        self.assertNotIn('secret-extra', json.dumps(shape))
+        with self.assertRaises(DataError):
+            expiration_dates({'expirations': {'date': ['2026-10-16'], 'expiration': []}}, date(2026,9,19))
+
+    def test_schema_failure_records_endpoint_and_only_shape(self):
+        from trading_scanner.tradier import fetch_probe
+        diagnostic = {}
+        with patch('trading_scanner.tradier.request_json', return_value={'expirations': {'unexpected-secret': 'private-value'}}):
+            with self.assertRaisesRegex(DataError, 'TRADIER_SCHEMA_INVALID'):
+                fetch_probe('sandbox', 'SYNTH', 'synthetic-local-input', as_of=date(2026,9,19), diagnostic=diagnostic)
+        self.assertEqual(diagnostic['endpoint'], 'expirations')
+        self.assertEqual(diagnostic['shape']['expirations.date'], 'missing')
+        self.assertNotIn('private-value', json.dumps(diagnostic))
+        self.assertNotIn('unexpected-secret', json.dumps(diagnostic))
