@@ -53,7 +53,7 @@ STAGES = {
     "tradier_chain": "Fetching monthly option chain",
     "summary": "Writing sanitized review summary",
 }
-COUNT_KEYS = {"rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
+COUNT_KEYS = {"tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
 
 
 class RunProgress:

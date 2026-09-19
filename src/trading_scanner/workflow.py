@@ -5,7 +5,7 @@ import json
 import uuid
 
 from .core import DataError, calculate, normalize_universe
-from .dashboard import (combine, read_json, ota_checked, history_previous,
+from .dashboard import (attach_tradier, combine, read_json, ota_checked, history_previous,
                         save_history, write_dashboard, synthetic_ota, atomic_json, FILTER_DEFAULTS)
 from .demo import make_snapshot
 from .progress import RunProgress, SAFE_ERRORS
@@ -54,9 +54,12 @@ def run_dashboard(root, args):
             save_history(history_dir, calculate(old))
             previous = history_previous(history_dir, snapshot)
         result = combine(snapshot, ota, filters, now=now, previous=previous)
+        probes = [read_json(path) for path in getattr(args, 'tradier', [])]
+        attach_tradier(result, probes)
         if not result['ranked']:
             raise DataError('NO_VALID_PEER_GROUP')
-        counts = {'ranked': len(result['ranked']), 'excluded': len(result['excluded']),
+        counts = {'tradier_matched': sum(r['tradier_status'] != 'not_supplied' for r in result['combined']),
+                  'ranked': len(result['ranked']), 'excluded': len(result['excluded']),
                   'matched': sum(r['ota_status'] == 'returned' for r in result['combined']),
                   'candidates': sum(r['review_status'] == 'matches_config_unverified' for r in result['combined'])}
         progress.finish(counts=counts)
@@ -66,6 +69,7 @@ def run_dashboard(root, args):
         atomic_json(destination / 'snapshot.json', snapshot)
         atomic_json(destination / 'ota-input.json', ota_checked(ota, profile))
         write_csv(destination / 'universe.csv', normalize_universe(snapshot['universe']), ('symbol','group','company','sector','sector_etf'))
+        atomic_json(destination / 'tradier-inputs.json', probes)
         write_dashboard(result, destination)
         save_history(history_dir, result)
         progress.finish()

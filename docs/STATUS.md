@@ -144,3 +144,16 @@ References: [layered raw/refined/business data](https://learn.microsoft.com/en-u
 and [schema evolution and rescued fields](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema).
 These are established architectural patterns, not a mandate to adopt Databricks
 or a universal requirement to accept unusable data into calculations.
+
+### Saved Tradier dashboard integration — 2026-09-19
+
+Added repeatable `dashboard --tradier PATH` for explicitly selected saved ATM
+probe outputs. HTML/CSV show strikes, monthly expiry, quotes, spreads, liquidity,
+Greeks and profile/retrieval provenance. Duplicate symbols, mixed environments
+and provider data in synthetic dashboards are rejected. Missing data remains
+blank and freshness unverified; CRS and candidate rules are unchanged.
+129 guarded offline tests passed on local Python, including cached CLI integration,
+HTML escaping, preserved Greek strings, missing legs' Greeks, profile separation
+and unchanged ranks. User-run combined dashboard validation remains pending.
+Automatic batch collection, daily Tradier orchestration and quote freshness
+validation remain pending.

@@ -122,3 +122,54 @@ class DashboardTests(unittest.TestCase):
             if row['ota_status'] == 'returned':
                 self.assertIsNone(row['meanIvPcnt'])
                 self.assertEqual(row['meanIvPcnt_status'], 'negative_unusable')
+
+    def test_tradier_join_preserves_ranking_and_missing_greeks(self):
+        from trading_scanner.dashboard import attach_tradier, write_dashboard
+        result = combine(self.snapshot, self.ota, now=self.now)
+        result['profile'] = 'public'
+        before = deepcopy(result['ranked'])
+        probe = {'schema_version': 1, 'source': 'tradier', 'profile': 'production',
+                 'symbol': 'S00', 'retrieved_at': self.now.isoformat(),
+                 'expiration': '2026-10-16', 'expiration_type': 'standard', 'atm_strike': 100,
+                 'call': {'strike': 100, 'bid': 2, 'ask': 3, 'greeks': {'theta': '-0.1', 'unknown': '<script>x</script>'}},
+                 'put': {'strike': 100, 'bid': 1, 'ask': 2}}
+        original = deepcopy(probe)
+        attach_tradier(result, [probe])
+        self.assertEqual(before, result['ranked'])
+        self.assertEqual(original, probe)
+        row = next(r for r in result['combined'] if r['symbol'] == 'S00')
+        self.assertEqual(row['tradier_atm_strike'], 100)
+        self.assertIn('-0.1', row['tradier_call_greeks'])
+        self.assertIsNone(row['tradier_put_greeks'])
+        self.assertEqual(sum(r['tradier_status'] == 'not_supplied' for r in result['combined']), 59)
+        destination = temp / 'tradier-dashboard'
+        write_dashboard(result, destination)
+        self.assertIn('tradier_atm_strike', (destination / 'combined.csv').read_text())
+        self.assertNotIn('<script>x</script>', (destination / 'dashboard.html').read_text())
+        for bad in ([probe, probe], [probe, {**probe, 'symbol': 'S01', 'profile': 'sandbox'}],
+                    [{**probe, 'put': {'strike': 101}}]):
+            with self.assertRaises(DataError):
+                attach_tradier(result, bad)
+        result['profile'] = 'synthetic'
+        with self.assertRaises(DataError):
+            attach_tradier(result, [probe])
+
+    def test_tradier_cached_dashboard_end_to_end(self):
+        root = temp / 'tradier-dashboard-cli'
+        root.mkdir()
+        snapshot = deepcopy(self.snapshot)
+        snapshot['profile'] = 'public'
+        ota = {**self.ota, 'source': 'ota', 'coverage': 'short_page_observed'}
+        probe = {'schema_version': 1, 'source': 'tradier', 'profile': 'production',
+                 'symbol': 'S00', 'retrieved_at': self.now.isoformat(),
+                 'expiration': '2026-10-16', 'expiration_type': 'standard', 'atm_strike': 100,
+                 'call': {'strike': 100}, 'put': {'strike': 100}}
+        for name, data in [('prices', snapshot), ('ota', ota), ('probe', probe)]:
+            (root / (name + '.json')).write_text(json.dumps(data))
+        with redirect_stdout(io.StringIO()):
+            status = main(['dashboard', '--snapshot', str(root / 'prices.json'),
+                           '--ota', str(root / 'ota.json'), '--tradier', str(root / 'probe.json')], root)
+        self.assertEqual(status, 0)
+        report = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
+        self.assertEqual(report['counts']['tradier_matched'], 1)
+        self.assertNotIn('S00', json.dumps(report))

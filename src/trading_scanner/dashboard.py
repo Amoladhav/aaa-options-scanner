@@ -21,6 +21,58 @@ EXTRA_FIELDS = ('price_status', 'ota_status', 'review_status', 'rank_change', 'h
                 'daysToEarnings', 'avgVol30d', 'ota_field_status', *(field + '_status' for field in IV_FIELDS))
 
 
+TRADIER_FIELDS = ('tradier_status', 'tradier_profile', 'tradier_retrieved_at',
+                  'tradier_expiration', 'tradier_atm_strike', 'tradier_underlying_price',
+                  'tradier_underlying_average_volume', 'tradier_average_volume_period',
+                  *(f'tradier_{side}_{field}' for side in ('call', 'put') for field in
+                    ('strike', 'bid', 'ask', 'spread', 'spread_pct', 'open_interest', 'volume',
+                     'bid_date', 'ask_date', 'status', 'greeks_status', 'greeks')))
+
+
+def attach_tradier(result, probes):
+    """Join explicitly supplied derived snapshots, preserving source and quote status.
+
+    Duplicate symbols are ambiguous: callers must choose a run instead of silently
+    overwriting it. Production, sandbox and synthetic outputs cannot be mixed.
+    """
+    from .chain_spreads import number
+    lookup, profiles = {}, set()
+    for probe in probes:
+        if not isinstance(probe, dict) or probe.get('schema_version') != 1 or probe.get('source') != 'tradier':
+            raise DataError('DASHBOARD_INPUT_INVALID')
+        profile = probe.get('profile')
+        if result['profile'] == 'synthetic' or profile not in ('sandbox', 'production'):
+            raise DataError('DASHBOARD_INPUT_INVALID')
+        profiles.add(profile)
+        symbol = normalize_symbol(probe['symbol'])
+        stamp = datetime.fromisoformat(probe['retrieved_at'])
+        strike = probe.get('atm_strike')
+        if symbol in lookup or len(profiles) > 1 or stamp.tzinfo is None or not number(strike) or strike <= 0:
+            raise DataError('DASHBOARD_INPUT_INVALID')
+        date.fromisoformat(probe['expiration'])
+        if probe.get('expiration_type') != 'standard':
+            raise DataError('DASHBOARD_INPUT_INVALID')
+        joined = {'tradier_status': 'supplied_freshness_unverified', 'tradier_profile': profile,
+                  'tradier_retrieved_at': stamp.isoformat(), 'tradier_expiration': probe['expiration'] + '*',
+                  'tradier_atm_strike': strike, 'tradier_underlying_price': probe.get('underlying_price'),
+                  'tradier_underlying_average_volume': probe.get('underlying_average_volume'),
+                  'tradier_average_volume_period': probe.get('underlying_average_volume_period')}
+        for side in ('call', 'put'):
+            leg = probe.get(side)
+            if not isinstance(leg, dict) or leg.get('strike') != strike:
+                raise DataError('DASHBOARD_INPUT_INVALID')
+            for field in ('strike', 'bid', 'ask', 'spread', 'spread_pct', 'open_interest', 'volume',
+                          'bid_date', 'ask_date', 'status', 'greeks_status', 'greeks'):
+                value = leg.get(field)
+                joined[f'tradier_{side}_{field}'] = json.dumps(value, sort_keys=True, allow_nan=False) if field == 'greeks' and value is not None else deepcopy(value)
+        lookup[symbol] = joined
+    for row in result['combined']:
+        row.update({key: None for key in TRADIER_FIELDS})
+        row['tradier_status'] = 'not_supplied'
+        row.update(lookup.get(row['symbol'], {}))
+    return result
+
+
 def read_json(path, limit=30_000_000):
     from .ota_config import pairs
     with Path(path).open('rb') as stream:
@@ -190,7 +242,7 @@ def synthetic_ota(snapshot):
 
 def write_dashboard(result, destination):
     write_reports(result, destination)
-    fields = (*CRS_FIELDS, *EXTRA_FIELDS)
+    fields = (*CRS_FIELDS, *EXTRA_FIELDS, *TRADIER_FIELDS)
     write_csv(destination / 'combined.csv', result['combined'], fields)
     write_csv(destination / 'candidates.csv', [r for r in result['combined'] if r['review_status'] == 'matches_config_unverified'], fields)
     write_csv(destination / 'departed.csv', result['departed'], ('symbol','group','rank','score','bias'))
@@ -200,8 +252,10 @@ def write_dashboard(result, destination):
               'meanIvPcnt':'Mean IV %', 'ivHi1YrPcnt':'1y IV high %', 'ivLow1YrPcnt':'1y IV low %',
               'meanIvPcnt_status':'Mean IV status', 'ivHi1YrPcnt_status':'IV high status', 'ivLow1YrPcnt_status':'IV low status', 'ivGauge':'IV gauge', 'spreadLiquidityPcnt':'OTA liquidity', 'totalOpenInterest':'Open interest',
               'totalOptionsVolume':'Options volume', 'daysToEarnings':'Days to earnings', 'avgVol30d':'Underlying avg volume (OTA 30d)'}
-    columns = ('symbol','company','group','rank','score','bias', *EXTRA_FIELDS)
-    numeric = {'rank','score','rank_change', *OTA_FIELDS}
+    columns = ('symbol','company','group','rank','score','bias', *EXTRA_FIELDS, *TRADIER_FIELDS)
+    labels.update({key: key.replace('tradier_', 'Tradier ').replace('_', ' ').title() for key in TRADIER_FIELDS})
+    numeric = {'rank','score','rank_change', *OTA_FIELDS,
+               *(key for key in TRADIER_FIELDS if key.endswith(('_strike', '_price', '_bid', '_ask', '_spread', '_spread_pct', '_open_interest', '_volume')))}
     th = ''.join(f'<th><button data-col="{i}" data-numeric="{str(k in numeric).lower()}">{escape(labels.get(k,k))}</button></th>' for i,k in enumerate(columns))
     body = []
     for row in result['combined']:
@@ -221,6 +275,7 @@ def write_dashboard(result, destination):
     html += f'<div class="eyebrow">{label}</div><h1>Momentum + options research</h1><p class="muted">Price session: {escape(result["as_of"])} · OTA retrieved: {escape(result["ota_metadata"]["retrieved_at"])}<br>Prior recorded session: {escape(result["previous_session"] or "none")}</p>'
     html += '<div class="cards">' + ''.join(f'<div class="card"><b>{n}</b>{caption}</div>' for n,caption in [(len(result['ranked']),'Ranked symbols'),(matched,'Freshly retrieved OTA matches'),(shortlist,'Tail rows matching config'),(len(result['excluded']),'Price exclusions')]) + '</div>'
     html += '<p class="muted">CRS ranks stocks and ETFs separately. OTA metrics do not change CRS scores. IV rank and IV percentile are not available here; provider mean IV and gauge retain their original meaning. Green rows match your numeric settings, not a validated trading signal. Quote time and metric methodology are unverified. Not returned means absent from the filtered screener, not zero liquidity.</p>'
+    html += '<p class="muted">Tradier ATM quotes: explicitly supplied saved results; freshness unverified. * marks the selected standard monthly expiry. Bid, ask and spread are dollars per share; spread_pct is percent of midpoint. Call/put volume is current contract volume, not an average. Underlying average volume retains its provider period. Greeks retain provider values and update times; missing results are not zero.</p>'
     html += '<p><a href="combined.csv">Combined CSV</a> · <a href="candidates.csv">Review candidates CSV</a> · <a href="report.html">CRS calculation detail</a> · <a href="departed.csv">Departed symbols</a></p>'
     html += '<div class="toolbar"><input id="search" placeholder="Search symbol or company" aria-label="Search"><select id="group" aria-label="Group"><option value="all">All groups</option><option value="stock">Stocks</option><option value="etf">ETFs</option></select><select id="bias" aria-label="CRS bias"><option value="all">All CRS labels</option><option>long</option><option>short</option><option>neutral</option></select><select id="review" aria-label="Review status"><option value="all">All review statuses</option><option value="matches_config_unverified">Matches settings</option><option value="unknown">Unknown</option><option value="below_config">Below settings</option></select><span id="visible"></span></div>'
     html += '<div class="table"><table><thead><tr>' + th + '</tr></thead><tbody>' + ''.join(body) + '</tbody></table></div>'

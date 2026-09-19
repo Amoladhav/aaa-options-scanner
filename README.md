@@ -668,3 +668,43 @@ metrics; none can substitute for another. If the browser's actual screener respo
 lacks volume, inspect other Fetch/XHR and WebSocket messages locally and identify
 the endpoint category and field names, without sharing headers, keys or captures.
 The source and observation time must be established before adding a joined metric.
+
+### Attach saved Tradier ATM results to the dashboard
+
+After validating a `tradier-probe` result, attach its local `atm-spreads.json` to
+an existing price + OTA dashboard. This command reads saved files only; it does
+not contact Tradier or load a token. Run it yourself because inputs contain your
+provider data. For example, from the repository root in Bash/WSL:
+
+```bash
+.venv/bin/python -I run.py dashboard --tradier artifacts/tradier/production/YOUR_RUN_ID/atm-spreads.json
+```
+
+Native Windows PowerShell (using its own virtual environment):
+
+```powershell
+.\.venv\Scripts\python.exe -I run.py dashboard --tradier artifacts/tradier/production/YOUR_RUN_ID/atm-spreads.json
+```
+
+Replace `YOUR_RUN_ID` with the saved probe's directory name, not a credential.
+The command chooses the latest successful saved public price and OTA files;
+`--snapshot PATH --ota PATH` selects them explicitly. Repeat `--tradier PATH`
+for distinct symbols. Select one saved run per symbol and use a single Tradier
+profile per dashboard; duplicate symbols and mixed sandbox/production inputs
+are rejected. Synthetic dashboards cannot accept provider results.
+
+HTML, `combined.csv` and `candidates.csv` include the monthly expiration marked
+`*`, ATM strike, underlying price, call/put strike, bid, ask, spread (dollars per
+share), spread percent of midpoint, open interest, current contract volume,
+quote timestamps/status and each leg's Greeks as JSON retaining provider fields.
+Underlying average volume and its provider period are separate from contract
+volume; no historical contract average is inferred. Source profile and retrieval
+time accompany the join. Missing symbols say `not_supplied`, with blank values.
+Quote freshness remains unverified even when a file was recently retrieved.
+CRS scores and candidate eligibility are unchanged by these display fields.
+
+The output directory also saves `tradier-inputs.json` for provenance. It is
+private user data like the other dashboard inputs, not an agent review report.
+The sanitized report exposes only the aggregate `tradier_matched` count.
+This increment supports explicit saved single-symbol probes; automatic batch
+fetching and daily Tradier orchestration remain pending.

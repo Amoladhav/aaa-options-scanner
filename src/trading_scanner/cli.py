@@ -87,6 +87,8 @@ def main(argv=None, root: Path | None = None) -> int:
     dashboard.add_argument('--snapshot', type=Path)
     dashboard.add_argument('--ota', type=Path)
     dashboard.add_argument('--filters', type=Path)
+    dashboard.add_argument('--tradier', type=Path, action='append', default=[],
+                           help='Attach a saved atm-spreads.json; repeat for distinct symbols, one profile only')
     daily = subs.add_parser('daily', help='USER-RUN: refresh public prices, fetch OTA, write combined dashboard')
     daily.add_argument('--profile', choices=['public'], required=True)
     daily.add_argument('--page-size', type=int, choices=range(1,601), default=100, metavar='1..600', help='Rows per OTA page (default: 100)')
