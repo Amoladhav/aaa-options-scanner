@@ -15,6 +15,21 @@ CODE_FIELDS = ("ivGauge", "optionable")
 FIELDS = (*PERCENT_FIELDS, *COUNT_FIELDS, *CODE_FIELDS)
 
 
+def parse_response(payload):
+    """Support the reference adapter's results.data envelope and legacy arrays.
+
+Do not recursively guess a list: other arrays may be metadata or errors.
+Malformed recognized row containers remain errors, including on HTTP 200.
+"""
+    if isinstance(payload, list):
+        return parse_rows(payload)
+    if isinstance(payload, dict):
+        results = payload.get('results')
+        if isinstance(results, dict) and 'data' in results:
+            return parse_rows(results['data'])
+    raise DataError('OTA_ENVELOPE_UNSUPPORTED')
+
+
 def parse_rows(rows):
     """Parse one explicit list of at most 100 rows; discard unneeded fields.
 

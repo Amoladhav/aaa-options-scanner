@@ -10,7 +10,7 @@ import uuid
 import warnings
 
 from .core import DataError
-from .ota import parse_rows
+from .ota import parse_response
 from .ota_config import MAX_INPUT, parse_config, pairs
 from .progress import RunProgress
 
@@ -85,9 +85,7 @@ def fetch_page(criteria, token):
             payload = json.loads(raw, object_pairs_hook=pairs)
         except (ValueError, RecursionError):
             raise DataError('OTA_SCHEMA_INVALID') from None
-        if not isinstance(payload, list):
-            raise DataError('OTA_ENVELOPE_UNSUPPORTED')
-        return parse_rows(payload)
+        return parse_response(payload)
     except (OSError, http.client.HTTPException):
         raise DataError('OTA_NETWORK_ERROR') from None
     finally:

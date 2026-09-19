@@ -102,3 +102,18 @@ class OtaFetchTests(unittest.TestCase):
         with patch('trading_scanner.ota_fetch.ssl.create_default_context'), patch('trading_scanner.ota_fetch.http.client.HTTPSConnection', return_value=connection):
             with self.assertRaisesRegex(DataError, '^OTA_NETWORK_ERROR$'):
                 fetch_page(CRITERIA, 'synthetic-local-input')
+
+    def test_reference_envelope_flows_through_transport(self):
+        body = b'{"results":{"data":[{"symbol":"SYNTH","values":{"totalOptionsVolume":12}}],"total":1},"metadata":"synthetic-private-marker"}'
+        with patch('trading_scanner.ota_fetch.ssl.create_default_context'), patch('trading_scanner.ota_fetch.http.client.HTTPSConnection', return_value=self.connection(body=body)):
+            rows = fetch_page(CRITERIA, 'synthetic-local-input')
+        self.assertEqual(rows[0]['totalOptionsVolume'], 12)
+        self.assertNotIn('synthetic-private-marker', str(rows))
+
+    def test_reference_envelope_empty_and_invalid(self):
+        from trading_scanner.ota import parse_response
+        self.assertEqual(parse_response({'results': {'data': []}}), [])
+        for payload in ({'results': {'data': None}}, {'results': {'data': {}}},
+                        {'results': []}, {'errors': []}, {'results': {'other': []}}):
+            with self.assertRaises(DataError):
+                parse_response(payload)

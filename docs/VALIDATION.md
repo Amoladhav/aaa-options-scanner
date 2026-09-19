@@ -121,3 +121,14 @@ headers. The request test checks the complete header allowlist, excluding cookie
 captured Content-Length and HTTP/2 pseudo-headers; compression remains identity.
 All 69 guarded offline tests passed. No captured credential values were stored or
 used, and no authenticated request was made. Live compatibility remains pending.
+
+## OTA response envelope regression
+
+Two user-run allowlisted diagnostics reported `OTA_ENVELOPE_UNSUPPORTED`, which
+occurs after HTTP 200 and JSON decoding. The previously scanned redacted reference
+configuration identifies `results.data` as the row path. The transport now accepts
+that exact envelope as well as legacy bare arrays, without guessing other lists.
+Two synthetic regressions cover transport parsing, discarded metadata, empty rows
+and malformed/unknown containers. All 71 guarded offline tests passed. No raw
+user response was inspected or authenticated request rerun. A successful live
+row parse remains pending the user's retry; cURL HTTP success alone does not prove it.

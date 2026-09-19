@@ -346,8 +346,9 @@ decoding is not implemented. These headers do not reproduce a browser's TLS stac
 `OTA_AUTH_REJECTED` means 401/403: the token might have expired, or the request
 may require different access. Sign in normally and obtain your current token for
 a deliberate retry; do not assume expiry is the cause. `OTA_RATE_LIMITED` stops
-without retry. `OTA_ENVELOPE_UNSUPPORTED` means the outer response is not an array;
-share only its field names so the parser can be adjusted. Never share raw responses.
+without retry. Both a bare row array and the reference adapter's `results.data`
+envelope are supported. `OTA_ENVELOPE_UNSUPPORTED` means another outer structure;
+share only its field names/nesting so the parser can be adjusted. Never share raw responses.
 An empty successful page means zero matches for this request, not complete coverage.
 
 Token expiry, renewal and server-side revocation semantics remain unknown. This
