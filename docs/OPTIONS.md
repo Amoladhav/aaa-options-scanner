@@ -79,7 +79,7 @@ The owner also verified that the token expires with the session.
 `spreadLiquidityPcnt`, `totalOpenInterest`, `totalOptionsVolume`, `ivGauge` and
 `optionable` under vendor names. Missing values remain null; invalid supplied
 metrics and duplicate symbols reject the page. Unneeded fields are dropped.
-Only invented fixtures are committed. The parser is now used by the single-page
+Only invented fixtures are committed. The parser is now used by the paginated
 `ota-fetch` CLI transport; generic options-report integration remains pending.
 
 Do not map `ivGauge` or `meanIvPcnt` to IV rank/percentile, or interpret
@@ -87,11 +87,12 @@ Do not map `ivGauge` or `meanIvPcnt` to IV rank/percentile, or interpret
 request has earnings, price-change, moving-average and liquidity filters: results
 are a selected subset, not the momentum universe. Omitted symbols cannot be treated
 as zero liquidity or non-optionable. The complete supplied payload is now saved
-in configuration. Response envelope, pagination termination and observation
-timestamps remain pending. No raw captures are needed.
+in configuration. The results.data envelope is supported. Pagination continues
+through an empty page, defaulting to 600 rows and 50 requests. Live paging behavior
+and observation timestamps remain unverified. No raw captures are needed.
 
 The owner confirms personal scripted access is permitted. The user-run `ota-fetch`
-command now probes one page with a hidden token prompt. See the README for exact
+command now fetches pages with a hidden token prompt. See the README for exact
 commands and local acquisition steps. No authenticated request was run by agents.
 
 The owner reports website access with a Chrome session token, but no API access.

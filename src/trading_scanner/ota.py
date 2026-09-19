@@ -60,26 +60,26 @@ def normalize_metric(value, field):
     return result
 
 
-def parse_response(payload):
+def parse_response(payload, max_rows=100):
     """Support the reference adapter's results.data envelope and legacy arrays.
 
 Do not recursively guess a list: other arrays may be metadata or errors.
 Malformed recognized row containers remain errors, including on HTTP 200.
 """
     if isinstance(payload, list):
-        return parse_rows(payload)
+        return parse_rows(payload, max_rows)
     if isinstance(payload, dict):
         results = payload.get('results')
         if isinstance(results, dict) and 'data' in results:
-            return parse_rows(results['data'])
+            return parse_rows(results['data'], max_rows)
     raise DataError('OTA_ENVELOPE_UNSUPPORTED')
 
 
-def parse_rows(rows):
-    """Parse one explicit list of at most 100 rows; discard unneeded fields.
+def parse_rows(rows, max_rows=100):
+    """Parse a bounded row list (default 100, up to 600); discard unneeded fields.
 
-The response envelope is not established, so this function accepts only the
-rows array. A short or empty page does not establish full-universe coverage.
+This function accepts only the rows array extracted by parse_response.
+A short or empty page does not establish full-universe coverage.
 Missing/null fields stay unknown; malformed supplied metrics reject the page.
 """
     def invalid(field, reason):
@@ -87,7 +87,9 @@ Missing/null fields stay unknown; malformed supplied metrics reject the page.
 
     if not isinstance(rows, list):
         invalid('rows', 'not_array')
-    if len(rows) > 100:
+    if type(max_rows) is not int or not 1 <= max_rows <= 600:
+        raise ValueError('INVALID_PAGE_SIZE')
+    if len(rows) > max_rows:
         invalid('rows', 'too_many_rows')
     output, seen = [], set()
     for row in rows:

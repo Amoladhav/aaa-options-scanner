@@ -173,3 +173,15 @@ execution is implemented. Local storage would not extend session validity.
 This checkpoint changes documentation only. Markdown links, policy consistency,
 the staged diff and value-suppressing staged scan were reviewed. Application
 tests were not rerun; the latest executed offline suite passed 75 tests.
+
+## OTA pagination: 2026-09-19
+
+All 80 guarded offline tests passed. Five new tests cover short/capped pages,
+full pages followed by an empty page, empty first pages, page numbering and default
+600-row requests, parsing 600 unique symbols, invalid bounds, repeated symbols,
+page-limit failure, session expiry mid-run and no partial artifact publication.
+The existing CLI test now checks combined results.json output. No authenticated
+requests were executed. Default limits are 600 rows and 50 pages; termination
+requires an empty page, not merely a short response. Realtime membership can shift,
+so observed exhaustion is not a point-in-time completeness guarantee. User-run
+validation of the new pagination behavior remains pending.

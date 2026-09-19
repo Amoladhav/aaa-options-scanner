@@ -77,12 +77,14 @@ def main(argv=None, root: Path | None = None) -> int:
     config.add_argument("--input", type=Path, help="Read a criteria-only text file instead of stdin")
     config.formatter_class = lambda prog: argparse.RawDescriptionHelpFormatter(prog, width=88)
     config.add_argument("--apply", action="store_true", help="Replace config/ota-screener.json with validated criteria")
-    ota_fetch = subs.add_parser('ota-fetch', help='USER-RUN: fetch one OTA page with a hidden token prompt')
+    ota_fetch = subs.add_parser('ota-fetch', help='USER-RUN: fetch OTA pages with a hidden token prompt')
     ota_fetch.add_argument('--profile', choices=['ota'], required=True)
+    ota_fetch.add_argument('--page-size', type=int, choices=range(1, 601), default=600, metavar='1..600')
+    ota_fetch.add_argument('--max-pages', type=int, choices=range(1, 101), default=50, metavar='1..100')
     args = parser.parse_args(argv)
     if args.command == 'ota-fetch':
         from .ota_fetch import run_fetch
-        return run_fetch(root)
+        return run_fetch(root, page_size=args.page_size, max_pages=args.max_pages)
     if args.command == "ota-config":
         return configure_ota(args, root)
     run_id = uuid.uuid4().hex

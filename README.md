@@ -295,17 +295,17 @@ is intentionally shown in the local terminal preview.
 
 This prepares the request configuration for OTA integration. **It does not yet
 connect to OTA or alter momentum calculations.** The row parser also exists, but
-the single-page transport is available below. Pagination, timestamps and real-access validation remain pending.
+the paginated transport is available below. Live paging and timestamps remain unverified.
 README usage notes and project status are updated with each implemented feature.
 
-## OTA: first real connection test (user-run)
+## OTA: paginated screener fetch (user-run)
 
 The owner has confirmed permission for personal scripted access. The `ota-fetch`
-command now sends **one page-1 POST** using `config/ota-screener.json` and prompts
+command sends paginated POST requests using `config/ota-screener.json` and prompts
 for a token without echo. It uses standard-library HTTPS with certificate checking,
 a 30-second socket timeout, no cookies, redirects, retries or proxy-environment
-discovery. No dependency installation is needed. This is a connection check, not
-the full daily enrichment pipeline.
+discovery. No dependency installation is needed. It fetches screener matches;
+joining them to the momentum report remains a separate next feature.
 
 At the owner's request, OTA requests send a fixed Chrome-style `User-Agent`
 (`Chrome/153.0.0.0` on Windows) for compatibility. This does not reflect the actual
@@ -340,7 +340,7 @@ decoding is not implemented. These headers do not reproduce a browser's TLS stac
    a token into stdin or pass it on the command line.
 5. Give the agent only the printed `artifacts/agent-review/<run-id>.json` path.
    That report contains fixed status/error codes and counts, with no token,
-   headers, response body, identifiers or symbols. The normalized `page.json`
+   headers, response body, identifiers or symbols. The normalized `results.json`
    under `artifacts/ota/` is for your local review, not agent intake.
 
 `OTA_AUTH_REJECTED` means 401/403: the token might have expired, or the request
@@ -349,7 +349,7 @@ a deliberate retry; do not assume expiry is the cause. `OTA_RATE_LIMITED` stops
 without retry. Both a bare row array and the reference adapter's `results.data`
 envelope are supported. `OTA_ENVELOPE_UNSUPPORTED` means another outer structure;
 share only its field names/nesting so the parser can be adjusted. Never share raw responses.
-An empty successful page means zero matches for this request, not complete coverage.
+An empty first page means zero matches for this request, not the entire market.
 
 `OTA_SCHEMA_INVALID` now prints a fixed field/reason pair and includes it as
 `schema_diagnostic` in the agent-review report. Examples are `totalOpenInterest /
@@ -378,8 +378,40 @@ timeouts and server-side revocation mechanics remain unverified. Python does not
 guarantee secure erasure of in-memory strings.
 
 Results retain vendor metric names and a retrieval time; the market observation
-time is unknown. Only page 1 (up to 100 rows) is checked, using your selected
-filters. Pagination, once-daily automation and joining live OTA values to momentum
-rankings are next steps. The first user-run check passed with 77 rows and no errors
+time is unknown. Pages use your selected filters. Once-daily automation and joining
+live OTA values to momentum rankings remain future work. The earlier single-page
+user-run check passed with 77 rows and no errors
 (review report `126d95ced37a4481b0e217b61b7d89e2`). Full coverage and metric
-interpretation remain unverified; the latest offline suite passed 75 tests.
+interpretation remain unverified; the latest offline suite passed 80 tests.
+
+### Pagination and limits
+
+The default page size is **600**, with at most **50 requests**, including the final
+empty-page check. Page numbers start at 1 and increase; the payload and symbol-ascending
+sort remain unchanged. A short page does not stop the loop because OTA may cap the
+requested size. Fetching continues until an empty page. For 77 matches, expect
+one data page plus one empty-page request if the provider honors page numbering.
+
+Override limits when needed:
+
+```bash
+python3 -I -S run.py ota-fetch --profile ota --page-size 600 --max-pages 50
+```
+
+PowerShell uses `py -3 -I -S` instead of `python3 -I -S`. Allowed page sizes are
+1–600; page limits are 1–100. The per-response byte limit remains 2 MB; reduce the
+page size if `OTA_RESPONSE_TOO_LARGE` occurs.
+
+Repeated symbols across pages fail with `OTA_DUPLICATE_PAGE_SYMBOL`; reaching the
+limit before an empty page fails with `OTA_PAGE_LIMIT`. Authentication, rate-limit
+and schema failures also stop immediately. No combined data file is written unless
+all requested pages finish through empty-page termination. Existing run outputs
+remain separate and untouched. Progress is measured against the page limit until
+termination establishes the actual page count, not an estimate of market coverage.
+
+The sanitized report uses check `ota_paginated_fetch` and counts rows published,
+pages requested, pages received and symbols received before failure. The user data
+file records `coverage: empty_page_reached`. This describes observed exhaustion,
+not guaranteed point-in-time completeness: realtime screener membership may change
+between pages. Pagination has passed offline tests; live validation of page size
+and server paging behavior remains pending your next user-run report.

@@ -21,7 +21,8 @@ SAFE_ERRORS = {"SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHA
                "OTA_CONFIG_SYNTAX", "OTA_CONFIG_UNSUPPORTED_FILTER", "OTA_CONFIG_RANGE_REVERSED",
                "OTA_TOKEN_INVALID", "OTA_PROMPT_UNAVAILABLE", "OTA_AUTH_REJECTED", "OTA_RATE_LIMITED",
                "OTA_REDIRECT_REJECTED", "OTA_HTTP_ERROR", "OTA_NETWORK_ERROR", "OTA_RESPONSE_TOO_LARGE",
-               "OTA_SCHEMA_INVALID", "OTA_ENVELOPE_UNSUPPORTED", "OTA_FETCH_FAILED"}
+               "OTA_SCHEMA_INVALID", "OTA_ENVELOPE_UNSUPPORTED", "OTA_FETCH_FAILED",
+               "OTA_PAGINATION_INVALID", "OTA_DUPLICATE_PAGE_SYMBOL", "OTA_PAGE_LIMIT"}
 STAGES = {
     "run": "Scanner",
     "synthetic_data": "Generating synthetic prices",
@@ -35,11 +36,11 @@ STAGES = {
     "config_parse": "Reading and validating pasted screener criteria",
     "config_save": "Saving screener configuration",
     "ota_auth": "Waiting for local hidden token input",
-    "ota_fetch": "Fetching one OTA screener page",
+    "ota_fetch": "Fetching OTA screener pages (progress against page limit)",
     "reports": "Writing snapshots and reports",
     "summary": "Writing sanitized review summary",
 }
-COUNT_KEYS = {"ranked", "excluded", "symbols_requested", "symbols_received"}
+COUNT_KEYS = {"ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received"}
 
 
 class RunProgress:
@@ -87,7 +88,7 @@ without terminal probing or environment reads. Events are flushed immediately.
         else:
             filled = percent // 5
             bar = f"[{'#' * filled}{'-' * (20 - filled)}] {percent:3}%"
-        units = "batches" if self.stage_name == "prices" else "steps"
+        units = "batches" if self.stage_name == "prices" else "pages" if self.stage_name == "ota_fetch" else "steps"
         count_text = "" if self.total is None else f" ({self.completed}/{self.total} {units})"
         self.stream.write(f"{level:<7} {bar} {message}{count_text} | elapsed {elapsed:.1f}s\n")
         self.stream.flush()

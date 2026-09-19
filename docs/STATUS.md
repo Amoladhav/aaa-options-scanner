@@ -5,7 +5,7 @@ Updated: 2026-09-19. Phase: momentum scanner with verified single-page OTA fetch
 OTA live checkpoint: user-run diagnostic `126d95ced37a4481b0e217b61b7d89e2`
 passed `ota_single_page_fetch`, returned 77 rows and reported no error. This
 confirms one successful authenticated fetch and parse with the saved filters.
-Pagination/full coverage, metric definitions and report integration
+Live pagination/full coverage, metric definitions and report integration
 remain unverified. No authenticated request was executed by agents.
 
 The owner verified that the token expires with the OTA session. Fetches require
@@ -38,7 +38,7 @@ unattended daily schedule or automatic login/renewal is implemented.
 
 ## Verification
 
-On Ubuntu, Python 3.14.4: seven intake-tool tests and 75 offline application tests
+On Ubuntu, Python 3.14.4: seven intake-tool tests and 80 offline application tests
 passed. The offline runner denies network, subprocesses, real environment reads,
 and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
 Guards are installed before test discovery. Tests cover numeric reference parity
@@ -86,8 +86,9 @@ hooks, and WSL-specific checks remain pending.
   Single-page live OTA access is verified. No persistence/Conviction, order
   execution or performance claims.
 - OTA row parsing is tested with invented fixtures. Vendor fields remain separate
-  from normalized IV metrics. Single-page transport uses the saved request shape;
-  pagination, timestamps and repeat-run validation remain pending; see [options notes](OPTIONS.md).
+  from normalized IV metrics. Pagination defaults to 600 rows, up to 50 pages,
+  and continues through an empty page. Duplicates, page limits and mid-run failures
+  reject partial output. Live paging, timestamps and repeat-run validation remain pending.
 - `ota-config` accepts complete pasted criteria, previews a versioned config and
   atomically replaces `config/ota-screener.json` with `--apply`. It uses shared
   progress/logging and never executes pasted code or makes provider requests.
@@ -95,9 +96,9 @@ hooks, and WSL-specific checks remain pending.
 ## Next sequence
 
 The owner has confirmed permission for personal scripted OTA access. `ota-fetch
---profile ota` now performs a user-run single-page connection test with hidden
+--profile ota` now performs a user-run paginated fetch with hidden
 token input, fixed-host HTTPS and sanitized diagnostics. A 77-row live run passed;
-pagination and integration into the momentum report are not yet implemented.
+pagination is offline-tested; integration into the momentum report is not yet implemented.
 
 1. User installs optional wheel dependencies and runs public refresh; inspect only
    the allowlisted agent-review report. Fix real schema/packaging issues if evidenced.
