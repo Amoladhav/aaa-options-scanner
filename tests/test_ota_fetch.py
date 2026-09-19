@@ -210,3 +210,20 @@ class OtaFetchTests(unittest.TestCase):
         with patch('trading_scanner.workflow.run_daily', return_value=0) as daily:
             self.assertEqual(main(['daily', '--profile', 'public'], temp), 0)
         self.assertEqual(daily.call_args.args[1].page_size, 100)
+
+    def test_screener_matrix_with_unusable_iv_on_page_nineteen(self):
+        from trading_scanner.ota import parse_rows, IV_FIELDS
+        for total in (0, 77, 100, 237, 1837):
+            def page(criteria, token, *, page, page_size):
+                raw = [{'symbol': f'S{i}', 'values': {IV_FIELDS[i % 3]: -1, 'totalOptionsVolume': 0}}
+                       for i in range((page-1)*page_size, min(page*page_size, total))]
+                return parse_rows(raw, max_rows=page_size)
+            counts = {}
+            with patch('trading_scanner.ota_fetch.fetch_page', side_effect=page):
+                rows = fetch_all(CRITERIA, 'synthetic-local-input', counts=counts)
+            self.assertEqual(len(rows), total)
+            self.assertEqual(counts['pages_received'], total // 100 + 1)
+            for i, row in enumerate(rows):
+                field = IV_FIELDS[i % 3]
+                self.assertIsNone(row[field])
+                self.assertEqual(row[field + '_status'], 'negative_unusable')

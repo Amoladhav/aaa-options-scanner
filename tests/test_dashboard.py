@@ -112,3 +112,13 @@ class DashboardTests(unittest.TestCase):
         row = next(r for r in result['combined'] if r['symbol'] == cached['rows'][0]['symbol'])
         self.assertIsNone(row['ivLow1YrPcnt'])
         self.assertEqual(row['ivLow1YrPcnt_status'], 'negative_unusable')
+
+    def test_unusable_mean_iv_cannot_pass_required_iv_filter(self):
+        for row in self.ota['rows']:
+            row['meanIvPcnt'] = -1
+        result = combine(self.snapshot, self.ota, {**FILTER_DEFAULTS, 'min_mean_iv': 10}, now=self.now)
+        self.assertFalse(any(r['review_status'] == 'matches_config_unverified' for r in result['combined']))
+        for row in result['combined']:
+            if row['ota_status'] == 'returned':
+                self.assertIsNone(row['meanIvPcnt'])
+                self.assertEqual(row['meanIvPcnt_status'], 'negative_unusable')

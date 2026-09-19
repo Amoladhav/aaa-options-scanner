@@ -11,7 +11,8 @@ from .core import DataError, normalize_symbol
 
 # Keep vendor names: an IV level, categorical gauge and liquidity score cannot
 # safely be substituted for IV rank, IV percentile or bid/ask spread.
-PERCENT_FIELDS = ("meanIvPcnt", "ivHi1YrPcnt", "ivLow1YrPcnt", "spreadLiquidityPcnt")
+IV_FIELDS = ("meanIvPcnt", "ivHi1YrPcnt", "ivLow1YrPcnt")
+PERCENT_FIELDS = (*IV_FIELDS, "spreadLiquidityPcnt")
 COUNT_FIELDS = ("totalOpenInterest", "totalOptionsVolume", "daysToEarnings")
 CODE_FIELDS = ("ivGauge", "optionable")
 FIELDS = (*PERCENT_FIELDS, *COUNT_FIELDS, *CODE_FIELDS, "avgVol30d")
@@ -48,8 +49,8 @@ def normalize_metric(value, field):
         raise OtaSchemaError(field, 'non_finite')
     if number < 0:
         # Observed in an owner-run screener. Its provider meaning is unknown;
-        # retain the symbol but never use this value as a valid IV low or zero.
-        if field == 'ivLow1YrPcnt':
+        # retain the symbol but never use this value as a valid IV value or zero.
+        if field in IV_FIELDS:
             return None
         raise OtaSchemaError(field, 'negative')
     if integer:
@@ -84,7 +85,7 @@ def parse_rows(rows, max_rows=100):
 
 This function accepts only the rows array extracted by parse_response.
 A short or empty page does not establish full-universe coverage.
-Missing/null fields stay unknown. Negative annual IV lows are marked unusable;
+Missing/null fields stay unknown. Negative IV values are marked unusable;
 other malformed supplied metrics reject the page.
 """
     def invalid(field, reason):
@@ -113,8 +114,8 @@ other malformed supplied metrics reject the page.
             value = values.get(field)
             if value is not None:
                 value = normalize_metric(value, field)
-                if field == 'ivLow1YrPcnt' and value is None:
-                    parsed['ivLow1YrPcnt_status'] = 'negative_unusable'
+                if field in IV_FIELDS and value is None:
+                    parsed[field + '_status'] = 'negative_unusable'
             parsed[field] = value
         output.append(parsed)
     return output

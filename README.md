@@ -564,11 +564,31 @@ until the updated diagnostic is returned. Curl can isolate transport issues,
 but this probe's sanitized report is sufficient for schema debugging; do not
 paste raw authenticated captures or headers into chat.
 
-### Unusable OTA annual IV low
+### Unusable OTA IV values
 
-An owner-run screener returned a negative `ivLow1YrPcnt`. Its provider meaning
-is unverified. The parser now keeps that symbol, stores the IV low as null and
-adds `ivLow1YrPcnt_status: negative_unusable`, preserved in dashboard/CSV output.
-It does not substitute zero or use the negative value in calculations. Other
-invalid metrics still fail validation. This exception does not verify IV rank
-or percentile definitions.
+Owner-run screeners returned negative `ivLow1YrPcnt` and `meanIvPcnt` values.
+Negative mean, annual high and annual low IV values now become null with a
+`<field>_status: negative_unusable` marker in saved rows and dashboard/CSV output.
+Their provider meaning is unverified. They are never replaced with zero; missing
+mean IV cannot pass an enabled mean-IV filter. Invalid counts, malformed rows,
+duplicates and other schema violations remain errors.
+
+### Live screener test matrix (user-run)
+
+Try a narrow screener (<100 results), a medium screener (a few hundred), and a
+broad screener (>1,800), including ETFs and rows with unavailable IV. For each,
+record the browser result count and observation time locally, then paste its
+criteria and fetch:
+
+```bash
+python3 -I -S run.py ota-config --apply
+python3 -I -S run.py ota-fetch --profile ota
+```
+
+Share each generated `agent-review` report with a label such as narrow/medium/broad
+and the browser count. The agent does not run authenticated requests. Default
+pages are 100 rows; exactly full final pages require another request to observe
+termination. Compare counts with the same filters; realtime changes can cause
+mismatches. Do not treat a short page alone as proof of complete coverage.
+Existing per-run files are preserved. Applying criteria replaces the current
+local screener config, so save desired settings before switching screeners.

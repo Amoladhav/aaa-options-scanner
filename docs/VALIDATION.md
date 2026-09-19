@@ -244,3 +244,12 @@ field-specific unknown handling with an explicit reason marker, preserved
 through cached dashboard joins. Other negative metrics remain rejected.
 116 guarded offline tests passed; user-run fetch retest remains pending. The
 user's modified screener config was excluded from the commit.
+
+## Mixed screener IV and pagination coverage
+
+User report f7b7e774e9f8425eb493489b14f4b9ec parsed 18 pages/1,800 symbols
+before meanIvPcnt/negative on request 19. Generalized unknown-with-reason handling
+to the three IV level fields. 119 guarded offline tests passed, including
+0/77/100/237/1837-row synthetic screeners and required-IV filter rejection.
+Live narrow/medium/broad screener comparison remains user-run; browser counts
+and sanitized reports are requested. Existing user criteria remain uncommitted.

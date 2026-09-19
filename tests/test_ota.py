@@ -50,7 +50,7 @@ class OtaSchemaTests(unittest.TestCase):
 
     def test_invalid_values_fail_with_fixed_code(self):
         for field, value in [('meanIvPcnt', float('nan')), ('ivHi1YrPcnt', float('inf')),
-                             ('meanIvPcnt', True), ('meanIvPcnt', -1), ('meanIvPcnt', 10**400),
+                             ('meanIvPcnt', True), ('meanIvPcnt', 10**400),
                              ('totalOpenInterest', 1.5), ('totalOptionsVolume', '1200.5'),
                              ('ivGauge', False), ('optionable', -1)]:
             rows = deepcopy(self.rows)
@@ -93,8 +93,17 @@ class OtaSchemaTests(unittest.TestCase):
             self.assertIsNone(rows[0]['ivLow1YrPcnt'])
             self.assertEqual(rows[0]['ivLow1YrPcnt_status'], 'negative_unusable')
             self.assertEqual(rows[0]['totalOpenInterest'], 10000)
-        for field in ('ivHi1YrPcnt', 'meanIvPcnt', 'spreadLiquidityPcnt', 'totalOpenInterest'):
+        for field in ('spreadLiquidityPcnt', 'totalOpenInterest'):
             rows = deepcopy(self.rows)
             rows[0]['values'][field] = -1
             with self.assertRaises(DataError):
                 parse_rows(rows)
+
+    def test_all_negative_iv_fields_are_unknown_not_zero(self):
+        from trading_scanner.ota import IV_FIELDS
+        for field in IV_FIELDS:
+            self.rows[0]['values'][field] = '-1.25'
+        row = parse_rows(self.rows)[0]
+        for field in IV_FIELDS:
+            self.assertIsNone(row[field])
+            self.assertEqual(row[field + '_status'], 'negative_unusable')

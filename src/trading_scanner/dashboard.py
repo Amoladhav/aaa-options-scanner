@@ -8,7 +8,7 @@ from pathlib import Path
 import tempfile
 
 from .core import DataError, calculate, normalize_symbol
-from .ota import FIELDS as OTA_FIELDS, normalize_metric
+from .ota import FIELDS as OTA_FIELDS, IV_FIELDS, normalize_metric
 from .report import FIELDS as CRS_FIELDS, write_csv, write_reports
 
 FILTER_DEFAULTS = {'schema_version': 1, 'min_open_interest': 10000,
@@ -18,7 +18,7 @@ FILTER_DEFAULTS = {'schema_version': 1, 'min_open_interest': 10000,
 EXTRA_FIELDS = ('price_status', 'ota_status', 'review_status', 'rank_change', 'history_status',
                 'meanIvPcnt', 'ivHi1YrPcnt', 'ivLow1YrPcnt', 'ivGauge',
                 'spreadLiquidityPcnt', 'totalOpenInterest', 'totalOptionsVolume',
-                'daysToEarnings', 'avgVol30d', 'ivLow1YrPcnt_status')
+                'daysToEarnings', 'avgVol30d', *(field + '_status' for field in IV_FIELDS))
 
 
 def read_json(path, limit=30_000_000):
@@ -75,13 +75,14 @@ def ota_checked(payload, profile):
             raise DataError('DASHBOARD_INPUT_INVALID')
         seen.add(symbol)
         metrics = {key: normalize_metric(row[key], key) if row.get(key) is not None else None for key in OTA_FIELDS}
-        status = row.get('ivLow1YrPcnt_status')
-        if status not in (None, 'negative_unusable'):
-            raise DataError('DASHBOARD_INPUT_INVALID')
-        if status == 'negative_unusable' or row.get('ivLow1YrPcnt') is not None and metrics['ivLow1YrPcnt'] is None:
-            if metrics['ivLow1YrPcnt'] is not None:
+        for field in IV_FIELDS:
+            status = row.get(field + '_status')
+            if status not in (None, 'negative_unusable'):
                 raise DataError('DASHBOARD_INPUT_INVALID')
-            metrics['ivLow1YrPcnt_status'] = 'negative_unusable'
+            if status == 'negative_unusable' or row.get(field) is not None and metrics[field] is None:
+                if metrics[field] is not None:
+                    raise DataError('DASHBOARD_INPUT_INVALID')
+                metrics[field + '_status'] = 'negative_unusable'
         rows.append({'symbol': symbol, **metrics})
     # Persist only this allowlist, never arbitrary provider properties.
     return {'source': payload['source'], 'retrieved_at': stamp.isoformat(),
@@ -108,7 +109,7 @@ def combine(snapshot, ota, filters=None, *, now=None, previous=None):
     for row in result['ranked']:
         matched = lookup.get(row['symbol'])
         joined = {**row, **{key: matched.get(key) if matched else None for key in OTA_FIELDS},
-                  'ivLow1YrPcnt_status': matched.get('ivLow1YrPcnt_status') if matched else None,
+                  **{field + '_status': matched.get(field + '_status') if matched else None for field in IV_FIELDS},
                   'price_status': price_status,
                   'ota_status': timing if matched else 'not_returned_by_screener',
                   'rank_change': None, 'history_status': 'no_prior_session'}
@@ -188,7 +189,7 @@ def write_dashboard(result, destination):
               'rank':'Rank', 'score':'CRS score', 'percentile':'Percentile', 'rank_change':'Rank change ↑',
               'price_status':'Price age', 'ota_status':'OTA coverage', 'review_status':'Review', 'history_status':'History',
               'meanIvPcnt':'Mean IV %', 'ivHi1YrPcnt':'1y IV high %', 'ivLow1YrPcnt':'1y IV low %',
-              'ivLow1YrPcnt_status':'IV low status', 'ivGauge':'IV gauge', 'spreadLiquidityPcnt':'OTA liquidity', 'totalOpenInterest':'Open interest',
+              'meanIvPcnt_status':'Mean IV status', 'ivHi1YrPcnt_status':'IV high status', 'ivLow1YrPcnt_status':'IV low status', 'ivGauge':'IV gauge', 'spreadLiquidityPcnt':'OTA liquidity', 'totalOpenInterest':'Open interest',
               'totalOptionsVolume':'Options volume', 'daysToEarnings':'Days to earnings', 'avgVol30d':'Underlying avg volume (OTA 30d)'}
     columns = ('symbol','company','group','rank','score','bias', *EXTRA_FIELDS)
     numeric = {'rank','score','rank_change', *OTA_FIELDS}
