@@ -149,3 +149,14 @@ Regression coverage includes precision-sensitive fractions, huge exponents,
 booleans, placeholders and nonfinite strings. All 75 offline tests passed.
 No newer field-level live diagnostic was present, so this addresses a known
 compatibility gap without claiming it is the confirmed cause of the user's failure.
+
+## Verified user-run OTA checkpoint: 2026-09-19
+
+Reviewed only the allowlisted report `126d95ced37a4481b0e217b61b7d89e2`:
+profile `ota`, check `ota_single_page_fetch` passed, 77 rows, error_code null.
+Reported source revision hash:
+`9df30e8fab560f7d27e396e5ca09048c94735ba0fc1e93fb8ff75aa35858575d`.
+This evidences one successful user-run request and row parse, not complete
+pagination, metric semantics, session longevity or repeat-run reliability.
+No tokens, raw response files or request logs were inspected. Earlier pending
+live notes above describe their respective historical increments.

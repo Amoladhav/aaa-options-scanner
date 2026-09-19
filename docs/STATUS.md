@@ -1,6 +1,12 @@
 # Project status
 
-Updated: 2026-09-18. Phase: momentum scanner with offline options enrichment.
+Updated: 2026-09-19. Phase: momentum scanner with verified single-page OTA fetch.
+
+OTA live checkpoint: user-run diagnostic `126d95ced37a4481b0e217b61b7d89e2`
+passed `ota_single_page_fetch`, returned 77 rows and reported no error. This
+confirms one successful authenticated fetch and parse with the saved filters.
+Pagination/full coverage, metric definitions, expiry and report integration
+remain unverified. No authenticated request was executed by agents.
 
 ## Implemented
 
