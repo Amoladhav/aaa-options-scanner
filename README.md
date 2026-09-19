@@ -357,6 +357,13 @@ non_integer`, `rows / too_many_rows` or `response / invalid_json`. No response
 values or symbols are included. Share the report path to diagnose the exact issue;
 the tool does not silently coerce invalid metrics or publish a partial page.
 
+OTA numeric fields accept ordinary decimal strings and numbers. Counts/codes
+accept whole-number decimals such as `1200.0` or `"1200"`, but never truncate
+fractions. Booleans, negative/nonfinite values, blank strings, separators and
+placeholder text remain invalid. Integer metrics are capped at `2^53 - 1` to
+avoid accepting values outside the exact JSON floating-point integer range.
+Missing/null values remain unknown; no fake volume or IV substitutions are made.
+
 Token expiry, renewal and server-side revocation semantics remain unknown. This
 tool does not refresh tokens or automate login. Sign out through OTA when finished;
 sign-out alone has not been verified to revoke an already copied token. Use OTA's

@@ -4,6 +4,8 @@ No HTTP transport, credential handling or inferred financial definitions. Caller
 must handle pagination and observation timestamps before publishing a snapshot.
 """
 import math
+from decimal import Decimal, InvalidOperation
+import re
 
 from .core import DataError, normalize_symbol
 
@@ -26,6 +28,36 @@ class OtaSchemaError(DataError):
             raise ValueError('INVALID_DIAGNOSTIC')
         super().__init__('OTA_SCHEMA_INVALID')
         self.field, self.reason = field, reason
+
+
+def normalize_metric(value, field):
+    """Accept lossless decimal representations, never truncate fractional counts."""
+    integer = field in COUNT_FIELDS or field in CODE_FIELDS
+    reason = 'non_integer' if integer else 'non_numeric'
+    if type(value) not in (int, float, str):
+        raise OtaSchemaError(field, reason)
+    if isinstance(value, str):
+        if len(value) > 128 or not re.fullmatch(r'[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?', value.strip()):
+            raise OtaSchemaError(field, reason)
+        value = value.strip()
+    try:
+        number = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        raise OtaSchemaError(field, reason) from None
+    if not number.is_finite():
+        raise OtaSchemaError(field, 'non_finite')
+    if number < 0:
+        raise OtaSchemaError(field, 'negative')
+    if integer:
+        # Bound integer expansion for scientific notation. Floats beyond the
+        # exact-integer range have already lost possible source precision.
+        if number > 2**53 - 1 or number != number.to_integral_value():
+            raise OtaSchemaError(field, 'non_integer')
+        return int(number)
+    result = float(number)
+    if not math.isfinite(result) or result == 0 and number != 0:
+        raise OtaSchemaError(field, 'non_finite')
+    return result
 
 
 def parse_response(payload):
@@ -73,23 +105,7 @@ Missing/null fields stay unknown; malformed supplied metrics reject the page.
         for field in FIELDS:
             value = values.get(field)
             if value is not None:
-                if field in PERCENT_FIELDS:
-                    # IV expressed in percent can exceed 100. The liquidity
-                    # field's scale is unverified, so do not impose that ceiling.
-                    if type(value) not in (int, float):
-                        invalid(field, 'non_numeric')
-                    if value < 0:
-                        invalid(field, 'negative')
-                    try:
-                        finite = math.isfinite(value)
-                    except OverflowError:
-                        invalid(field, 'non_finite')
-                    if not finite:
-                        invalid(field, 'non_finite')
-                elif type(value) is not int:
-                    invalid(field, 'non_integer')
-                elif value < 0:
-                    invalid(field, 'negative')
+                value = normalize_metric(value, field)
             parsed[field] = value
         output.append(parsed)
     return output

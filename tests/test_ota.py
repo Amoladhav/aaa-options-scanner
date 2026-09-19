@@ -51,7 +51,7 @@ class OtaSchemaTests(unittest.TestCase):
     def test_invalid_values_fail_with_fixed_code(self):
         for field, value in [('meanIvPcnt', float('nan')), ('ivHi1YrPcnt', float('inf')),
                              ('meanIvPcnt', True), ('meanIvPcnt', -1), ('meanIvPcnt', 10**400),
-                             ('totalOpenInterest', 1.5), ('totalOptionsVolume', '1200'),
+                             ('totalOpenInterest', 1.5), ('totalOptionsVolume', '1200.5'),
                              ('ivGauge', False), ('optionable', -1)]:
             rows = deepcopy(self.rows)
             rows[0]['values'][field] = value
@@ -68,3 +68,19 @@ class OtaSchemaTests(unittest.TestCase):
 
     def test_empty_page_is_valid_without_coverage_claim(self):
         self.assertEqual(parse_rows([]), [])
+
+    def test_numeric_strings_and_integral_decimals(self):
+        self.rows[0]['values'].update(meanIvPcnt=' 45.25 ', totalOpenInterest='10000.0',
+                                     totalOptionsVolume=1200.0, ivGauge='2', optionable='1.0')
+        row = parse_rows(self.rows)[0]
+        self.assertEqual(row['meanIvPcnt'], 45.25)
+        self.assertEqual(row['totalOpenInterest'], 10000)
+        self.assertIs(type(row['totalOptionsVolume']), int)
+        self.assertEqual(row['ivGauge'], 2)
+        self.assertEqual(row['optionable'], 1)
+
+    def test_numeric_strings_never_truncate_or_invent_values(self):
+        for value in ('1.00000000000000001', 'NaN', 'Infinity', '', 'N/A', '1,000', '-1', '1e1000000', True):
+            self.rows[0]['values']['totalOptionsVolume'] = value
+            with self.subTest(value=value), self.assertRaises(DataError):
+                parse_rows(self.rows)

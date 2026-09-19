@@ -141,3 +141,11 @@ JSON decoding, row shape/count, symbols, numeric types, negatives and nonfinite
 values without emitting response values. Two new tests cover vocabulary rejection
 and the sanitized CLI failure report. All 73 offline tests passed. Validation
 semantics remain unchanged; live diagnosis awaits the user's next report.
+
+Numeric compatibility increment: decimal strings and integral decimals are now
+accepted using Decimal validation before conversion. Unlike the incoming adapter,
+fractional counts are never truncated, and missing volume is never fabricated.
+Regression coverage includes precision-sensitive fractions, huge exponents,
+booleans, placeholders and nonfinite strings. All 75 offline tests passed.
+No newer field-level live diagnostic was present, so this addresses a known
+compatibility gap without claiming it is the confirmed cause of the user's failure.
