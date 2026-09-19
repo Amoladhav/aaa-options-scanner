@@ -124,9 +124,9 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
         counts['symbols_received'] = len(rows)
         if progress is not None:
             progress.advance(page, counts=counts)
-        # Probe beyond short pages: the provider may silently cap page size.
-        # Empty-page termination is observed exhaustion, not an atomic snapshot.
-        if not batch:
+        # Match the reference adapter: do not probe beyond a short final page.
+        # A short page is not proof that the provider honored the requested size.
+        if len(batch) < page_size:
             return rows
     raise DataError('OTA_PAGE_LIMIT')
 
@@ -174,13 +174,13 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES)
         output = {'schema_version': 1, 'source': 'ota',
                   'retrieved_at': datetime.now(timezone.utc).isoformat(),
                   'observation_timestamp': None, 'page_size': page_size,
-                  'pages_received': pagination_counts['pages_received'], 'coverage': 'empty_page_reached',
+                  'pages_received': pagination_counts['pages_received'], 'coverage': 'short_page_observed',
                   'methodology': 'unverified',
                   'criteria_sha256': hashlib.sha256(json.dumps(checked['criteria'], sort_keys=True).encode()).hexdigest(),
                   'rows': rows}
         (destination / 'results.json').write_text(json.dumps(output, indent=2, allow_nan=False) + '\n', encoding='utf-8')
         progress.finish()
-        print(f'Fetched {count} rows; reached an empty page after {pagination_counts["pages_received"]} pages. Realtime results can change during paging.')
+        print(f'Fetched {count} rows; stopped on a short page after {pagination_counts["pages_received"]} pages. Full coverage remains unverified.')
         print(f'User data: {destination / "results.json"}')
     except (Exception, KeyboardInterrupt) as exc:
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'OTA_FETCH_FAILED'

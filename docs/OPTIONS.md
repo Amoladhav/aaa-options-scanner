@@ -88,7 +88,7 @@ request has earnings, price-change, moving-average and liquidity filters: result
 are a selected subset, not the momentum universe. Omitted symbols cannot be treated
 as zero liquidity or non-optionable. The complete supplied payload is now saved
 in configuration. The results.data envelope is supported. Pagination continues
-through an empty page, defaulting to 600 rows and 50 requests. Live paging behavior
+until a short page, defaulting to 600 rows and at most 50 requests. Live paging behavior
 and observation timestamps remain unverified. No raw captures are needed.
 
 The owner confirms personal scripted access is permitted. The user-run `ota-fetch`

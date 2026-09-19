@@ -38,7 +38,7 @@ unattended daily schedule or automatic login/renewal is implemented.
 
 ## Verification
 
-On Ubuntu, Python 3.14.4: seven intake-tool tests and 80 offline application tests
+On Ubuntu, Python 3.14.4: seven intake-tool tests and 81 offline application tests
 passed. The offline runner denies network, subprocesses, real environment reads,
 and files outside reviewed source/tests/config, stdlib and a synthetic temp tree.
 Guards are installed before test discovery. Tests cover numeric reference parity
@@ -87,7 +87,7 @@ hooks, and WSL-specific checks remain pending.
   execution or performance claims.
 - OTA row parsing is tested with invented fixtures. Vendor fields remain separate
   from normalized IV metrics. Pagination defaults to 600 rows, up to 50 pages,
-  and continues through an empty page. Duplicates, page limits and mid-run failures
+  and stops on a short page. Duplicates, page limits and mid-run failures
   reject partial output. Live paging, timestamps and repeat-run validation remain pending.
 - `ota-config` accepts complete pasted criteria, previews a versioned config and
   atomically replaces `config/ota-screener.json` with `--apply`. It uses shared

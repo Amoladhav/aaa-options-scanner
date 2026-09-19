@@ -382,15 +382,15 @@ time is unknown. Pages use your selected filters. Once-daily automation and join
 live OTA values to momentum rankings remain future work. The earlier single-page
 user-run check passed with 77 rows and no errors
 (review report `126d95ced37a4481b0e217b61b7d89e2`). Full coverage and metric
-interpretation remain unverified; the latest offline suite passed 80 tests.
+interpretation remain unverified; the latest offline suite passed 81 tests.
 
 ### Pagination and limits
 
 The default page size is **600**, with at most **50 requests**, including the final
-empty-page check. Page numbers start at 1 and increase; the payload and symbol-ascending
-sort remain unchanged. A short page does not stop the loop because OTA may cap the
-requested size. Fetching continues until an empty page. For 77 matches, expect
-one data page plus one empty-page request if the provider honors page numbering.
+short-page response. Page numbers start at 1 and increase; the payload and symbol-ascending
+sort remain unchanged. Fetching stops when a page has fewer rows than requested,
+matching the reference adapter. For 77 matches with the default size, only one
+request is made. Full pages continue to the next page.
 
 Override limits when needed:
 
@@ -403,15 +403,15 @@ PowerShell uses `py -3 -I -S` instead of `python3 -I -S`. Allowed page sizes are
 page size if `OTA_RESPONSE_TOO_LARGE` occurs.
 
 Repeated symbols across pages fail with `OTA_DUPLICATE_PAGE_SYMBOL`; reaching the
-limit before an empty page fails with `OTA_PAGE_LIMIT`. Authentication, rate-limit
+limit before a short page fails with `OTA_PAGE_LIMIT`. Authentication, rate-limit
 and schema failures also stop immediately. No combined data file is written unless
-all requested pages finish through empty-page termination. Existing run outputs
+all requested pages finish through short-page termination. Existing run outputs
 remain separate and untouched. Progress is measured against the page limit until
 termination establishes the actual page count, not an estimate of market coverage.
 
 The sanitized report uses check `ota_paginated_fetch` and counts rows published,
 pages requested, pages received and symbols received before failure. The user data
-file records `coverage: empty_page_reached`. This describes observed exhaustion,
-not guaranteed point-in-time completeness: realtime screener membership may change
+file records `coverage: short_page_observed`. This is not guaranteed completeness:
+the provider may cap page size or ignore page numbers; realtime membership may change
 between pages. Pagination has passed offline tests; live validation of page size
 and server paging behavior remains pending your next user-run report.

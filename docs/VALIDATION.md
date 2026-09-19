@@ -185,3 +185,15 @@ requests were executed. Default limits are 600 rows and 50 pages; termination
 requires an empty page, not merely a short response. Realtime membership can shift,
 so observed exhaustion is not a point-in-time completeness guarantee. User-run
 validation of the new pagination behavior remains pending.
+
+## Short-page termination correction
+
+User diagnostic `4cacfbf5acbe46648d4560cc6a16dc81` reported two received pages,
+77 symbols from the first, and `OTA_DUPLICATE_PAGE_SYMBOL` on the second. The
+empty-page probe was inappropriate for that response behavior. Paging now stops
+on fewer rows than requested, matching the reference adapter; full-page duplicate
+and page-limit guards remain. A 77-row synthetic regression proves there is no
+second request with the 600-row default. Existing pagination tests still exercise
+full pages, limits and mid-run expiry. All 81 offline tests passed. Coverage is
+labeled `short_page_observed`, not guaranteed complete: server caps, ignored page
+numbers and realtime membership changes remain unresolved. Live retry is user-run.

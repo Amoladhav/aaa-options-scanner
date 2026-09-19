@@ -131,14 +131,14 @@ class OtaFetchTests(unittest.TestCase):
         self.assertNotIn('synthetic-private-marker', output.getvalue() + json.dumps(report))
         self.assertFalse(list(root.glob('artifacts/ota/*/results.json')))
 
-    def test_paging_continues_past_short_pages_and_preserves_arguments(self):
+    def test_paging_continues_past_full_pages_and_preserves_arguments(self):
         counts = {}
         progress = Mock()
         with patch('trading_scanner.ota_fetch.fetch_page', side_effect=[[{'symbol':'S01'}], [{'symbol':'S02'}], []]) as fetch:
-            rows = fetch_all(CRITERIA, 'synthetic-local-input', counts=counts, progress=progress)
+            rows = fetch_all(CRITERIA, 'synthetic-local-input', page_size=1, counts=counts, progress=progress)
         self.assertEqual([r['symbol'] for r in rows], ['S01','S02'])
         self.assertEqual([c.kwargs for c in fetch.call_args_list],
-                         [{'page':n, 'page_size':600} for n in (1,2,3)])
+                         [{'page':n, 'page_size':1} for n in (1,2,3)])
         self.assertTrue(all(c.args == (CRITERIA, 'synthetic-local-input') for c in fetch.call_args_list))
         self.assertEqual(counts, {'pages_requested':3, 'pages_received':3, 'symbols_received':2})
         self.assertEqual(progress.advance.call_count, 3)
@@ -156,7 +156,7 @@ class OtaFetchTests(unittest.TestCase):
                                 ([[{'symbol':'S01'}], DataError('OTA_AUTH_REJECTED')], 'OTA_AUTH_REJECTED')]:
             with patch('trading_scanner.ota_fetch.fetch_page', side_effect=responses) as fetch:
                 with self.assertRaisesRegex(DataError, code):
-                    fetch_all(CRITERIA, 'synthetic-local-input', max_pages=2)
+                    fetch_all(CRITERIA, 'synthetic-local-input', page_size=1, max_pages=2)
                 self.assertEqual(fetch.call_count, 2)
 
     def test_page_size_and_path_validation(self):
@@ -178,9 +178,17 @@ class OtaFetchTests(unittest.TestCase):
         (root / 'config').mkdir(parents=True)
         (root / 'config' / 'ota-screener.json').write_text(json.dumps(parse_config(json.dumps(CRITERIA))))
         with patch('trading_scanner.ota_fetch.prompt_token', return_value='synthetic-local-input'), patch('trading_scanner.ota_fetch.fetch_page', side_effect=[[{'symbol':'S01'}], DataError('OTA_AUTH_REJECTED')]), redirect_stdout(io.StringIO()):
-            self.assertEqual(main(['ota-fetch','--profile','ota'], root), 1)
+            self.assertEqual(main(['ota-fetch','--profile','ota', '--page-size', '1'], root), 1)
         report = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
         self.assertEqual(report['counts']['pages_requested'],2)
         self.assertEqual(report['counts']['pages_received'],1)
         self.assertEqual(report['counts']['rows'],0)
         self.assertFalse(list(root.glob('artifacts/ota/*/results.json')))
+
+    def test_short_page_does_not_probe_repeating_final_page(self):
+        batch = [{'symbol':f'S{i}'} for i in range(77)]
+        counts = {}
+        with patch('trading_scanner.ota_fetch.fetch_page', return_value=batch) as fetch:
+            self.assertEqual(fetch_all(CRITERIA, 'synthetic-local-input', counts=counts), batch)
+        fetch.assert_called_once_with(CRITERIA, 'synthetic-local-input', page=1, page_size=600)
+        self.assertEqual(counts['pages_requested'], 1)
