@@ -15,6 +15,11 @@ from .ota_config import MAX_INPUT, parse_config, pairs
 from .progress import RunProgress
 
 HOST = 'app.otatrade.com'
+# Owner-requested browser-style compatibility header; not actual browser identity
+# or a substitute for valid authentication. Keep deterministic for diagnostics.
+USER_AGENT = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+              'AppleWebKit/537.36 (KHTML, like Gecko) '
+              'Chrome/120.0.0.0 Safari/537.36')
 PATH = '/api/secure/screeners/criteria/results?rows=100&realtime=true&type=NON_OTC&view=criteria&sortField=symbol&sortOrder=asc&page=1'
 MAX_RESPONSE = 2_000_000
 ERRORS = {'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
@@ -44,7 +49,8 @@ def fetch_page(criteria, token):
         connection = http.client.HTTPSConnection(HOST, timeout=30, context=ssl.create_default_context())
         connection.request('POST', PATH, body=body,
                            headers={'x-auth-token': token, 'Content-Type': 'application/json',
-                                    'Accept': 'application/json', 'Accept-Encoding': 'identity'})
+                                    'Accept': 'application/json', 'Accept-Encoding': 'identity',
+                                    'User-Agent': USER_AGENT})
         response = connection.getresponse()
         status = response.status
         if status in (401, 403):

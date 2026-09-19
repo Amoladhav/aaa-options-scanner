@@ -33,7 +33,11 @@ class OtaFetchTests(unittest.TestCase):
         args, kwargs = connection.request.call_args
         self.assertEqual(args, ('POST', PATH))
         self.assertEqual(json.loads(kwargs['body']), CRITERIA)
-        self.assertEqual(set(kwargs['headers']), {'x-auth-token','Content-Type','Accept','Accept-Encoding'})
+        self.assertEqual(set(kwargs['headers']), {'x-auth-token','Content-Type','Accept','Accept-Encoding','User-Agent'})
+        self.assertEqual(kwargs['headers']['User-Agent'],
+                         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                         'AppleWebKit/537.36 (KHTML, like Gecko) '
+                         'Chrome/120.0.0.0 Safari/537.36')
         connection.request.assert_called_once()
         connection.close.assert_called_once()
 

@@ -109,3 +109,8 @@ safe network errors and sanitized success/failure artifacts. Transport and token
 input were replaced with synthetic fixtures inside the existing offline guard.
 No real token was read and no authenticated request was made. The owner confirms
 permission, but real token-only access and response shape remain user-run checks.
+
+Browser-style User-Agent increment: the existing request-contract test now checks
+the exact owner-requested Chrome-style header and the complete header allowlist.
+`python3 -I -S tools/test_offline.py`: 69 tests passed. No authenticated request
+was executed; whether the header improves OTA compatibility remains unverified.

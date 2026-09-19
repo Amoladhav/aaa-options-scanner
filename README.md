@@ -307,6 +307,11 @@ a 30-second socket timeout, no cookies, redirects, retries or proxy-environment
 discovery. No dependency installation is needed. This is a connection check, not
 the full daily enrichment pipeline.
 
+At the owner's request, OTA requests send a fixed Chrome-style `User-Agent`
+(`Chrome/120.0.0.0` on Windows) for compatibility. This does not reflect the actual
+OS/browser, provide authentication, or guarantee acceptance by OTA. No browser
+cookies or other browser identity headers are copied automatically.
+
 1. Sign in to your own OTA account in Chrome. Open Developer Tools → Network →
    Fetch/XHR, then load your screener normally.
 2. Select the successful POST to `/api/secure/screeners/criteria/results`.
