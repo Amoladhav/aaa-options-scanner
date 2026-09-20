@@ -369,3 +369,7 @@ interpreted filter metrics and master-owned columns. Reuse `combine()` and
 keep source selection and export controls in the UI, with join and CRS rules in
 the shared model. Raw-field presentation and Excel CSV output now have isolated
 regression coverage. Web endpoints and persistent column preferences remain future work.
+
+HTML percentile-tail controls are presentation-only over saved CRS percentiles.
+Future web controls should use these same peer-group percentiles and keep display
+selection distinct from persisted candidate rules and source-fetch settings.

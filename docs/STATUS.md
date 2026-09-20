@@ -12,7 +12,14 @@ native OS storage can save the current token but cannot extend its lifetime.
 Manual runs and the optional local schedule worker are user-started. No login
 automation or OS startup service exists.
 
-## Latest increment: CRS with complete OTA columns
+## Latest increment: interactive CRS tail selection
+
+HTML now offers top/bottom/both X-percentile controls and explicit CRS ordering,
+with field-diagnostic help and Tradier attachment counts. Presentation filters do
+not change rankings, fixed 10% labels, candidate rules or CSV files. 182 isolated
+offline tests passed; browser interaction and real-data report checks remain pending.
+
+## Previous increment: CRS with complete OTA columns
 
 The combined HTML and Excel-readable master CSV now include CRS score, rank,
 percentile, 21/63/126-session returns and all captured OTA source fields. Raw

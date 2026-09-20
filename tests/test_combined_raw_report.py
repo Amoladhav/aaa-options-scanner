@@ -92,6 +92,36 @@ class CombinedRawReportTests(unittest.TestCase):
         self.assertNotIn('<script>synthetic</script>',html)
         self.assertIn('&lt;script&gt;synthetic&lt;/script&gt;',html)
 
+    def test_html_tail_controls_receive_full_precision_percentiles(self):
+        from html.parser import HTMLParser
+        class Rows(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.percentiles=[]
+            def handle_starttag(self, tag, attrs):
+                data=dict(attrs)
+                if tag=='tr' and 'data-percentile' in data:
+                    self.percentiles.append(data['data-percentile'])
+        del self.snapshot['prices']['S01']
+        result=combine(self.snapshot,self.raw,now=self.now)
+        attach_tradier(result,[])
+        write_dashboard(result,self.root)
+        html=(self.root/'dashboard.html').read_text()
+        parser=Rows()
+        parser.feed(html)
+        self.assertEqual(parser.percentiles,[str(r['percentile']) if r.get('percentile') is not None else '' for r in result['combined']])
+        self.assertIn('',parser.percentiles)
+        for x in (.1,.2,.5):
+            top=[float(p) for p in parser.percentiles if p and float(p)>=1-x]
+            bottom=[float(p) for p in parser.percentiles if p and float(p)<=x]
+            self.assertTrue(top)
+            self.assertTrue(bottom)
+            self.assertTrue(all(p>=1-x for p in top))
+        self.assertIn('id="tailPercent" required type="number"',html)
+        self.assertIn('Short research: bottom X%',html)
+        self.assertIn('Tradier rows attached: 0 / 60',html)
+        self.assertIn('What are OTA field diagnostics?',html)
+
     def test_cli_demo_preserves_source_and_prints_excel_paths(self):
         output=io.StringIO()
         with redirect_stdout(output):

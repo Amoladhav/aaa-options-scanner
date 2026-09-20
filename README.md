@@ -57,6 +57,20 @@ use `ota-report` for the complete OTA inventory.
 OTA does not alter CRS scores. Missing matches mean absent from the filtered
 screener, not zero volume. Provider definitions remain unverified.
 
+In HTML, use **CRS selection** → **Long research: top X%**, **Short research:
+bottom X%**, or **Both tails**, and set **X (%)** (default 10). **CRS order** sorts
+strongest or weakest first; column headers also sort. Percentiles use the full
+stock/ETF peer groups, not the visible subset. Search/group/fixed-label/review
+filters combine with the tail selection; leave fixed labels and review at All
+for a pure percentile screen. UI filtering does not change CSVs or candidate rules.
+
+**OTA field diagnostics** describes numeric conversion or missing/unusable input;
+it is not a score. **Tradier Status** explains quote availability. Tradier files
+are attached explicitly: add `--tradier PATH_TO_SAVED_BATCH_JSON` (or a saved
+`atm-spreads.json`) to the dashboard command. Without it, status is `not_supplied`
+and quotes are blank. The report displays the attached-row count and makes no
+network requests. Missing metrics remain unavailable even for an attached row.
+
 `dashboard` selects the newest saved files by modification time. Use
 `--snapshot PATH --ota PATH` to select exact inputs. Synthetic/public profiles
 cannot mix. Output includes copies of inputs and settings for reproduction.
