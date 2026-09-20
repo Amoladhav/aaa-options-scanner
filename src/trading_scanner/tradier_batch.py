@@ -27,7 +27,8 @@ def master_id(rows):
 
 def run_batch(root, args):
     from .cli import code_revision
-    from .token_store import load_token, prompt_api_key, valid_token
+    from .credentials import resolve
+    from .token_store import prompt_api_key, valid_token
     from .workflow import newest
     run_id, revision = new_run_id(), code_revision()
     progress, state, destination, credential, code = None, None, None, None, None
@@ -57,8 +58,9 @@ def run_batch(root, args):
         atomic_json(destination / 'batch.json', state)
         progress.finish()
         progress.start('tradier_auth')
-        credential = (valid_token(prompt_api_key(save=False), provider='tradier')
-                      if args.prompt_token else load_token(provider='tradier', profile=args.profile))
+        credential = resolve('tradier', args.profile,
+                             source=getattr(args, 'credential_source', None) or ('prompt' if getattr(args, 'prompt_token', False) else 'store'),
+                             allow_prompt=True, prompt=lambda: valid_token(prompt_api_key(save=False), provider='tradier'))
         progress.finish()
         progress.start('tradier_batch', total=len(master))
         from .throttling import Governor

@@ -15,7 +15,8 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 2. Latest implementation checkpoint: `ec66c33` (readable run IDs and Tradier
    attachment diagnostics); prior `1204335` adds HTML CRS tail filtering and
    `6051eef` preserves all OTA fields in combined reports. 184 offline tests passed.
-3. Begin C1 below: the shared credential loader and synthetic tests. No Infisical
+3. C1 is implemented and offline verified (192 tests). Continue with C2 below.
+   Original C1 scope: the shared credential loader and synthetic tests. No Infisical
    SDK in the scanner; retain run.py and existing commands. Do not begin the
    database migration or cloud deployment at the same time.
 4. Complete each checkpoint with focused local commits, README/status updates,
@@ -77,7 +78,7 @@ without a reviewed migration. Provider values and private paths must not enter d
 This document records decisions, ordered work and acceptance criteria. Runtime
 credential integration and general history database are not implemented by it.
 
-### C1 — Shared credential loader (next)
+### C1 — Shared credential loader (offline verified: 2026-09-20)
 
 - Centralize provider/profile-to-variable mapping. Proposed names:
   `SCANNER_OTA_TOKEN`, `SCANNER_TRADIER_SANDBOX_TOKEN`,

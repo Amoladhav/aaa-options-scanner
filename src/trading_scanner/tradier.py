@@ -19,7 +19,9 @@ from .progress import RunProgress
 HOSTS = {'production': 'api.tradier.com', 'sandbox': 'sandbox.tradier.com'}
 MAX_RESPONSE = 5_000_000
 MAX_CHAINS = 32
-ERRORS = {'THROTTLE_BUSY', 'THROTTLE_STATE_INVALID', 'THROTTLE_COOLDOWN_ACTIVE', 'THROTTLE_CIRCUIT_OPEN', 'TRADIER_INVALID_INPUT', 'TRADIER_TOKEN_INVALID', 'TRADIER_AUTH_REJECTED',
+from .credentials import ERRORS as CREDENTIAL_ERRORS
+
+ERRORS = CREDENTIAL_ERRORS | {'THROTTLE_BUSY', 'THROTTLE_STATE_INVALID', 'THROTTLE_COOLDOWN_ACTIVE', 'THROTTLE_CIRCUIT_OPEN', 'TRADIER_INVALID_INPUT', 'TRADIER_TOKEN_INVALID', 'TRADIER_AUTH_REJECTED',
           'TRADIER_RATE_LIMITED', 'TRADIER_REDIRECT_REJECTED', 'TRADIER_HTTP_ERROR',
           'TRADIER_NETWORK_ERROR', 'TRADIER_RESPONSE_TOO_LARGE', 'TRADIER_SCHEMA_INVALID',
           'TRADIER_MONTHLY_UNVERIFIED', 'TRADIER_NO_ATM_PAIR', 'TRADIER_FETCH_FAILED',
@@ -269,7 +271,8 @@ def capture_writer(destination, profile, run_id, revision):
 def run_probe(root, args):
     from .cli import code_revision
     from .dashboard import atomic_json
-    from .token_store import load_token, prompt_api_key, valid_token
+    from .credentials import resolve
+    from .token_store import prompt_api_key, valid_token
     run_id, revision = new_run_id(), code_revision()
     progress, code, counts = None, None, {'chains_received': 0, 'rows': 0}
     diagnostic = {}
@@ -283,9 +286,9 @@ def run_probe(root, args):
         progress = RunProgress(root / 'artifacts' / 'logs', run_id, 'tradier-probe', args.profile, revision)
         progress.begin()
         progress.start('tradier_auth')
-        credential = (valid_token(prompt_api_key(save=False), provider='tradier')
-                      if getattr(args, 'prompt_token', False)
-                      else load_token(provider='tradier', profile=args.profile))
+        credential = resolve('tradier', args.profile,
+                             source=getattr(args, 'credential_source', None) or ('prompt' if getattr(args, 'prompt_token', False) else 'store'),
+                             allow_prompt=True, prompt=lambda: valid_token(prompt_api_key(save=False), provider='tradier'))
         progress.finish()
         try:
             # Same-day expiry is excluded using the New York trading date.

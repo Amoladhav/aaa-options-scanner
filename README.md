@@ -940,3 +940,25 @@ resume plan for screens, acceptance checks and the distinction from later hostin
 The [implementation research handoff](docs/IMPLEMENTATION_RESEARCH.md) supplies
 official documentation links, implementation boundaries and unresolved access
 questions for the next session.
+
+## Explicit environment credentials (C1)
+
+Provider commands accept `--credential-source env|store|prompt|auto`. Existing
+OTA prompt, Tradier OS-store defaults and legacy flags remain compatible; do not
+combine a legacy credential flag with `--credential-source`. `auto` tries only
+the selected variable then a hidden terminal prompt when absent. Empty/invalid
+values fail, with no source/profile fallback or authentication retry. Web and
+noninteractive callers must prohibit prompts.
+
+| Provider/profile | Environment variable |
+| --- | --- |
+| OTA / ota | `SCANNER_OTA_TOKEN` |
+| Tradier / sandbox | `SCANNER_TRADIER_SANDBOX_TOKEN` |
+| Tradier / production | `SCANNER_TRADIER_PRODUCTION_TOKEN` |
+
+User-run format check after secret-manager injection (no provider request):
+`python3 -I -S run.py credential-check --provider tradier --profile sandbox --credential-source env`.
+PowerShell: `py -3 -I -S run.py credential-check --provider tradier --profile sandbox --credential-source env`.
+Only status and a sanitized `artifacts/agent-review/` report are emitted. Format
+validity is not authentication. Demo/saved-report paths never load credentials.
+Scheduling remains disabled; C1 does not activate or configure a worker.

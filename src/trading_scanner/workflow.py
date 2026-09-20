@@ -125,7 +125,7 @@ def run_daily(root, args):
     if code:
         return code
     prices = set(root.glob('artifacts/runs/public/*/snapshot.json')) - before_prices
-    code = run_fetch(root, page_size=args.page_size, max_pages=args.max_pages, use_stored_token=args.use_stored_token)
+    code = run_fetch(root, page_size=args.page_size, max_pages=args.max_pages, use_stored_token=args.use_stored_token, credential_source=getattr(args, 'credential_source', None))
     if code:
         return code
     ota = set(root.glob('artifacts/ota/*/results.json')) - before_ota

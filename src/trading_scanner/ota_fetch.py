@@ -37,7 +37,9 @@ DEFAULT_PAGE_SIZE = 100
 DEFAULT_MAX_PAGES = 100
 PATH = '/api/secure/screeners/criteria/results?rows=100&realtime=true&type=NON_OTC&view=criteria&sortField=symbol&sortOrder=asc&page=1'
 MAX_RESPONSE = 2_000_000
-ERRORS = {'THROTTLE_BUSY', 'THROTTLE_STATE_INVALID', 'THROTTLE_COOLDOWN_ACTIVE', 'THROTTLE_CIRCUIT_OPEN', 'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
+from .credentials import ERRORS as CREDENTIAL_ERRORS
+
+ERRORS = CREDENTIAL_ERRORS | {'THROTTLE_BUSY', 'THROTTLE_STATE_INVALID', 'THROTTLE_COOLDOWN_ACTIVE', 'THROTTLE_CIRCUIT_OPEN', 'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
           'OTA_AUTH_REJECTED', 'OTA_RATE_LIMITED', 'OTA_REDIRECT_REJECTED',
           'OTA_HTTP_ERROR', 'OTA_NETWORK_ERROR', 'OTA_RESPONSE_TOO_LARGE',
           'OTA_SCHEMA_INVALID', 'OTA_ENVELOPE_UNSUPPORTED', 'OTA_FETCH_FAILED', 'RUN_CANCELLED',
@@ -53,13 +55,11 @@ def request_path(page, page_size):
 
 
 def prompt_token():
-    # Raising the fallback warning prevents getpass from reading echoed input.
-    with warnings.catch_warnings():
-        warnings.simplefilter('error', getpass.GetPassWarning)
-        try:
-            return getpass.getpass('Paste your OTA x-auth-token (hidden; not saved): ')
-        except (getpass.GetPassWarning, EOFError):
-            raise DataError('OTA_PROMPT_UNAVAILABLE') from None
+    from .credentials import hidden_prompt
+    try:
+        return hidden_prompt('Paste your OTA x-auth-token (hidden; not saved): ')
+    except DataError:
+        raise DataError('OTA_PROMPT_UNAVAILABLE') from None
 
 
 def _fetch_page_once(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE, capture=None, governor=None):
@@ -147,7 +147,7 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
     raise DataError('OTA_PAGE_LIMIT')
 
 
-def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES, use_stored_token=False):
+def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES, use_stored_token=False, credential_source=None):
     from .cli import code_revision
     run_id = new_run_id()
     revision = code_revision()
@@ -180,11 +180,9 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         print(f"Using config: {(root / 'config/ota-screener.json').resolve()}")
         print(f"Criteria SHA256: {request_config['criteria_sha256']} | criteria={request_config['criteria_count']} enabled={request_config['enabled_count']} | page_size={page_size} max_pages={max_pages}")
         progress.start('ota_auth')
-        if use_stored_token:
-            from .token_store import load_token
-            token = load_token()
-        else:
-            token = prompt_token()
+        from .credentials import resolve
+        token = resolve('ota', 'ota', source=credential_source or ('store' if use_stored_token else 'prompt'),
+                        allow_prompt=True, prompt=prompt_token)
         progress.finish()
         destination.mkdir(parents=True, exist_ok=False)
         snapshot = {'schema_version': 2, 'source': 'ota', 'representation': 'ota_raw',

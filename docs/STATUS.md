@@ -309,3 +309,17 @@ novice walkthroughs and native OS setup execution remain pending.
 findings for Infisical, Flask/Waitress, SQLite and later Finviz/IBKR adapters. It
 includes test-isolation constraints and current code pointers. Research only; no
 dependencies, provider access, database migrations or server startup performed.
+
+## C1 shared credential loader — 2026-09-20
+
+Implemented explicit env/store/prompt/auto resolution in `credentials.py`, with
+provider/profile separation, absence-only fallback, hidden TTY prompts and safe
+errors. CLI adapters share it; existing OS-store commands/defaults are preserved.
+`credential-check` writes an allowlisted format-check report without contacting a
+provider. No import-time environment access; domain/provider clients still receive
+explicit credential strings. No dependency or scheduling changes.
+
+192 guarded offline tests passed on the local Ubuntu interpreter, including
+precedence, malformed/missing input, no-TTY/echo-warning failures, one-key reads,
+CLI redaction and auth-failure behavior. Offline checks passed; live checks pending.
+Infisical installation and Windows/macOS verification remain user-run and pending.

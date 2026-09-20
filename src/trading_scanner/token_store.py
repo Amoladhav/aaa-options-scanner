@@ -112,12 +112,9 @@ def run_store(root, action, *, provider='ota', profile=None):
 
 
 def prompt_api_key(*, save=True):
-    import getpass
-    import warnings
+    from .credentials import hidden_prompt
+    label = 'saved to OS store' if save else 'not saved'
     try:
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', getpass.GetPassWarning)
-            label = 'saved to OS store' if save else 'not saved'
-            return getpass.getpass(f'Paste your Tradier API key (hidden; {label}): ')
-    except (EOFError, getpass.GetPassWarning):
+        return hidden_prompt(f'Paste your Tradier API key (hidden; {label}): ')
+    except DataError:
         raise DataError('TOKEN_STORE_UNAVAILABLE') from None

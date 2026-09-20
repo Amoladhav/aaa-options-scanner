@@ -80,9 +80,21 @@ def main(argv=None, root: Path | None = None) -> int:
     for command in (ota_report, ota_demo):
         command.add_argument('--console-rows', type=int, choices=range(101), default=20, metavar='0..100')
         command.add_argument('--page-size', type=int, choices=(25,50,100,250), default=100, help='Initial HTML rows per page; all exports retain all rows')
+    for command in (ota_fetch, daily, probe, batch):
+        # Keep legacy flags but reject ambiguous source selection before any I/O.
+        command.add_argument('--credential-source', choices=('env', 'store', 'prompt', 'auto'))
+    check = subs.add_parser('credential-check', help='USER-RUN: local format check only; no provider request')
+    check.add_argument('--provider', choices=('ota', 'tradier'), required=True)
+    check.add_argument('--profile', choices=('ota', 'sandbox', 'production'), required=True)
+    check.add_argument('--credential-source', choices=('env', 'store'), required=True)
     from .schedule_cli import add_commands, run_schedule
     add_commands(subs)
     args = parser.parse_args(argv)
+    if getattr(args, 'credential_source', None) and (getattr(args, 'use_stored_token', False) or getattr(args, 'prompt_token', False)):
+        parser.error('Choose --credential-source or the legacy credential flag, not both.')
+    if args.command == 'credential-check':
+        from .credentials import run_check
+        return run_check(root, args)
     if args.command in ('ota-report', 'ota-report-demo'):
         from .ota_report_service import generate_report
         from .ota_reporting import ReportOptions
@@ -113,7 +125,7 @@ def main(argv=None, root: Path | None = None) -> int:
         return run_daily(root, args)
     if args.command == 'ota-fetch':
         from .ota_fetch import run_fetch
-        return run_fetch(root, page_size=args.page_size, max_pages=args.max_pages, use_stored_token=args.use_stored_token)
+        return run_fetch(root, page_size=args.page_size, max_pages=args.max_pages, use_stored_token=args.use_stored_token, credential_source=args.credential_source)
     if args.command == "ota-config":
         return configure_ota(args, root)
     return run_scan(args, root)

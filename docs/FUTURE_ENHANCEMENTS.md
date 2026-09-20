@@ -392,3 +392,11 @@ Delivery priority: C3a provides the first runnable localhost saved-results previ
 after the artifact catalog, ahead of advanced history work. Complete C6 local web
 acceptance before C7 Finviz/Interactive Brokers feasibility and adapters. Hosting
 is C8, separate from testing the personal local web application.
+
+## Adopted increment: explicit credential resolver (C1)
+
+`credentials.resolve` is now the shared runtime env/store/prompt boundary. CLI
+commands retain prior defaults; explicit env injection is opt-in. Future web and
+worker callers must leave prompting disabled and pass resolved credentials to
+services. `credential-check` provides an allowlisted user-run format check, not
+authentication evidence. No secret-manager SDK or scheduler activation was added.
