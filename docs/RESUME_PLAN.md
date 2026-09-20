@@ -4,6 +4,10 @@ Updated: 2026-09-20. This is the next-thread entry point. All phases below are
 planned unless explicitly marked complete. Do not install, authenticate, migrate
 real data or start a server merely by reading this plan.
 
+Research companion: [IMPLEMENTATION_RESEARCH.md](IMPLEMENTATION_RESEARCH.md)
+contains checked official sources, code pointers, stack recommendations and open
+questions. Read it before implementing; findings are dated, not live guarantees.
+
 ## Start here next thread
 
 1. Read project AGENTS.md, this file, STATUS.md and the relevant section of

@@ -302,3 +302,10 @@ Shared policy revision 7 requires a relevant next-step recommendation and user
 feedback invitation at completed-task milestones. README and the future planner
 link onboarding to the local-web direction. Documentation/static checks only;
 novice walkthroughs and native OS setup execution remain pending.
+
+## Research handoff prepared
+
+[IMPLEMENTATION_RESEARCH.md](IMPLEMENTATION_RESEARCH.md) records official-source
+findings for Infisical, Flask/Waitress, SQLite and later Finviz/IBKR adapters. It
+includes test-isolation constraints and current code pointers. Research only; no
+dependencies, provider access, database migrations or server startup performed.

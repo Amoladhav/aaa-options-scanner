@@ -40,3 +40,11 @@ The old INBOX zero placeholder for unavailable bid/ask spreads is not reused.
 
 [Monthly ATM spread plan](CHAIN_PLAN.md) records provider differences and selection
 rules. Real bid/ask spreads must come from a specific call and put contract.
+
+## Follow-up research: 2026-09-20
+
+The opening implementation status above is historical. Tradier now has a batch
+adapter and explicit dashboard attachment. See STATUS.md for the current runtime
+checkpoint and [implementation research](IMPLEMENTATION_RESEARCH.md) for Finviz
+Elite and IBKR access findings. Those new adapters remain scheduled after local
+web acceptance; public browsing does not establish unauthenticated API access.

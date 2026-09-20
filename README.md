@@ -936,3 +936,7 @@ implementation checkpoint is C1. These planned features are not yet implemented.
 The planned first localhost preview follows the artifact catalog (C3a); complete
 local web testing precedes Finviz/Interactive Brokers extensions (C7). See the
 resume plan for screens, acceptance checks and the distinction from later hosting.
+
+The [implementation research handoff](docs/IMPLEMENTATION_RESEARCH.md) supplies
+official documentation links, implementation boundaries and unresolved access
+questions for the next session.
