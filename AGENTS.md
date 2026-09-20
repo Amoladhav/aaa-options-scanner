@@ -1,6 +1,6 @@
 # Shared development policy
 
-Policy revision: 6 (2026-09-19). Owner-maintained; collaboration is supported.
+Policy revision: 7 (2026-09-19). Owner-maintained; collaboration is supported.
 This workspace contains independent projects. Do not initialize one umbrella
 repository or move/import project files without reviewing the intended boundary.
 Keep project instructions self-contained when a project is cloned elsewhere.
@@ -63,6 +63,18 @@ policy repository and automated copy process are not yet configured.
 - Current explicit user instructions take precedence over the planner. Reconcile
   material conflicts candidly; do not silently treat a historical plan as a binding
   product requirement. Keep execution, credential and publication boundaries intact.
+
+- At the end of every completed task or natural milestone, recommend a concrete
+  next step toward the long-term goal and briefly invite the user's suggestions
+  or priorities. Keep one relevant question, adapted to their comfort level; do
+  not repeat an unanswered question or interrupt unfinished authorized work.
+  This is a feedback invitation, not a new approval gate for work already requested.
+  Preserve the current task and do not auto-start an optional future phase.
+- For onboarding, first establish the user's OS/shell, existing setup and desired
+  detail level. Adapt between one-step beginner explanations, guided checkpoints
+  and concise commands. Do not assume terminal knowledge, infer WSL from Windows
+  hardware, or present incompatible shell commands as interchangeable. Follow the
+  project's setup guide when available and preserve all execution boundaries.
 
 ## Engineering guidance and external-data ingestion
 
@@ -301,7 +313,7 @@ This is guidance, not an active model configuration or a correctness guarantee.
   messages or exception text. Preserve the agent-review-only public intake boundary.
 - Offline tests run on Python 3.14.4 / Ubuntu. Real provider access, optional
   dependencies, and native Windows/macOS remain unverified. Hooks and CI are absent.
-- Shared policy revision 6 is copied above so standalone clones retain the rules.
+- Shared policy revision 7 is copied above so standalone clones retain the rules.
   Update copies by an explicit reviewed diff; do not weaken execution boundaries.
 
 ## Scanner architecture roadmap
@@ -319,6 +331,18 @@ This is guidance, not an active model configuration or a correctness guarantee.
   checks. The planner's proposed module layout, job system and web/storage choices
   are not implemented merely by being documented. Update the plan when decisions
   change; do not build future phases automatically.
+
+## Interactive setup role
+
+- When asked to set up/install/onboard this repo or obtain a first run, adopt
+  [the interactive setup role](docs/SETUP_AGENT.md) and use its adaptive conversation
+  and [platform-specific commands](docs/SETUP.md). Ask only for missing information.
+- This is a documented assistant workflow, not an installed bot or a `setup`
+  executable. Help users with no assistant through the manual guide as well.
+- Start with a no-credential demo and a visible result. Add optional dependencies
+  and user-run providers only for the selected goal. Never request credentials in
+  chat, enable hosted CI, change global execution policy or overwrite an existing
+  environment merely to simplify onboarding.
 
 ## Initial development mandate
 

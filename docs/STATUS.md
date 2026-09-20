@@ -213,3 +213,15 @@ Shared policy revision 6 and scanner instructions require proportional assessmen
 of every request against the roadmap, with material decisions recorded and no
 speculative infrastructure. This increment changes documentation only; no web
 server, database, worker, account system or cloud component was added.
+
+
+### Adaptive setup and continuing user feedback — 2026-09-19
+
+Added [interactive setup-agent instructions](SETUP_AGENT.md) and a
+[manual first-run guide](SETUP.md) covering PowerShell, macOS Terminal and Ubuntu/WSL.
+The role adapts beginner/guided/concise detail and begins with a synthetic demo;
+it is documentation for a repository-aware assistant, not a standalone executable.
+Shared policy revision 7 requires a relevant next-step recommendation and user
+feedback invitation at completed-task milestones. README and the future planner
+link onboarding to the local-web direction. Documentation/static checks only;
+novice walkthroughs and native OS setup execution remain pending.

@@ -265,6 +265,25 @@ change alters architecture, sequence or scope, update this plan and status notes
 in the same increment. Current explicit user instructions take precedence over
 this plan; do not treat the plan as grounds for unnecessary approval requests.
 
+## Onboarding and continued progress
+
+Current onboarding uses [an interactive assistant role](SETUP_AGENT.md) and
+[a manual guide](SETUP.md). Both begin with OS/shell, comfort level and existing
+setup, then a credential-free local demo. These documents exist; an executable
+setup wizard and an in-app onboarding screen do not yet exist.
+
+At task completion or natural milestones, agents recommend one useful next step
+and invite user suggestions. This feedback should inform priorities without
+repeating questions, blocking authorized work or automatically implementing future
+phases. Preserve current user intent and adjust the plan when priorities change.
+
+For P2, reuse these onboarding checkpoints in a local web first-run experience:
+workspace selection, synthetic demo, optional provider configuration and diagnostic
+handoff. Keep installation logic separate from application services. Acceptance
+must include novice walkthroughs on each supported OS, adaptive detail, resuming
+completed steps and no secret exposure. Do not install an agent service or introduce
+a hosted dependency just to provide setup guidance.
+
 ## Decision and backlog maintenance
 
 Current decisions: personal local workspace; modular monolith; one domain/service

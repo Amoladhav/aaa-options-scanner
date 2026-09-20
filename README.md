@@ -4,6 +4,20 @@ Cross-sectional momentum with a combined OTA research dashboard, session history
 configurable shortlist filters and a user-run daily workflow. Synthetic examples
 need no packages or credentials. Authenticated requests remain user-run.
 
+## New here? Start with guided setup
+
+Read [First local setup](docs/SETUP.md) for Windows PowerShell, macOS Terminal or
+Ubuntu/WSL. No accounts or API keys are needed for the first demo.
+
+If using a coding assistant, say:
+
+> Follow docs/SETUP_AGENT.md. Help me set up this repo. Ask my OS and whether I
+> prefer beginner, guided or concise instructions.
+
+The [setup agent guide](docs/SETUP_AGENT.md) defines an interactive assistant role;
+it is not a separate installed chatbot or executable. It adapts explanations and
+checks progress before dependent steps. The manual guide works without an assistant.
+
 ## Direction and development scope
 
 This is currently **one user's personal local workspace**. Development and tests
