@@ -12,26 +12,26 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 
 1. Read project AGENTS.md, this file, STATUS.md and the relevant section of
    FUTURE_ENHANCEMENTS.md. Check Git status and preserve unrelated changes.
-2. Latest implementation checkpoint: `ec66c33` (readable run IDs and Tradier
-   attachment diagnostics); prior `1204335` adds HTML CRS tail filtering and
-   `6051eef` preserves all OTA fields in combined reports. 184 offline tests passed.
-3. C1 is implemented and offline verified (192 tests). C2 documentation is prepared; user-run acceptance remains pending.
-   C3 is offline verified (201 tests); continue with C3a.
-   Original C1 scope: the shared credential loader and synthetic tests. No Infisical
-   SDK in the scanner; retain run.py and existing commands. Do not begin the
-   database migration or cloud deployment at the same time.
-4. Complete each checkpoint with focused local commits, README/status updates,
-   required isolated checks, staged value-suppressing scan and explicit remaining
-   live checks. User performs pushes and all credentialed operations.
+2. Implemented checkpoints: C1 `c86eddf`, C2 docs `c7d800d`, C3 `c18ae0b`;
+   C3a preview is implemented in the following local commit (see Git log).
+   205 guarded core tests and 11 optional guarded web tests passed; a separate
+   synthetic loopback HTTP smoke check passed and stopped cleanly.
+3. Next user checkpoint: [LOCAL_WEB.md](LOCAL_WEB.md), first the synthetic browser
+   preview, then user-selected saved OTA/Tradier inputs, quote coverage and Excel
+   exports. No provider operations, scheduling activation or real-data migration
+   ran. C2 Infisical/Tradier acceptance and browser/native OS checks remain pending.
+4. Continue C4 append-only history after preview feedback, then C5 backup/restore
+   and C6 settings/durable fetch lifecycle. C3 is not a fetch-job implementation.
+   Keep focused commits, README/status updates, isolated tests and staged scans.
+   User performs pushes and every credentialed operation. C7 remains after C6
+   user acceptance; no hosting or hosted CI activation is implied.
 
 Suggested next-thread prompt:
 
-> Read docs/RESUME_PLAN.md and AGENTS.md. Resume at C1: implement the shared
-> environment credential loader and tests, preserving existing OS-store/prompt
-> commands and explicit provider profiles. Then prepare the Infisical onboarding
-> guide. Deliver the localhost saved-results preview after C3, then complete the
-> local web test gates before exploring Finviz or Interactive Brokers. Keep
-> provider operations user-run and scheduling disabled.
+> Read AGENTS.md, docs/RESUME_PLAN.md and docs/STATUS.md. Review C3a browser
+> acceptance feedback, preserving the shared CLI/web report services. Continue
+> with C4 history, then C5 and C6 checkpoints. Keep provider operations user-run
+> and scheduling disabled. Finviz/IBKR implementation follows C6 acceptance.
 
 ## Confirmed direction and unresolved evidence
 
@@ -81,7 +81,7 @@ credential integration and general history database are not implemented by it.
 
 ### C1 — Shared credential loader (offline verified: 2026-09-20)
 
-- Centralize provider/profile-to-variable mapping. Proposed names:
+- Implemented provider/profile-to-variable mapping:
   `SCANNER_OTA_TOKEN`, `SCANNER_TRADIER_SANDBOX_TOKEN`,
   `SCANNER_TRADIER_PRODUCTION_TOKEN`. Confirm no existing public env contract first.
 - Read `os.environ.get()` only inside the explicit runtime loader. No secret reads
@@ -149,7 +149,7 @@ Gate: fresh DB, upgrade, failed migration rollback, interrupted publication,
 idempotent indexing, foreign-key and path checks. Old UUID and new timestamp IDs
 both work. Synthetic parity; any indexing of actual provider files is user-run.
 
-### C3a — First localhost preview (immediately after C3)
+### C3a — First localhost preview (implemented; browser acceptance pending)
 
 Deliver a runnable local web interface before completing advanced history features.
 Use a small same-origin Python web application with server-rendered pages and

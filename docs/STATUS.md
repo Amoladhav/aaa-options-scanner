@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-09-20. Phase: combined CRS/OTA dashboard and standalone Tradier probe prepared.
+Updated: 2026-09-20. Phase: C3a localhost saved-results preview ready for user acceptance.
 
 OTA live checkpoint: the user's short-page run returned 77 rows after one page
 with no error (`ec8d6c0cf18743e38ef32fa4f0832993`). This proves the observed
@@ -12,16 +12,24 @@ native OS storage can save the current token but cannot extend its lifetime.
 Manual runs and the optional local schedule worker are user-started. No login
 automation or OS startup service exists.
 
-## Next session: credentials and history roadmap
+## Current checkpoint: C3a preview
 
-Read [RESUME_PLAN.md](RESUME_PLAN.md). C0 (planning) is complete; C1 (credential
-loader) is next. C3a delivers the first runnable localhost preview; C6 completes
-local web acceptance before C7 Finviz/Interactive Brokers work. No localhost server
-is implemented or running from this planning change. Infisical integration and the general history database are not
-yet implemented. The current runtime baseline remains ec66c33 / 184 offline tests.
-No scheduling, hosted CI or provider operation was enabled during planning.
+C1 is implemented (`c86eddf`), C2 onboarding docs prepared (`c7d800d`), and C3
+catalog implemented (`c18ae0b`). C3a now supplies a runnable Flask/Waitress preview.
+See [LOCAL_WEB.md](LOCAL_WEB.md) for exact native OS startup/stop and acceptance.
+205 guarded core tests and 11 guarded web tests passed on Ubuntu/Python 3.14.4.
+A separate temporary synthetic HTTP check passed health, same-origin report build,
+report rendering, CSV, hostile Host rejection and clean server stop. No server
+was left running. No actual browser automation/tool was available.
 
-## Latest implementation: readable run IDs and Tradier diagnostics
+Browser/Excel and the user's saved OTA/Tradier quote acceptance remain pending,
+as does C2's user-run Infisical/Tradier check. Native Windows/macOS and WSL browser
+forwarding are unverified. C4 history, C5 backup/restore and C6 durable user-initiated
+fetch/settings workflow remain open. C3 catalog is not a durable job queue.
+Provider operations stay user-run; scheduling/hosted CI were not activated and no
+Finviz/IBKR implementation began. Offline checks passed; live checks pending.
+
+## Earlier implementation: readable run IDs and Tradier diagnostics
 
 New run folders/logs use local YYYYMMDDHHMM plus a uniqueness suffix. Legacy IDs
 remain accepted; existing artifacts are not renamed. Dashboard summaries now show
@@ -343,3 +351,18 @@ byte-preserving idempotent indexing, interrupted publication, missing/changed
 files and path confinement. Only temporary synthetic databases were opened.
 See [CATALOG.md](CATALOG.md) and [decision 0001](decisions/0001-local-catalog.md).
 C3a preview is next; C4 history and C5 backup/recovery remain pending.
+
+## C3a shared saved-report web interface — 2026-09-20
+
+`report_service` centralizes CLI/web composition, validated complete-dataset view
+selection and formula-protected CSV. The local app adds source pickers, report and
+run pages, coverage/diagnostic details and full/filtered downloads. A dedicated
+synthetic workspace avoids reading user artifacts on demo startup. It checks exact
+loopback Host/Origin, CSRF, proxy headers, escaping and safe errors; no credential,
+provider, raw-capture, scheduling or arbitrary filesystem routes exist.
+
+Web reports currently omit prior daily-history input, explicitly documented until
+C4. Existing CLI history remains compatible. Code revision hashes now include
+web templates/assets and SQL migrations as well as application Python. Pinned
+web extras and a separate guarded runner preserve the default core isolation.
+See [dependency review](WEB_DEPENDENCIES.md) and [decision 0002](decisions/0002-local-web-preview.md).

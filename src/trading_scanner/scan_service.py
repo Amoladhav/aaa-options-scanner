@@ -27,8 +27,10 @@ class DiscardOutput:
 
 def code_revision() -> str:
     digest = hashlib.sha256()
-    for path in sorted(Path(__file__).parent.glob("*.py")):
-        digest.update(path.name.encode("utf-8"))
+    for path in sorted(Path(__file__).parent.rglob("*")):
+        if not path.is_file() or path.suffix not in (".py", ".html", ".css", ".sql"):
+            continue
+        digest.update(path.relative_to(Path(__file__).parent).as_posix().encode("utf-8"))
         digest.update(path.read_bytes())
     return digest.hexdigest()
 

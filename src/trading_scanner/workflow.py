@@ -58,9 +58,9 @@ def run_dashboard(root, args):
             old['as_of'] = old['sessions'][-1]
             save_history(history_dir, calculate(old))
             previous = history_previous(history_dir, snapshot)
-        result = combine(snapshot, ota, filters, now=now, previous=previous)
+        from .report_service import compose_report
         probes = [read_json(path) for path in getattr(args, 'tradier', [])]
-        attach_tradier(result, probes)
+        result = compose_report(snapshot, ota, filters=filters, now=now, previous=previous, probes=probes)
         if not result['combined']:
             raise DataError('NO_VALID_PEER_GROUP')
         counts = {'ota_received': result['ota_join_counts']['received'], 'ota_outside_master':result['ota_join_counts']['outside_master'],

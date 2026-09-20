@@ -134,3 +134,11 @@ See [Infisical setup](SECRETS.md) for OS-specific installation, browser login,
 profile-scoped injection and safe format checks. Complete the no-credential demo
 first. All authentication and provider commands are user-run. Keep scheduling
 disabled during the C1–C6 web checkpoints; no worker activation is implied.
+
+## Local web checkpoint
+
+After the synthetic HTML output, offer [LOCAL_WEB.md](LOCAL_WEB.md) for the C3a
+localhost demo. Reuse the established OS/shell/interpreter; explain the optional
+package install, exact URL and Ctrl+C stop. Record synthetic browser acceptance
+before guiding user-run saved-source indexing. Do not enable scheduling or suggest
+Finviz/IBKR implementation before C6 user acceptance.

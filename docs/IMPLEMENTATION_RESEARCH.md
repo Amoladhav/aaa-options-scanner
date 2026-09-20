@@ -4,7 +4,11 @@ Checked 2026-09-20 against public primary documentation and repository source.
 Read [RESUME_PLAN.md](RESUME_PLAN.md) for ordering and acceptance gates. This is
 research and proposed design, not installed dependencies or live validation.
 Recheck versions, licensing, installation URLs and provider access at implementation.
-No secrets, account operations, raw data inspection or installs were performed.
+No secrets, account operations, raw data inspection or installs were performed
+during this research. Implementation update: C1/C3 and C3a are now implemented;
+C2 onboarding is documented. See STATUS.md and LOCAL_WEB.md for current evidence
+and requirements-web.txt for reviewed pins. The sections below retain the original
+research context, not the current completion status.
 
 ## Recommended stack and why
 

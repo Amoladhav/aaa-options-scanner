@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block content %}
+<p class="eyebrow">PERSONAL WORKSPACE / SAVED RESULTS</p><h1>Choose your research inputs</h1>
+<p class="muted">Build a report from a saved master list and optional provider results. Opening or refreshing a page never fetches market data.</p>
+<section class="panel"><h2>Compose a report</h2><form method="post" action="{{ url_for('generate') }}">
+<input type="hidden" name="csrf" value="{{ session.csrf }}">
+<div class="formgrid">{% for kind,label in [('prices','Price history & master (required)'),('ota','OTA screener'),('tradier','Tradier ATM batch')] %}
+<label>{{ label }}<select name="{{ kind }}" {% if kind=='prices' %}required{% endif %}><option value="">{% if kind=='prices' %}Choose a source{% else %}Not attached{% endif %}</option>
+{% for item in artifacts if item.kind==kind and item.availability=='available' %}<option value="{{ item.id }}">{{ item.profile }} · {{ item.id }} · indexed {{ item.started_at | local_time }}</option>{% endfor %}</select></label>{% endfor %}</div>
+<p class="muted">Source timestamps and master compatibility appear in the report. Tradier batches must match the selected master. Synthetic and provider inputs cannot be mixed.</p><button class="primary" type="submit">Build saved-data report</button></form></section>
+<section class="panel"><h2>Saved reports</h2><ul class="reports">{% for item in artifacts if item.kind=='report' %}<li><a href="{{ url_for('report',artifact_id=item.id) }}">{{ 'Synthetic demo' if item.profile=='synthetic' else 'Master research report' }}</a><span>{{ item.started_at | local_time }} · {{ item.state }} · {{ item.id }}</span></li>{% else %}<li>No reports yet. Choose your inputs above.</li>{% endfor %}</ul></section>
+<details><summary>How to add saved sources</summary><p>Use the user-run <code>catalog-index</code> commands in <code>docs/CATALOG.md</code>. Return here after indexing the selected price snapshot, OTA results and Tradier batch. Only validated artifact IDs appear; the app cannot browse arbitrary files.</p><p>The <code>web --demo</code> command opens a separate synthetic workspace, with invented prices and OTA metrics. Use <code>web</code> for your indexed real workspace.</p></details>
+{% endblock %}

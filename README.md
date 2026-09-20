@@ -23,12 +23,23 @@ checks progress before dependent steps. The manual guide works without an assist
 This is currently **one user's personal local workspace**. Development and tests
 stay local. The planned progression is shared application services, durable local
 jobs, a local web interface, then a separately approved sharing/hosting phase.
-There is no local web server or cloud deployment implemented by this plan.
+A saved-results localhost preview is now available through `run.py web` (C3a).
+Durable provider jobs and hosting remain deferred; scheduling stays disabled in
+the preview. See [local web startup and acceptance](docs/LOCAL_WEB.md).
 
 See [Future enhancements and architecture plan](docs/FUTURE_ENHANCEMENTS.md) for
 module boundaries, migration steps, acceptance gates and deferred decisions.
 Every implementation request is reviewed against that direction, proportionally,
 while preserving the current CLI and avoiding speculative infrastructure.
+
+## Try the localhost preview
+
+Follow [LOCAL_WEB.md](docs/LOCAL_WEB.md) to install pinned optional dependencies,
+start `web --demo`, and then select your own indexed saved sources. It includes
+CRS tail filters, pagination, source/quote coverage and full/filtered CSV downloads.
+Core checks: 205 passed; optional guarded web checks: 11 passed; synthetic HTTP
+start/report/CSV/stop passed on Ubuntu. Browser/Excel and native OS acceptance
+remain pending. No provider fetch or scheduler is started by the web app.
 
 ## First combined output
 

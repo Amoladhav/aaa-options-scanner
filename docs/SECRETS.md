@@ -107,14 +107,14 @@ macOS or Ubuntu/WSL, using the environment created in SETUP.md:
 
 ```bash
 infisical run --env=sandbox --path=/scanner/tradier --include-imports=false --expand=false --secret-overriding=false -- .venv/bin/python -I -S run.py credential-check --provider tradier --profile sandbox --credential-source env
-infisical run --env=sandbox --path=/scanner/tradier --include-imports=false --expand=false --secret-overriding=false -- .venv/bin/python -I -S run.py tradier-probe --profile sandbox --symbol SPY --credential-source env
+infisical run --env=sandbox --path=/scanner/tradier --include-imports=false --expand=false --secret-overriding=false -- .venv/bin/python -I run.py tradier-probe --profile sandbox --symbol SPY --credential-source env
 ```
 
 Native Windows PowerShell:
 
 ```powershell
 infisical run --env=sandbox --path=/scanner/tradier --include-imports=false --expand=false --secret-overriding=false -- .\.venv\Scripts\python.exe -I -S run.py credential-check --provider tradier --profile sandbox --credential-source env
-infisical run --env=sandbox --path=/scanner/tradier --include-imports=false --expand=false --secret-overriding=false -- .\.venv\Scripts\python.exe -I -S run.py tradier-probe --profile sandbox --symbol SPY --credential-source env
+infisical run --env=sandbox --path=/scanner/tradier --include-imports=false --expand=false --secret-overriding=false -- .\.venv\Scripts\python.exe -I run.py tradier-probe --profile sandbox --symbol SPY --credential-source env
 ```
 
 Run the second command only after format validation succeeds. Format validation

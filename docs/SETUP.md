@@ -2,7 +2,8 @@
 
 Start with invented data: no trading account, API key, network fetch or application
 packages are needed for the demo. This project is a personal local workspace; it
-currently produces HTML files rather than running a web server.
+produces HTML files and offers an optional [localhost preview](LOCAL_WEB.md).
+The no-package first demo below remains available.
 
 For interactive help, ask your coding assistant:
 

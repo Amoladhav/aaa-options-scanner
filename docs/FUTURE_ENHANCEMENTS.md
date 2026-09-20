@@ -291,7 +291,8 @@ implementation; master-driven joins; raw-first ingestion; local files plus SQLit
 metadata when needed; one local worker initially; hosted infrastructure deferred.
 These are design choices, not claims that proposed components already exist.
 
-Unselected: web framework, worker process mechanism, ORM (if any), cloud vendor,
+Selected for C3a: Flask/Jinja and Waitress (see decision 0002).
+Unselected: worker process mechanism, ORM (if any), cloud vendor,
 cloud database, identity provider and multi-user data-sharing model. Record each
 consequential choice in `docs/decisions/NNNN-short-title.md` when it is actually
 made: context, alternatives, decision, tradeoffs, acceptance and migration impact.
@@ -408,3 +409,13 @@ immutable copies, metadata migrations and reconciliation counts. This is a
 report/source catalog, not P1 durable fetch jobs. Existing scheduling storage is
 unchanged. See [catalog contracts](CATALOG.md) and [decision 0001](decisions/0001-local-catalog.md).
 C3a can use opaque IDs without scanning raw provider directories on startup.
+
+## Adopted increment: localhost saved-results preview (C3a)
+
+Flask/Jinja plus Waitress now serve explicit saved-source selection, reports,
+run history, coverage/diagnostics and full/filtered CSV through shared Python
+composition and selection services. See [startup/acceptance](LOCAL_WEB.md).
+No provider execution or scheduling controls are exposed. This precedes C4
+history and C5 backup work; P1 durable fetch jobs still gate C6 fetch controls.
+Actual browser/Excel acceptance remains open despite isolated route and synthetic
+HTTP checks. Do not treat C3a as C6 acceptance or begin Finviz/IBKR prematurely.

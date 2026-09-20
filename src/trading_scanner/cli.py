@@ -87,6 +87,9 @@ def main(argv=None, root: Path | None = None) -> int:
     check.add_argument('--provider', choices=('ota', 'tradier'), required=True)
     check.add_argument('--profile', choices=('ota', 'sandbox', 'production'), required=True)
     check.add_argument('--credential-source', choices=('env', 'store'), required=True)
+    web = subs.add_parser('web', help='Explicit localhost saved-results preview; no provider calls')
+    web.add_argument('--demo', action='store_true', help='Use a separate invented-data workspace')
+    web.add_argument('--port', type=int, default=8765)
     subs.add_parser('catalog-init', help='Initialize local metadata only; never activate scheduling')
     subs.add_parser('catalog-reconcile', help='USER-RUN: check registered files and orphan counts')
     index = subs.add_parser('catalog-index', help='USER-RUN: index one saved source; no provider requests')
@@ -97,6 +100,9 @@ def main(argv=None, root: Path | None = None) -> int:
     args = parser.parse_args(argv)
     if getattr(args, 'credential_source', None) and (getattr(args, 'use_stored_token', False) or getattr(args, 'prompt_token', False)):
         parser.error('Choose --credential-source or the legacy credential flag, not both.')
+    if args.command == 'web':
+        from .web_cli import run_web
+        return run_web(root, args)
     if args.command.startswith('catalog-'):
         from .catalog_service import run_catalog
         return run_catalog(root, args)
