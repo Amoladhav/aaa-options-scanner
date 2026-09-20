@@ -340,7 +340,7 @@ check local disk space and permissions. A scan does not start if log creation fa
 
 Offline checks passed; live checks pending. Native Windows/macOS, browser
 interaction, optional dependency installation, and real provider responses remain
-unverified for this new increment. Cross-platform CI is prepared but has not run; Git hooks remain unconfigured.
+unverified for this new increment. Hosted CI is deferred; verification runs locally. Git hooks remain unconfigured.
 
 ## Sources and next increment
 
@@ -555,11 +555,20 @@ and server paging behavior remains pending your next user-run report.
 
 ## Cross-platform checks
 
-The prepared [GitHub Actions workflow](.github/workflows/offline.yml) runs guarded
-synthetic tests on Ubuntu, Windows and macOS, Python 3.11 and 3.14, after a user
-push. It has not run remotely yet. It installs no application dependencies and
-does not use provider credentials. Local Git hooks and a transitive dependency
-lock remain pending. Native OS credential stores require separate user-run checks.
+GitHub Actions is **inactive in this checkout**. Development and testing are local:
+
+```bash
+python3 -I -S tools/test_offline.py
+python3 -I -S tools/test_intake_scan.py
+```
+
+On native Windows, use your local `python` executable with the same arguments.
+The [future CI example](docs/future-ci/offline.yml.example) is stored outside
+`.github/workflows/` and cannot trigger Actions from that location. Do not activate
+hosted CI until explicitly requested. If an older workflow is still on GitHub,
+disable it in **Actions → Offline verification → … → Disable workflow**, or run
+`gh workflow disable offline.yml` yourself from this repository. This local change
+does not disable the remote copy until you push it; agents do not push.
 
 ### Tradier schema diagnostics
 

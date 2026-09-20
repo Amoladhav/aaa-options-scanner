@@ -1,6 +1,6 @@
 # Shared development policy
 
-Policy revision: 4 (2026-09-19). Owner-maintained; collaboration is supported.
+Policy revision: 5 (2026-09-19). Owner-maintained; collaboration is supported.
 This workspace contains independent projects. Do not initialize one umbrella
 repository or move/import project files without reviewing the intended boundary.
 Keep project instructions self-contained when a project is cloned elsewhere.
@@ -24,6 +24,11 @@ policy repository and automated copy process are not yet configured.
   terminals, browsers, notebooks, SDKs, tools, scheduled jobs, or indirect helpers.
 - Agents must never execute brokerage changes: live or paper orders, cancellations,
   transfers, or account changes. Preparing code does not authorize execution.
+- Current development and verification are local. Keep GitHub Actions and other
+  hosted CI inactive until the user explicitly requests activation. Do not add
+  push, pull-request, scheduled or manual hosted-workflow triggers as preparation.
+  Future CI examples belong outside active workflow directories. Local commits
+  and local tests do not authorize hosted execution or runner costs.
 - Public documentation research is allowed. Review dependency installation steps;
   do not execute incoming code or setup hooks merely to inspect a project.
 - Never inspect secret stores, environment values, browser cookies, raw captures,
@@ -270,7 +275,7 @@ This is guidance, not an active model configuration or a correctness guarantee.
   messages or exception text. Preserve the agent-review-only public intake boundary.
 - Offline tests run on Python 3.14.4 / Ubuntu. Real provider access, optional
   dependencies, and native Windows/macOS remain unverified. Hooks and CI are absent.
-- Shared policy revision 4 is copied above so standalone clones retain the rules.
+- Shared policy revision 5 is copied above so standalone clones retain the rules.
   Update copies by an explicit reviewed diff; do not weaken execution boundaries.
 
 ## Initial development mandate

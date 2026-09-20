@@ -64,8 +64,8 @@ transitive lock and installation verification remain pending.
 
 Offline checks passed; live checks pending. Tests do not prove real provider
 access or strategy performance. Native Windows/macOS, browser interaction, remote CI execution,
-hooks, and WSL-specific checks remain pending. A cross-platform offline CI
-workflow is prepared, not remotely verified.
+hooks, and WSL-specific checks remain pending. Hosted CI is deferred; the former workflow is retained only as an inactive
+example under docs/future-ci/. Verification runs locally.
 
 ## Decisions and limits
 
@@ -116,7 +116,7 @@ workflow is prepared, not remotely verified.
    contract metrics only after schema, expiration, delay and quote times check out.
 4. Verify live OTA full-page continuation, metric definitions and a defensible
    options-volume ETF universe. Current 50 ETF list remains a starter watchlist.
-5. Run prepared CI on user push; confirm native OS behavior. No performance or
+5. Defer hosted CI until explicitly requested; confirm native OS behavior locally. No performance or
    profitability validation is claimed.
 
 ## OTA capture redesign
@@ -191,3 +191,13 @@ Tradier per-symbol errors are recorded as safe codes without source identifiers.
 redirected output, error log/privacy boundaries, partial summaries and local offset
 conversion across a date boundary. Actual user terminal rendering and native
 Windows/macOS verification remain pending; no credentialed fetch was executed.
+
+
+### Local verification only — 2026-09-19
+
+Removed the push/pull-request workflow from the active GitHub Actions directory.
+Its six-job matrix is retained as docs/future-ci/offline.yml.example for later
+review. Shared policy revision 5 requires explicit user activation of hosted CI.
+Local tests remain unchanged. The remote workflow may remain enabled until the
+user disables it on GitHub or pushes the local removal; no remote action was
+performed by the agent.
