@@ -22,9 +22,11 @@ A separate temporary synthetic HTTP check passed health, same-origin report buil
 report rendering, CSV, hostile Host rejection and clean server stop. No server
 was left running. No actual browser automation/tool was available.
 
-Browser/Excel and the user's saved OTA/Tradier quote acceptance remain pending,
-as does C2's user-run Infisical/Tradier check. Native Windows/macOS and WSL browser
-forwarding are unverified. C4 history, C5 backup/restore and C6 durable user-initiated
+The user confirms the synthetic report is visible in Windows Chrome (2026-09-20).
+Filtering/Excel and the user's saved OTA/Tradier quote acceptance remain pending,
+as does C2's user-run Infisical/Tradier check. Native Windows Python and macOS are
+unverified; basic Windows Chrome visibility after WSL startup guidance is
+user-confirmed. C4 history, C5 backup/restore and C6 durable user-initiated
 fetch/settings workflow remain open. C3 catalog is not a durable job queue.
 Provider operations stay user-run; scheduling/hosted CI were not activated and no
 Finviz/IBKR implementation began. Offline checks passed; live checks pending.
@@ -366,3 +368,13 @@ C4. Existing CLI history remains compatible. Code revision hashes now include
 web templates/assets and SQL migrations as well as application Python. Pinned
 web extras and a separate guarded runner preserve the default core isolation.
 See [dependency review](WEB_DEPENDENCIES.md) and [decision 0002](decisions/0002-local-web-preview.md).
+
+## Shared-machine resource review — 2026-09-20
+
+User requests low CPU/memory overhead while other demanding applications run.
+Synthetic 60/600-symbol checks (150 sessions) observed about 46/58 MiB peak Python
+process RSS and 29/85 ms report builds. These in-process figures exclude Chrome,
+the full WSL VM and real-provider payloads. No runtime settings or global resource
+limits changed. Full-report decode on every view and in-memory CSV are known
+scaling limits; retain on-demand behavior and assess richer inputs before C6.
+See [resource evidence and limits](LOCAL_WEB.md#resource-use-and-shared-machine-constraint).

@@ -419,3 +419,15 @@ No provider execution or scheduling controls are exposed. This precedes C4
 history and C5 backup work; P1 durable fetch jobs still gate C6 fetch controls.
 Actual browser/Excel acceptance remains open despite isolated route and synthetic
 HTTP checks. Do not treat C3a as C6 acceptance or begin Finviz/IBKR prematurely.
+
+## Shared-machine resource constraint (2026-09-20)
+
+The user confirmed basic synthetic report visibility in Windows Chrome and asks
+that CPU/memory overhead stay low alongside other resource-intensive apps. Keep
+server-rendered, demand-driven pages and disabled scheduling. Before C4–C6 adds
+history or workers, assess peak memory, concurrent requests and background work.
+Budget selection depends on the user's available RAM/CPU and realistic saved data;
+no hard quota or global WSL limit is implemented. Measure first rather than adding
+unbounded caches or changing frameworks. C3a currently decodes full reports for
+views and builds CSV in memory; future optimization should retain shared selection
+and full/filtered-export parity. See [measured scope](LOCAL_WEB.md#resource-use-and-shared-machine-constraint).

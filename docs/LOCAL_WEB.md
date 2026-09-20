@@ -40,8 +40,9 @@ or select another port. The app never tries a public binding as a fallback.
 
 For WSL, first try the printed address in the Windows browser. Localhost forwarding
 must work without a tunnel or LAN bind; if it does not, stop and identify the WSL
-network configuration before changing it. Actual WSL-to-Windows browser forwarding
-has not been verified here.
+network configuration before changing it. The user confirmed the synthetic report is visible in Windows Chrome after
+following the WSL startup guidance (2026-09-20). Other network configurations
+remain unverified.
 
 `--demo` creates/reuses a separate synthetic workspace at
 `artifacts/web-demo-workspace/`. The root page lists its source IDs and reports;
@@ -106,9 +107,10 @@ After the synthetic preview, test your saved-data report yourself:
 - Find startup/report log paths and sanitized `Agent review:` paths in the terminal.
   Logs/errors are retained. No automatic retention/deletion is configured.
 
-Record OS, shell, browser, steps passed and safe failure descriptions. User/browser
-acceptance is pending; automated route tests are not visual/Excel verification.
-Native Windows/macOS and WSL browser forwarding are separately pending.
+Record OS, shell, browser, steps passed and safe failure descriptions. The user confirmed synthetic report visibility in Windows Chrome on 2026-09-20.
+Filtering, real saved quotes and Excel acceptance remain pending; automated route
+tests are not visual/Excel verification.
+Native Windows Python and macOS operation remain separately pending.
 
 Known C3a scope: web reports share calculation/master/provider joins and full CSV
 with CLI for identical inputs/settings. This preview uses the reviewed candidate
@@ -151,3 +153,42 @@ inputs or adopt orphan files automatically. No filesystem browser, raw capture
 route, entire-artifact static mount, credential entry form or provider endpoint is
 available. Loopback, strict Host/Origin, CSRF, escaping and response headers are
 verified controls for this preview, not authorization to expose it remotely.
+
+## Resource use and shared-machine constraint
+
+The owner runs other resource-intensive applications concurrently. Keep this app
+small and demand-driven; measure meaningful new features before adding background
+work or parallel report processing. No machine-wide WSL limits were changed.
+
+Current implementation: one Python server process using Flask/Jinja/Waitress,
+ordinary HTML/CSS, four request threads and an embedded SQLite metadata file.
+There is no Node/frontend build pipeline, JavaScript polling, automatic refresh,
+provider fetching or active scheduler in the web app. Waiting threads do not mean
+four CPU cores are continuously busy. Waitress waits for network events; see its
+[design documentation](https://docs.pylonsproject.org/projects/waitress/en/stable/design.html).
+
+A bounded synthetic check on WSL2/Python 3.14.4 (2026-09-20) used the same guarded
+in-process web boundary and a fresh process per workload. Each fixture contained
+150 price sessions and synthetic OTA metrics. Single-sample observations:
+
+| Synthetic master size | Report build elapsed / CPU | First page elapsed | Peak process RSS |
+| --- | --- | --- | --- |
+| 60 symbols | 29 / 18 ms | 14 ms | 45.8 MiB |
+| 600 symbols | 85 / 72 ms | 20 ms | 58.1 MiB |
+
+For 600 symbols, next-page/filter/export elapsed times were approximately
+12/10/17 ms. The default page contained 25 rows and about 86 KiB of HTML. Peak RSS
+includes fixture construction and the in-process test client; it excludes Windows
+Chrome, the overall WSL VM, other processes and a live HTTP server's socket/thread
+overhead. This is an indicative local measurement, not a resource cap, benchmark
+of real provider payloads or guarantee under other concurrent workloads. No real
+provider file, running user process or credential was inspected for this check.
+
+Current limitation: pagination reduces browser rows, but each request still reads
+and decodes the full immutable report before filtering; CSV is built in memory.
+Large raw field sets and concurrent tab requests can therefore increase peak
+usage. Four request threads are not a memory/CPU quota. Generating one report is
+serialized, while page/export requests are not. Keep the default 25-row view and
+measure real-data usage during user-run acceptance before selecting additional
+caching, lazy diagnostics, streaming exports or other bounded optimizations.
+User device capacity and an acceptable resource budget are not yet established.

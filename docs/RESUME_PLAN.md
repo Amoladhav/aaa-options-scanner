@@ -16,10 +16,12 @@ questions. Read it before implementing; findings are dated, not live guarantees.
    C3a preview is implemented in the following local commit (see Git log).
    205 guarded core tests and 11 optional guarded web tests passed; a separate
    synthetic loopback HTTP smoke check passed and stopped cleanly.
-3. Next user checkpoint: [LOCAL_WEB.md](LOCAL_WEB.md), first the synthetic browser
-   preview, then user-selected saved OTA/Tradier inputs, quote coverage and Excel
-   exports. No provider operations, scheduling activation or real-data migration
-   ran. C2 Infisical/Tradier acceptance and browser/native OS checks remain pending.
+3. User confirmed synthetic report visibility in Windows Chrome on 2026-09-20.
+   Next checkpoint: [LOCAL_WEB.md](LOCAL_WEB.md), filters and user-selected saved
+   OTA/Tradier inputs, quote coverage and Excel exports. Keep CPU/memory use small
+   alongside the user's other demanding apps; see the documented synthetic
+   resource measurements and full-report-loading limits. No provider operations,
+   scheduling activation or real-data migration ran. C2 Infisical/Tradier acceptance and browser/native OS checks remain pending.
 4. Continue C4 append-only history after preview feedback, then C5 backup/restore
    and C6 settings/durable fetch lifecycle. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
