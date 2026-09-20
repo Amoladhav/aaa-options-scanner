@@ -1,4 +1,4 @@
-"""Pure, bounded saved-report views. No expressions, I/O or strategy changes."""
+"""Pure, bounded saved-report views; no I/O or strategy changes."""
 from dataclasses import dataclass, asdict
 from decimal import Decimal, InvalidOperation
 import json
@@ -115,6 +115,7 @@ class Selection:
     page_size: int = 25
     filters: tuple = ()
     columns: tuple = ()
+    expression: str = ''
 
     def __post_init__(self):
         if (not isinstance(self.search, str) or len(self.search) > 100
@@ -131,6 +132,11 @@ class Selection:
                 or not all(isinstance(col, str) and 1 <= len(col) <= 256 for col in self.columns)
                 or len(set(self.columns)) != len(self.columns)):
             raise DataError('REPORT_SELECTION_INVALID')
+        if not isinstance(self.expression, str):
+            raise DataError('REPORT_EXPRESSION_INVALID')
+        if self.expression:
+            from .report_expressions import compile_expression, expression_for_selection
+            compile_expression(expression_for_selection(self))
 
     @classmethod
     def from_mapping(cls, values):
@@ -150,6 +156,8 @@ class Selection:
     def query(self):
         values = asdict(self)
         values.pop('filters'); values.pop('columns')
+        if not self.expression:
+            values.pop('expression')
         pairs = list(values.items())
         for rule in self.filters:
             pairs.extend((('field', rule.field), ('op', rule.op), ('value', rule.value)))
@@ -162,6 +170,10 @@ def select_rows(result, selection):
     if (selection.sort not in columns or set(selection.columns) - columns
             or any(rule.field not in columns for rule in selection.filters)):
         raise DataError('REPORT_COLUMN_UNKNOWN')
+    expression = None
+    if selection.expression:
+        from .report_expressions import compile_expression, expression_for_selection
+        expression = compile_expression(expression_for_selection(selection), columns)
     rows = []
     for row in result['combined']:
         if selection.group != 'all' and not (row['group'] == selection.group or selection.group == 'sector' and row.get('sector_etf')):
@@ -171,7 +183,7 @@ def select_rows(result, selection):
         p, x = row.get('percentile'), selection.percent / 100
         if selection.tail != 'all' and (p is None or not ((selection.tail in ('top', 'both') and p >= 1-x) or (selection.tail in ('bottom', 'both') and p <= x))):
             continue
-        if all(rule.matches(row) for rule in selection.filters):
+        if (expression.matches(row) if expression else all(rule.matches(row) for rule in selection.filters)):
             rows.append(row)
     # Keep numeric, text and missing buckets stable in either direction. Numeric
     # strings compare numerically; null/absent/blank stay last, ties by symbol.

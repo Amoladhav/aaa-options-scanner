@@ -1,0 +1,33 @@
+{% macro field_picker(name,selected,numeric=false) -%}
+<select name="{{ name }}"><option value="">Choose column</option>{% for col in columns if not numeric or col in units %}<option value="{{ col }}" {% if col==selected %}selected{% endif %}>{{ col }}{% if numeric %} · {{ units[col] }}{% endif %}</option>{% endfor %}</select>
+{%- endmacro %}
+{% macro node_editor(node,path='r',depth=1) -%}
+{% if node.type in ['all','any'] %}
+<fieldset class="expression-group"><legend>{{ "ALL (AND)" if node.type=="all" else "ANY (OR)" }} group</legend>
+<label>Match<select name="e.{{ path }}.type"><option value="all" {% if node.type=='all' %}selected{% endif %}>ALL conditions (AND)</option><option value="any" {% if node.type=='any' %}selected{% endif %}>ANY condition (OR)</option></select></label>
+{% for child in node.rules %}{{ node_editor(child,path ~ '.' ~ loop.index0,depth+1) }}{% else %}<p class="muted">Add a rule or group. Empty nested groups must be filled or removed before applying.</p>{% endfor %}
+<div class="expression-actions"><button name="action" value="add_rule:{{ path }}">Add rule</button>{% if depth<max_depth %}<button name="action" value="add_group:{{ path }}">Add nested group</button>{% endif %}{% if path!='r' %}<button name="action" value="remove:{{ path }}">Remove group</button>{% endif %}</div></fieldset>
+{% else %}
+<fieldset class="expression-rule"><legend>Condition</legend><div class="filter-rule">
+<label>Left column{{ field_picker('e.' ~ path ~ '.field',node.field) }}</label>
+<label>Comparison<select name="e.{{ path }}.op">{% for op,label in operators.items() %}<option value="{{ op }}" {% if node.op==op %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Compare with<select name="e.{{ path }}.type"><option value="literal" {% if node.type=='literal' %}selected{% endif %}>A value / presence check</option><option value="column" {% if node.type=='column' %}selected{% endif %}>Multiplier × another column</option></select></label>
+<label>Value<input name="e.{{ path }}.value" maxlength="200" value="{{ node.get('value','') }}" placeholder="Empty for presence checks"></label>
+<label>Multiplier<input name="e.{{ path }}.factor" maxlength="32" value="{{ node.get('factor','1') }}" inputmode="decimal"></label>
+<label>Right column{{ field_picker('e.' ~ path ~ '.other',node.get('other',''),true) }}</label>
+</div><p class="muted">Value mode uses only Value. Column mode uses only Multiplier and Right column; choose =, ≠, &gt;, ≥, &lt; or ≤ and columns with matching units.</p><button name="action" value="remove:{{ path }}">Remove rule</button></fieldset>
+{% endif %}
+{%- endmacro %}
+<details class="panel expression-panel" {% if draft_pending or editor_error or selection.expression %}open{% endif %}><summary>Column filters · AND/OR groups and column comparisons</summary>
+<p><b>Applied filter:</b> <span class="expression-summary">{{ active_summary }}</span></p>
+{% if editor_error %}<p class="filter-error" role="alert">{{ editor_error }} The table and downloads still use the applied filter.</p>{% elif draft_pending %}<p class="filter-draft" role="status">Draft changes are not applied. The table and downloads still use the applied filter.</p>{% endif %}
+<p>Add rules and nested groups below, then <b>Apply filters</b>. ALL means AND; ANY means OR. Groups act as parentheses. Search, stock/ETF selection and CRS tails also apply.</p>
+<form method="get" class="expression-form">
+{% for key,value in editor_params %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+<input type="hidden" name="draft" value="{{ draft }}">
+{{ node_editor(editor_tree) }}
+<div class="expression-actions"><button class="primary" name="action" value="apply">Apply filters</button><button name="action" value="clear">Clear column filters</button><a href="{{ url_for('report',artifact_id=artifact_id) }}?{{ editor_params|urlencode }}">Discard draft</a></div>
+</form>
+<p class="muted">Example: meanIvPcnt &gt; 1.5 × ivLow1YrPcnt. Numeric comparisons use saved units: return/percentile fractions use 0.10 for 10%. Missing/null values fail comparisons, including ≠; missing, null and blank checks are separate. Unknown units cannot be used for column comparisons. Same units do not establish matching timestamps or quote freshness.</p>
+<p class="muted">Limits: 32 rules, 4 group levels. Add/remove edits the draft only. Applying resets pagination. Navigation and downloads use the applied filter; discard or apply your draft before changing views.</p>
+</details>

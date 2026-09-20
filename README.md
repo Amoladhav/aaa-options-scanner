@@ -38,16 +38,18 @@ Follow [LOCAL_WEB.md](docs/LOCAL_WEB.md) to install pinned optional dependencies
 start `web --demo`, and then select your own indexed saved sources. It includes
 CRS tails, all-column filters/sorting, visible-column controls, pagination,
 source/quote coverage, full/filtered CSV and IV-section TradingView text exports.
-Core checks: 212 passed; optional guarded web checks: 13 passed. The earlier
+[Grouped filters](docs/FILTER_EXPRESSIONS.md) add nested AND/OR and unit-checked
+column comparisons such as `meanIvPcnt > 1.5 * ivLow1YrPcnt`.
+Core checks: 222 passed; optional guarded web checks: 17 passed. The earlier
 synthetic HTTP start/report/CSV/stop check passed on Ubuntu. The user confirmed synthetic report
 visibility in Windows Chrome after WSL startup guidance. Filter/Excel, saved-source
 quote coverage and native Windows Python/macOS acceptance remain pending.
 No provider fetch or scheduler is started by the web app.
 
-Development is at remaining C3a acceptance, including the new column/watchlist controls. New threads should start with
+Development is at C3b grouped-filter browser acceptance. New threads should start with
 [the resume checkpoint and milestone tracker](docs/RESUME_PLAN.md) and
-[current status](docs/STATUS.md). C3b cross-column expressions and AND/OR groups
-follow C3a acceptance, then C4–C6 before Finviz/IBKR.
+[current status](docs/STATUS.md). C3b is implemented and offline verified;
+builder feedback precedes C4–C6 and then Finviz/IBKR.
 Target shared 8–16 GB RAM machines running TradingView/TOS and other tools;
 realistic resource acceptance is still pending. See
 [measurements and limits](docs/LOCAL_WEB.md#resource-use-and-shared-machine-constraint).

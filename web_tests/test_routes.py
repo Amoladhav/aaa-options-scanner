@@ -15,6 +15,7 @@ from trading_scanner.demo import make_snapshot
 from trading_scanner.dashboard import synthetic_ota
 from trading_scanner.report_service import ReportService,compose_report,csv_export
 from trading_scanner.report_selection import Selection, ColumnFilter, watchlist_export
+from trading_scanner.report_expressions import decode_document
 from trading_scanner.web import create_app
 from trading_scanner.core import DataError
 
@@ -207,7 +208,8 @@ class WebRoutesTests(unittest.TestCase):
             self.assertIn('filtered-watchlist.txt',download.headers['Content-Disposition'])
             self.assertIn('text/plain',download.headers['Content-Type'])
             previous=next(link for link in links if parse_qs(urlsplit(link).query).get('page')==['1'] and '/export' not in link and '/watchlist' not in link)
-            self.assertEqual(parse_qs(urlsplit(previous).query)['field'],['ivGauge','company'])
+            migrated=decode_document(parse_qs(urlsplit(previous).query)['expression'][0])
+            self.assertEqual([rule['field'] for rule in migrated['root']['rules']],['ivGauge','company'])
             sort=next(link for link in links if parse_qs(urlsplit(link).query).get('sort')==['ivGauge'] and parse_qs(urlsplit(link).query).get('direction')==['desc'])
             self.assertNotIn('page',parse_qs(urlsplit(sort).query))
             self.assertEqual(self.get(sort).status_code,200)
@@ -218,8 +220,9 @@ class WebRoutesTests(unittest.TestCase):
         query=[('field','ivGauge'),('op','eq'),('value','1'),('field',''),('op','contains'),('value','')]
         response=self.get(path+'?'+urlencode(query))
         self.assertEqual(response.status_code,200)
-        self.assertIn('1 active',response.text)
-        self.assertEqual(response.text.count('name="field"'),2)
+        self.assertIn('Applied filter:',response.text)
+        self.assertEqual(response.text.count('name="e.r.0.field"'),1)
+        self.assertNotIn('name="e.r.1.field"',response.text)
         for query in ('field=ivGauge&op=gt','field=ivGauge&op=gt&value=nan',
                       'field=unknown&op=eq&value=1','column=unknown',
                       'column=symbol&column=symbol','filters=arbitrary',

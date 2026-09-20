@@ -434,7 +434,7 @@ unbounded caches or changing frameworks. C3a currently decodes full reports for
 views and builds CSV in memory; future optimization should retain shared selection
 and full/filtered-export parity. See [measured scope](LOCAL_WEB.md#resource-use-and-shared-machine-constraint).
 
-## Column filtering and watchlist progression (2026-09-20)
+## Column filtering, expressions and watchlist progression (2026-09-20)
 
 C3a now has shared all-column selection, numeric/text/presence rules combined
 with AND, stable mixed-type sorting, visible-column controls and filtered
@@ -443,10 +443,16 @@ these services for table/CSV/watchlist membership before pagination. Original
 source values and CRS/candidate rules remain unchanged. Legacy standalone HTML
 is unchanged; this increment targets the active localhost dashboard.
 
-Next is **C3a user acceptance → C3b expressions → C4 history → C5 recovery → C6
-saved screeners/settings and durable jobs → C7 providers**. C3b defines a bounded,
+C3b is now implemented after user feedback on C3a. Next is **C3b builder feedback
+→ C4 history → C5 recovery → C6
+saved screeners/settings and durable jobs → C7 providers**. C3b supplies a bounded,
 versioned typed rule tree for cross-column comparisons (`A > 1.5 * B`) and nested
 AND/OR, before C4 needs reproducible rule provenance. C6 provides personal preset
-persistence through shared validation. See [C3b acceptance](RESUME_PLAN.md#c3b--typed-cross-column-expressions-and-andor-groups-planned).
-Expressions are planned, not implemented. No evaluator based on executable text,
-new dependencies, automatic fetch, worker or scheduling activation is introduced.
+persistence through shared validation. See [C3b acceptance](FILTER_EXPRESSIONS.md).
+The version-1 expression contract, unit registry and typed evaluator are shared
+with table/CSV/watchlist selection. The editor keeps drafts separate from applied
+filters and reports validation failures without changing the applied selection.
+Legacy AND rules migrate without changing membership. Limits are 32 rules/four
+group levels; text is never executed. See [the decision](decisions/0003-report-expressions.md).
+No new dependency, automatic fetch, worker or scheduling activation is introduced.
+Actual browser/import/resource acceptance remains separate from offline verification.

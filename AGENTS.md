@@ -336,8 +336,10 @@ This is guidance, not an active model configuration or a correctness guarantee.
 - Resume from [RESUME_PLAN.md](docs/RESUME_PLAN.md) and its current acceptance
   checkpoint, not the historical initial mandate below. At the 2026-09-20 pause,
   C1/C3 and C3a are implemented, C2 docs prepared, and synthetic report visibility
-  in Windows Chrome is user-confirmed. Remaining C3a acceptance precedes C3b typed cross-column/AND/OR filters,
-  then C4–C6; Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.
+  in Windows Chrome is user-confirmed. C3a column/watchlist controls and C3b typed
+  cross-column/AND/OR filters are now implemented and offline verified. Resume at
+  C3b builder feedback; then C4–C6. Specific saved-data/browser/import acceptance
+  gaps remain in STATUS.md. Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.
 - Target shared 8–16 GB RAM machines running other trading applications. Preserve
   demand-driven operation and assess resource use before adding background work;
   the owner's 32 GB machine is not a minimum requirement. Measurements and limits

@@ -291,3 +291,19 @@ silently ignoring them. No credentialed operation or real artifact inspection ra
 No dependency, migration, hosted workflow or scheduler activation was added.
 Browser ergonomics, Excel, real saved quotes, TradingView import/symbol resolution,
 native Windows/macOS and realistic shared-machine resource checks remain pending.
+
+## C3b typed expressions and grouped editor — 2026-09-20
+
+222 core tests passed via `python3 -I -S tools/test_offline.py`; 17 optional
+web tests passed via `python3 -I -S tools/test_web.py --deps artifacts/web-test-deps`
+on local Ubuntu/Python 3.14.4. Existing network/environment/process/real-database
+isolation remains installed before collection. No dependencies were installed.
+
+New synthetic coverage: nested AND/OR truth tables, exact decimal multiplication,
+unit mismatch/unknown-unit rejection, missing operands including zero multiplier,
+version/shape/size/depth validation, delimiter/text escaping, old AND migration,
+600-row/32-rule selection, actual rendered-form submission, draft/apply separation,
+invalid-apply recovery and matching table/CSV/watchlist membership across pages.
+No live HTTP/browser check, real provider artifact inspection or credentialed
+operation ran. Actual browser ergonomics, quote coverage, Excel/TradingView import,
+native Windows/macOS and realistic resource acceptance remain user-run and pending.

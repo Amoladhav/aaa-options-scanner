@@ -93,9 +93,12 @@ Restart your existing server after updating the code, then reopen a saved report
 Reports do not need rebuilding for these view controls. This feature is in the
 localhost dashboard; legacy standalone HTML reports keep their existing controls.
 
-- Open **Column filters**, select a column, comparison and value, then **Apply
-  column filters**. An additional blank rule appears after applying. Up to 32
-  active rules combine with AND. Choose **No filter** to remove a rule.
+- Open **Column filters · AND/OR groups and column comparisons**, add a rule,
+  choose a column/comparison/value, and click **Apply filters**. Groups can match
+  ALL (AND) or ANY (OR), including nested groups. Column mode compares a left
+  column with a multiplier times another column of compatible documented units.
+  Add/remove edits a draft; results/exports retain the applied filter until Apply.
+  See the [grouped-filter walkthrough and semantics](FILTER_EXPRESSIONS.md).
 - Every saved report field is available, including raw OTA columns, quote fields,
   statuses and diagnostics. Numeric comparisons accept finite numeric strings;
   booleans do not count as numbers. Text comparisons ignore case. Equality compares
@@ -133,10 +136,10 @@ preserves saved symbols without guessing prefixes or changing share-class spelli
 Review symbol resolution during import; real TradingView import/section behavior
 remains user-validation pending. Missing gauge is not an inferred IV category.
 
-Cross-column comparisons such as `A > 1.5 * B` and nested AND/OR groups are planned
-at **C3b**, after this preview's acceptance and before C4 history. Saved personal
-screener revisions follow in C6. Filters currently travel in local page URLs;
-there is no saved preset or automatic application to another report.
+Cross-column comparisons such as `A > 1.5 * B` and nested AND/OR groups are now
+implemented at **C3b**. Saved personal screener revisions follow in C6. Applied
+filters travel in local page URLs; there is no saved preset or automatic
+application to another report. Browser acceptance of the new editor is pending.
 
 ## Browser acceptance checkpoint
 
@@ -150,7 +153,9 @@ After the synthetic preview, test your saved-data report yourself:
 - Try stocks/ETFs, search and top/bottom/both X% tails, score ordering and next page.
   Selection applies to the complete report before pagination. Tied percentiles may
   yield more/fewer rows than exactly X%. Fixed CRS labels/candidate rules stay fixed.
-- Try multiple column rules, sort raw/quote/status columns in both directions,
+- Try nested AND/OR rules and a compatible column comparison; confirm draft
+  changes do not affect results before Apply, and an invalid rule preserves the
+  applied selection. Sort raw/quote/status columns in both directions,
   hide/show columns, move between pages and reset. Confirm missing values stay last.
 - Export the **TradingView watchlist** with a filter spanning multiple pages;
   confirm IV sections, symbol resolution and membership against the filtered CSV.

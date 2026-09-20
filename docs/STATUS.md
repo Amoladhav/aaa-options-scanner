@@ -1,23 +1,26 @@
 # Project status
 
-Updated: 2026-09-20. Phase: C3a column filtering/watchlist increment; user acceptance pending.
+Updated: 2026-09-20. Phase: C3b grouped expressions implemented; browser acceptance pending.
 
-Resumed with all-column filters/sorting, selectable table columns and filtered
-TradingView text export grouped by IV gauge. Shared pure selection drives the
-localhost table, filtered CSV and watchlist across all pages. Original data,
-strategy settings and legacy standalone HTML remain unchanged. No new dependency,
-provider access, scheduling or schema migration was needed.
+The user reviewed C3a positively and approved proceeding with C3b. The localhost
+dashboard now supports column-versus-value and column-versus-scaled-column rules,
+nested ALL (AND)/ANY (OR), explicit parentheses and a draft/apply editor. Applied
+selection is shared across table, CSV and IV-section watchlists. Legacy AND-only
+URLs migrate without changing membership. Unit mismatches/unknown units reject
+column arithmetic; missing operands never become zero. Original values and
+candidate/scoring rules remain unchanged. See [FILTER_EXPRESSIONS.md](FILTER_EXPRESSIONS.md).
 
-212 guarded core tests and 13 guarded web tests pass on Ubuntu/Python 3.14.4.
-Tests cover mixed types, raw missing/null/blank lineage, comparison semantics,
-query rejection, escaping, stable sorting and exact export membership/sections.
-Browser ergonomics, real saved quotes, Excel and TradingView import remain pending.
-The prior HTTP smoke check predates these changes; no server was started this turn.
+222 guarded core tests and 17 guarded web tests pass on Ubuntu/Python 3.14.4.
+Coverage includes truth tables, decimal precision, missing values, unit checks,
+malformed/oversized trees, old-rule migration, real form submission, draft isolation,
+invalid-apply recovery and export parity. A 600-row synthetic report passes with
+32 rules. Browser ergonomics, real saved quotes, Excel/TradingView import and
+realistic shared-machine resource use remain pending. No live server/browser,
+provider access, credential read or real-data migration ran this increment.
 
-Next: C3a user acceptance, then the newly planned C3b cross-column expressions and
-AND/OR groups, C4 history, C5 backup/restore and C6 saved screeners/settings/durable
-jobs. Finviz/IBKR stays after C6 acceptance. See [RESUME_PLAN.md](RESUME_PLAN.md).
-The shared 8–16 GB design target and realistic resource acceptance remain open.
+Next: C3b builder feedback, then C4 append-only history, C5 backup/restore and C6
+saved screeners/settings/durable jobs. Finviz/IBKR stays after C6 acceptance.
+Scheduling stays disabled. See [RESUME_PLAN.md](RESUME_PLAN.md).
 
 OTA live checkpoint: the user's short-page run returned 77 rows after one page
 with no error (`ec8d6c0cf18743e38ef32fa4f0832993`). This proves the observed

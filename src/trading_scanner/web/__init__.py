@@ -1,5 +1,6 @@
 """Same-origin localhost adapter. No provider/credential/scheduling routes."""
 from datetime import datetime
+from dataclasses import replace
 import hmac
 import secrets
 import threading
@@ -13,6 +14,8 @@ from ..core import DataError
 from ..report_service import ReportService, Selection, select_rows, csv_export, coverage
 from ..report_selection import (ColumnFilter, report_columns, watchlist_export,
                                 DEFAULT_COLUMNS, OPERATORS, MAX_RULES, cell_text)
+from ..report_expressions import (expression_for_selection, expression_summary, decode_document,
+    edit_expression, compile_expression, ERROR_MESSAGES, UNITS, MAX_DEPTH)
 
 
 def validate_port(port):
@@ -102,13 +105,18 @@ def create_app(catalog, *, port=8765, service=None):
         return redirect(url_for('report',artifact_id=aid),code=303)
 
     def selection():
-        if set(request.args)-{'search','group','tail','percent','sort','direction','page','page_size',
-                              'field','op','value','column','scope'}:
+        editor_keys={key for key in request.args if key.startswith('e.') or key in ('draft','action')}
+        if editor_keys and request.endpoint!='report':
             raise DataError('REPORT_SELECTION_INVALID')
-        if len(request.query_string)>24000 or any(len(request.args.getlist(key))!=1 for key in request.args if key not in ('field','op','value','column')):
+        if set(request.args)-editor_keys-{'search','group','tail','percent','sort','direction','page','page_size',
+                              'field','op','value','column','scope','expression'}:
+            raise DataError('REPORT_SELECTION_INVALID')
+        if len(request.query_string)>131072 or any(len(request.args.getlist(key))!=1 for key in request.args if key not in ('field','op','value','column')):
             raise DataError('REPORT_SELECTION_INVALID')
         values=request.args.to_dict()
         values.pop('scope',None)
+        for key in editor_keys:
+            values.pop(key,None)
         fields,ops,terms=(request.args.getlist(key) for key in ('field','op','value'))
         if not len(fields)==len(ops)==len(terms) or len(fields)>MAX_RULES+1:
             raise DataError('REPORT_FILTER_INVALID')
@@ -122,7 +130,28 @@ def create_app(catalog, *, port=8765, service=None):
     @app.get('/reports/<artifact_id>')
     def report(artifact_id):
         result=service.load(artifact_id)
-        selected=selection();rows=select_rows(result,selected)
+        selected=selection()
+        columns=report_columns(result)
+        active=expression_for_selection(selected)
+        if selected.filters:
+            selected=replace(selected,filters=(),expression=active)
+        draft=request.args.get('draft',active)
+        action=request.args.get('action')
+        edits={key:request.args[key] for key in request.args if key.startswith('e.')}
+        if (edits or 'draft' in request.args) and not action or action and 'draft' not in request.args:
+            raise DataError('REPORT_EXPRESSION_INVALID')
+        decode_document(draft)
+        editor_error=None
+        if action:
+            try:
+                draft=edit_expression(draft,edits,action)
+                if action in ('apply','clear'):
+                    compile_expression(draft,set(columns))
+                    selected=replace(selected,filters=(),expression=draft,page=1)
+                    active=draft
+            except DataError as exc:
+                editor_error=ERROR_MESSAGES.get(str(exc),ERROR_MESSAGES['REPORT_EXPRESSION_INVALID'])
+        rows=select_rows(result,selected)
         start=(selected.page-1)*selected.page_size
         params=selected.query()
         links={}
@@ -131,15 +160,17 @@ def create_app(catalog, *, port=8765, service=None):
         links['full']=url_for('export',artifact_id=artifact_id)+'?scope=full'
         links['filtered']=url_for('export',artifact_id=artifact_id)+'?'+urlencode(params+[('scope','filtered')])
         links['watchlist']=url_for('watchlist',artifact_id=artifact_id)+'?'+urlencode(params)
-        columns=report_columns(result)
         displayed=selected.columns or DEFAULT_COLUMNS
         sort_links={col:url_for('report',artifact_id=artifact_id)+'?'+urlencode(
             [(k,v) for k,v in params if k not in ('sort','direction','page')]+
             [('sort',col),('direction','asc' if selected.sort==col and selected.direction=='desc' else 'desc')]) for col in displayed}
-        rule_rows=list(selected.filters)+([None] if len(selected.filters)<MAX_RULES else [])
         return render_template('report.html',artifact_id=artifact_id,result=result,rows=rows[start:start+selected.page_size],
                                selection=selected,total=len(rows),start=start,links=links,counts=coverage(result),
-                               columns=columns,displayed=displayed,rule_rows=rule_rows,operators=OPERATORS,sort_links=sort_links)
+                               columns=columns,displayed=displayed,operators=OPERATORS,sort_links=sort_links,
+                               draft=draft,editor_tree=decode_document(draft)['root'],editor_error=editor_error,
+                               editor_params=params,
+                               active_summary=expression_summary(active),draft_pending=draft!=active,
+                               units=UNITS,max_depth=MAX_DEPTH),400 if editor_error else 200
 
     @app.get('/reports/<artifact_id>/export')
     def export(artifact_id):

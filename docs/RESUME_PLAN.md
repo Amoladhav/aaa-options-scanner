@@ -15,18 +15,18 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 2. Implemented checkpoints: C1 `c86eddf`, C2 docs `c7d800d`, C3 `c18ae0b`;
    C3a preview is implemented in `94b37fc`. Resource evidence and the shared
    8–16 GB design target are recorded in `6ddf2e9` and `ec80232`.
-   212 guarded core tests and 13 optional guarded web tests passed for the column-view increment; the prior
+   222 guarded core tests and 17 optional guarded web tests passed for C3b; the prior
    synthetic loopback HTTP smoke check passed and stopped cleanly (before this increment).
 3. User confirmed synthetic report visibility in Windows Chrome on 2026-09-20.
-   Next checkpoint: [LOCAL_WEB.md](LOCAL_WEB.md), filters and user-selected saved
+   C3b expressions are implemented; user feedback on C3a was positive.
+   Next checkpoint: [grouped filters](FILTER_EXPRESSIONS.md) and [LOCAL_WEB.md](LOCAL_WEB.md), user-selected saved
    OTA/Tradier inputs, quote coverage and Excel exports. Keep CPU/memory use small
    alongside TradingView/TOS on shared 8–16 GB machines; the owner's machine has
    32 GB. See the documented synthetic
    resource measurements and full-report-loading limits. No provider operations,
    scheduling activation or real-data migration ran. C2 Infisical/Tradier
    acceptance and remaining browser/native OS checks are pending.
-4. After preview acceptance, implement C3b typed expressions, then C4 append-only
-   history, C5 backup/restore
+4. After C3b builder feedback, continue C4 append-only history, C5 backup/restore
    and C6 settings/durable fetch lifecycle. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
    User performs pushes and every credentialed operation. C7 remains after C6
@@ -38,12 +38,15 @@ Suggested next-thread prompt:
 > docs/IMPLEMENTATION_RESEARCH.md. Resume at remaining C3a acceptance; the synthetic
 > report is already visible in Windows Chrome after WSL startup guidance. Check
 > filters, saved-source quote coverage, Excel exports and realistic resource use
-> before continuing C4–C6. Target shared 8–16 GB machines alongside TradingView/TOS.
+> and the C3b grouped-expression editor before continuing C4–C6. Target shared 8–16 GB machines alongside TradingView/TOS.
 > Keep provider operations user-run and scheduling disabled. Finviz/IBKR follows
 > C6 acceptance. Preserve shared CLI/web services and existing environments.
 
 Resumed on 2026-09-20 for C3a all-column filters/sorting and grouped watchlist
-exports. C3b expression filters are planned next after C3a user acceptance.
+exports. The user then approved proceeding with C3b; typed column comparisons
+and nested AND/OR are now implemented and offline verified. Specific real-data
+import/Excel/resource checks remain unverified; positive feedback does not close
+those evidence gaps.
 Reuse the existing WSL `.venv` if still compatible; do not repeat installation
 merely because a new thread began. From the project root, the established demo
 command is `.venv/bin/python -I run.py web --demo --port 8765`; open
@@ -199,17 +202,19 @@ preview and then selects their saved OTA/Tradier results. Confirm quotes appear,
 CRS top/bottom filtering works and Excel opens the export. Record actual browser
 and OS validation separately. A server merely starting is not feature acceptance.
 
-### C3b — Typed cross-column expressions and AND/OR groups (planned)
+### C3b — Typed cross-column expressions and AND/OR groups (implemented; browser acceptance pending)
 
-Sequence: finish C3a basic column filters/watchlist acceptance first, then C3b,
-then C4 history, C5 recovery and C6 saved screener/settings controls. Define the
-versioned expression contract before history/replay needs to pin it. Do not delay
-this usable basic-filter increment to build the expression language.
+Implemented after the user reviewed C3a and approved proceeding. A version-1
+typed expression contract, compatible legacy migration, pure evaluator and
+server-rendered draft/apply editor now exist. See [FILTER_EXPRESSIONS.md](FILTER_EXPRESSIONS.md).
+222 guarded core and 17 guarded web tests pass, including a 600-row/32-rule
+synthetic check. Next: builder feedback, C4 history, C5 recovery and C6 saved
+screener/settings controls. No real-data acceptance claim is implied.
 
-- Extend the shared pure selection service with a versioned typed rule tree:
+- Implemented shared pure selection with a versioned typed rule tree:
   column-versus-literal first, then column-versus-column with a bounded numeric
   multiplier, e.g. `meanIvPcnt > 1.5 * ivLow1YrPcnt`.
-- Add explicit nested ALL (AND) / ANY (OR) groups with visible parentheses and
+- Implemented explicit nested ALL (AND) / ANY (OR) groups with visible parentheses and
   predictable precedence. Migrate today's AND-only rules without changing results.
 - Resolve fields from the report column registry. Validate compatible units and
   numeric types; do not silently compare fractions with percentage points.
@@ -221,7 +226,7 @@ this usable basic-filter increment to build the expression language.
   must select identical full-dataset membership. C4 can record versioned rules
   with report provenance; user-managed saved presets/revisions belong in C6.
 
-Gate: synthetic truth tables for grouped AND/OR and precedence, cross-column
+Offline gate passed: synthetic truth tables for grouped AND/OR and precedence, cross-column
 numeric comparisons, unit mismatch, missing data, malformed/oversized expressions,
 old-rule compatibility and export parity. User accepts the builder before adding
 persisted screener controls. No scoring or candidate-policy change is implied.
