@@ -926,3 +926,9 @@ in-progress and not-supplied counts. A saved batch is not attached automatically
 pass its exact path using `--tradier`. Partial batches retain successful rows and
 show per-symbol failure statuses. A master mismatch fails rather than silently
 joining a different universe.
+
+## Development resume checkpoint
+
+See [the ordered resume plan](docs/RESUME_PLAN.md) for the Infisical credential
+loader, SQLite history/versioning, Git ownership and acceptance gates. The next
+implementation checkpoint is C1. These planned features are not yet implemented.

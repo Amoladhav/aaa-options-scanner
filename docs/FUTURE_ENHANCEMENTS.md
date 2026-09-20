@@ -377,3 +377,13 @@ selection distinct from persisted candidate rules and source-fetch settings.
 Shared `run_ids.py` supplies timestamp-prefixed unique operation IDs for current
 CLI workflows and future web jobs. Keep legacy artifact identifiers readable and
 use explicit timestamps/timezones for chronology rather than parsing IDs.
+
+## Next delivery sequence: secrets and versioned history
+
+[RESUME_PLAN.md](RESUME_PLAN.md) specifies C1-C6 and the next-thread handoff.
+It refines P0/P1: first a provider-independent credential loader and Infisical
+onboarding; then SQLite catalog, append-only CRS history/canonical session views,
+backup/restore and local-web reuse. Git owns code/migrations/reviewed defaults;
+private database and artifact files own runtime history. Large raw responses stay
+in immutable files. Existing schedule storage and legacy history need explicit
+compatibility/migration, not replacement by a parallel implementation.

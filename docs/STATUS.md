@@ -12,7 +12,14 @@ native OS storage can save the current token but cannot extend its lifetime.
 Manual runs and the optional local schedule worker are user-started. No login
 automation or OS startup service exists.
 
-## Latest increment: readable run IDs and Tradier diagnostics
+## Next session: credentials and history roadmap
+
+Read [RESUME_PLAN.md](RESUME_PLAN.md). C0 (planning) is complete; C1 (credential
+loader) is next. Infisical integration and the general history database are not
+yet implemented. The current runtime baseline remains ec66c33 / 184 offline tests.
+No scheduling, hosted CI or provider operation was enabled during planning.
+
+## Latest implementation: readable run IDs and Tradier diagnostics
 
 New run folders/logs use local YYYYMMDDHHMM plus a uniqueness suffix. Legacy IDs
 remain accepted; existing artifacts are not renamed. Dashboard summaries now show
