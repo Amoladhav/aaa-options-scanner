@@ -151,39 +151,59 @@ earlier snapshots. Public and synthetic artifacts are separated and ignored by G
 
 ## Standard progress and run logs
 
-All scan commands (including dashboard, OTA and standalone probes) print progress to **stdout** by
-default. Each stage announces `Currently running: ...` before work begins, then
-prints completion. Price downloads update after each batch, including empty
-responses. Bars show **per-stage** completion, not an estimated percentage of
-total runtime or an indication that every requested symbol has valid data.
+All commands share stdout progress and structured logs. In an interactive terminal,
+the progress bar **refreshes in place** using carriage returns; stage completions,
+warnings, errors and the final summary remain on separate lines. The current step
+is displayed before work begins. Tradier batches show expiration, underlying-quote
+or chain work while retaining the overall completed-symbol counter. Bars show
+per-stage completion, not a runtime estimate or proof that all data is usable.
+
+Stdout timestamps default to the **runtime machine's local timezone**, including
+its UTC offset. Configure the operating system/WSL timezone to your preference;
+the scanner does not infer your location or hardcode a zone. Each event computes
+its local offset, so daylight-saving changes are reflected. Structured logs retain
+both local and UTC timestamps; elapsed durations use a monotonic clock.
 
 ```text
-INFO    [######--------------]  30% Currently running: Downloading adjusted daily prices (4/13 batches) | elapsed 12.3s
+2026-09-19T15:04:05-07:00 INFO [######--------------]  30% 3/10 Fetching monthly option chain
 ```
 
-During a blocking download the latest stage remains displayed; there is no timed
-heartbeat or guessed ETA. Every update is flushed and written on a new line,
-including in IDE terminals and redirected stdout. No activation or new package
-is needed for progress/logging. Existing run commands stay the same.
+During blocking work the latest step remains visible; there is no guessed ETA or
+background heartbeat. Prompts clear the transient display before accepting input.
+Redirected output and IDE output panes that do not expose a terminal use plain
+newline-delimited messages, with no carriage returns or escape sequences. No new
+package is required. Existing fetch commands stay the same.
 
-Each run also creates an exclusive UTF-8 JSON Lines file at
-`artifacts/logs/<run_id>.jsonl`, printed at startup. Each line is a structured
-event with UTC timestamp, sequence, severity (`INFO`, `WARNING`, `ERROR`), run ID,
-implementation revision, command/profile, stage/event, a fixed message, completed
-and total counts, percentage, elapsed seconds, safe counts and error code.
-The run ID matches the output directory and `agent-review` summary.
+Every run creates two exclusive UTF-8 files, whose paths are printed at startup
+and again in the final summary:
 
-Events are flushed immediately. Previous logs are preserved; there is no automatic
-retention deletion. Warnings report exclusion counts; failures preserve the last
-stage and actual progress. Ctrl+C records cancellation and returns exit code 130.
-The log does not contain symbols, raw provider output, arbitrary exception text,
-URLs, headers or credentials. Provider stdout/stderr remain suppressed while our
-own progress remains visible. No general HTTP debug logger is enabled.
+- `artifacts/logs/<run_id>.jsonl`: every structured event.
+- `artifacts/logs/<run_id>.errors.log`: JSON Lines containing warnings and errors
+  only; empty when none occurred. Tradier symbol-specific failures are included.
 
-Use the same `RunProgress` component for future commands and adapters. Add fixed
-stage/error codes and allowlisted numeric counts instead of logging raw messages.
-After public runs, agents still read only the intended `artifacts/agent-review/`
-summary; ordinary run logs remain user-facing files.
+Log schema version **2** adds `timestamp` (local ISO 8601), `timezone` (local zone
+label) and `step` (current substep), retaining `timestamp_utc` and existing fields:
+sequence, severity, run ID, code revision, command/profile, stage/event, fixed
+message, completed/total counts, percentage, elapsed seconds, counts and safe error
+code. Existing version-1 files remain unchanged. Both files flush each event.
+
+The final stdout summary includes completion/partial/failure/cancellation status,
+elapsed time and available operation counts: master members, attempted/returned/
+failed symbols, HTTP requests, OTA pages/rows or probe chains/rows, as applicable.
+Counts accumulated in progress events are retained in the final run log event.
+Commands also print their output and sanitized `Agent review:` paths. For debugging,
+start with the error log and sanitized report. Ctrl+C records cancellation and
+returns exit code 130; a failed stage keeps its actual progress rather than 100%.
+
+Previous logs are preserved; no retention deletion occurs automatically. Logs
+exclude symbols, raw responses, arbitrary exception text, URLs, headers and
+credentials. Provider stdout/stderr remain suppressed where configured. No general
+HTTP tracing is enabled. If log creation itself fails, files may be unavailable;
+check the safe terminal error and local permissions/disk space.
+
+Future commands must use `RunProgress` and fixed stages/error codes with allowlisted
+numeric counts. Agents still inspect only intended `artifacts/agent-review/`
+reports after user-run fetches; ordinary logs remain user-facing files.
 
 ## Download public data (user-run)
 

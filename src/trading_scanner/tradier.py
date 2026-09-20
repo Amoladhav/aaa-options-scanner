@@ -161,7 +161,7 @@ def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=Non
 
     def fetch(endpoint, params):
         if before_request is not None:
-            before_request()
+            before_request(endpoint)
         diagnostic.clear()
         diagnostic.update(endpoint=endpoint, http_status=None)
         payload = request_json(profile, endpoint, params, credential, diagnostic=diagnostic, **({'capture': capture} if capture is not None else {}))
@@ -294,13 +294,15 @@ def run_probe(root, args):
         print(f'User data: {output}')
         print('ATM bid-ask spread draft saved; quote freshness remains unverified.')
     except (Exception, KeyboardInterrupt) as exc:
+        if progress:
+            progress.pause()
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'TRADIER_FETCH_FAILED'
         if isinstance(exc, DataError) and len(exc.args) == 1 and exc.args[0] in ERRORS:
             code = exc.args[0]
         print(f'{code}: request stopped; no retry or synthetic fallback.')
     try:
         if progress:
-            progress.end(code, counts={'symbols_received': counts['rows']})
+            progress.end(code, counts=counts)
             progress.close()
             progress = None
         report = {'schema_version': 1, 'run_id': run_id, 'code_revision': revision,

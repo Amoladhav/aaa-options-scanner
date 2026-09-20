@@ -150,7 +150,6 @@ def main(argv=None, root: Path | None = None) -> int:
         progress = RunProgress(artifact_root / "logs", run_id, args.command,
                                "unknown" if args.command == "cached" else profile, code_revision())
         progress.begin()
-        print(f"Run log: {progress.path}", flush=True)
         if args.command == "demo":
             progress.start("synthetic_data")
             snapshot = make_snapshot()

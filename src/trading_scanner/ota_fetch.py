@@ -216,6 +216,8 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         print(f'Field profile: {destination / "field-profile.json"}')
         print(f'Normalized data: {destination / "normalized.json"}')
     except (Exception, KeyboardInterrupt) as exc:
+        if progress:
+            progress.pause()
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'OTA_FETCH_FAILED'
         if isinstance(exc, DataError) and len(exc.args) == 1 and exc.args[0] in ERRORS:
             code = exc.args[0]
@@ -242,7 +244,7 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         if schema_diagnostic is not None:
             report['schema_diagnostic'] = schema_diagnostic
         if progress:
-            progress.end(code, counts={'symbols_received': count})
+            progress.end(code, counts={'rows': count, **pagination_counts})
         path = review / f'{run_id}.json'
         path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
         print(f'Agent review: {path}')

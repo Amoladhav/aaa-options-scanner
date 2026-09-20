@@ -137,6 +137,8 @@ def run_process(root, args):
         print(f'Field profile: {destination / "field-profile.json"}')
         print('Incomplete capture: profiling only.' if snapshot['acquisition_status'] == 'incomplete' else f'Normalized data: {destination / "normalized.json"}')
     except (Exception, KeyboardInterrupt) as exc:
+        if progress:
+            progress.pause()
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'OTA_PROCESS_INVALID'
         print(f'{code}: local processing stopped.')
     finally:

@@ -90,6 +90,8 @@ def run_store(root, action, *, provider='ota', profile=None):
             raise DataError('TOKEN_STORE_UNAVAILABLE')
         progress.finish()
     except (Exception, KeyboardInterrupt) as exc:
+        if progress:
+            progress.pause()
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'TOKEN_STORE_UNAVAILABLE'
         if isinstance(exc, DataError) and exc.args[0] in ('TOKEN_STORE_EMPTY','OTA_TOKEN_INVALID','TRADIER_TOKEN_INVALID','OTA_PROMPT_UNAVAILABLE'):
             code = exc.args[0]

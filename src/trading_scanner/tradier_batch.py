@@ -85,10 +85,11 @@ def run_batch(root, args):
             atomic_json(destination / 'batch.json', state)
             capture, capture_state = capture_writer(destination / 'symbols' / f'{index:04}',
                                                      args.profile, run_id, revision)
-            def before_request():
+            def before_request(endpoint=None):
                 pacer()
                 counts['requests'] += 1
-                progress.advance(index, counts=counts)
+                detail = {'expirations': 'tradier_expirations', 'quote': 'tradier_quote', 'chain': 'tradier_chain'}.get(endpoint)
+                progress.advance(index, counts=counts, detail=detail)
             try:
                 provider_symbol = symbol_checked(row['symbol'])
                 row['provider_symbol'] = provider_symbol
@@ -102,6 +103,7 @@ def run_batch(root, args):
                 safe = exc.args[0] if len(exc.args) == 1 and exc.args[0] in ERRORS else 'TRADIER_FETCH_FAILED'
                 row.update(status='failed', error_code=safe)
                 counts['symbols_failed'] += 1
+                progress.error(safe, counts=counts)
                 atomic_json(destination / 'batch.json', state)
                 if safe not in local_errors:
                     raise DataError(safe) from None

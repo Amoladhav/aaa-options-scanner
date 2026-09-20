@@ -34,8 +34,8 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(records[-1]['percent'], 100)
         self.assertEqual(records[-1]['counts'], {'ranked': 60, 'excluded': 0})
         self.assertEqual([r['sequence'] for r in records], list(range(1, len(records)+1)))
-        expected = {'schema_version', 'timestamp_utc', 'sequence', 'level', 'run_id',
-                    'code_revision', 'command', 'profile', 'event', 'stage', 'message',
+        expected = {'schema_version', 'timestamp', 'timezone', 'timestamp_utc', 'sequence', 'level', 'run_id',
+                    'code_revision', 'command', 'profile', 'event', 'stage', 'step', 'message',
                     'completed', 'total', 'percent', 'elapsed_seconds',
                     'stage_elapsed_seconds', 'counts', 'error_code'}
         summary = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
@@ -163,3 +163,86 @@ class ProgressTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             RunProgress(root, 'a'*32, 'demo', 'synthetic', 'b'*64, stream=io.StringIO())
         self.assertEqual(tracker.path.read_text(), text)
+
+    def test_terminal_refresh_reuses_line_and_clears_before_prompt(self):
+        class Terminal(io.StringIO):
+            def isatty(self):
+                return True
+        root, output = self.root(), Terminal()
+        tracker = RunProgress(root, 'c'*32, 'tradier-fetch', 'production', 'd'*64, stream=output)
+        try:
+            tracker.begin()
+            tracker.start('tradier_batch', total=10)
+            before = output.getvalue().count('\n')
+            tracker.advance(1, counts={'symbols_received': 1}, detail='tradier_chain')
+            tracker.advance(2, counts={'symbols_received': 2}, detail='tradier_quote')
+            self.assertEqual(output.getvalue().count('\n'), before)
+            self.assertIn('\r', output.getvalue())
+            self.assertIn('Fetching underlying quote', output.getvalue())
+            tracker.start('tradier_auth')
+            self.assertEqual(tracker.line_width, 0)
+            self.assertTrue(output.getvalue().endswith('\n'))
+            tracker.end(counts={'symbols_received': 2})
+            self.assertIn('Summary: status=completed', output.getvalue())
+            self.assertIn('symbols_received=2', output.getvalue())
+            self.assertIn(str(tracker.error_path), output.getvalue())
+        finally:
+            tracker.close()
+        records = [json.loads(line) for line in tracker.path.read_text().splitlines()]
+        self.assertEqual(sum(r['event'] == 'stage_progress' for r in records), 2)
+        self.assertTrue(all('\r' not in json.dumps(r) for r in records))
+        self.assertEqual(tracker.error_path.read_text(), '')
+
+    def test_error_file_and_partial_summary_preserve_safe_counts(self):
+        root, output = self.root(), io.StringIO()
+        tracker = RunProgress(root, 'e'*32, 'tradier-fetch', 'production', 'f'*64, stream=output)
+        try:
+            tracker.begin()
+            tracker.start('tradier_batch', total=5)
+            tracker.advance(2, counts={'master_symbols': 5, 'symbols_received': 1, 'requests': 6})
+            tracker.error('TRADIER_SCHEMA_INVALID', counts={'symbols_failed': 1})
+            tracker.error('synthetic-private-error')
+            tracker.end('TRADIER_BATCH_PARTIAL')
+        finally:
+            tracker.close()
+        errors = [json.loads(line) for line in tracker.error_path.read_text().splitlines()]
+        self.assertEqual([r['error_code'] for r in errors], ['TRADIER_SCHEMA_INVALID', 'SCAN_FAILED', 'TRADIER_BATCH_PARTIAL'])
+        self.assertNotIn('synthetic-private-error', tracker.error_path.read_text())
+        self.assertIn('Summary: status=partial', output.getvalue())
+        self.assertIn('symbols_failed=1', output.getvalue())
+        self.assertIn('requests=6', output.getvalue())
+        self.assertNotIn('\r', output.getvalue())
+
+    def test_local_timestamp_keeps_offset_and_utc_in_structured_log(self):
+        from datetime import timezone, timedelta
+        root = self.root()
+        class LocalDate(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2026, 9, 19, 20, 0, tzinfo=timezone.utc)
+            def astimezone(self, tz=None):
+                return super().astimezone(tz or timezone(timedelta(hours=5, minutes=30), 'TestLocal'))
+        with patch('trading_scanner.progress.datetime', LocalDate):
+            tracker = RunProgress(root, '1'*32, 'demo', 'synthetic', '2'*64, stream=io.StringIO())
+            try:
+                tracker.begin()
+            finally:
+                tracker.close()
+        record = json.loads(tracker.path.read_text().splitlines()[0])
+        self.assertEqual(record['timestamp'], '2026-09-20T01:30:00+05:30')
+        self.assertEqual(record['timestamp_utc'], '2026-09-19T20:00:00+00:00')
+        self.assertEqual(record['timezone'], 'TestLocal')
+
+    def test_narrow_terminal_keeps_step_without_wrapping(self):
+        class Terminal(io.StringIO):
+            def isatty(self):
+                return True
+        tracker = RunProgress(self.root(), '3'*32, 'tradier-fetch', 'production', '4'*64, stream=Terminal())
+        try:
+            tracker.columns = 40
+            tracker.start('tradier_batch', total=500)
+            tracker.advance(17, detail='tradier_chain')
+            self.assertLess(tracker.line_width, 40)
+            self.assertIn('tradier chain', tracker.stream.getvalue().split('\r')[-1])
+        finally:
+            tracker.close()

@@ -76,6 +76,8 @@ def run_dashboard(root, args):
         print(f'Dashboard: {destination / "dashboard.html"}')
         print(f'{counts["ranked"]} ranked; {counts["matched"]} fresh OTA matches; {counts["candidates"]} tail rows match settings (unverified metrics).')
     except (Exception, KeyboardInterrupt) as exc:
+        if progress:
+            progress.pause()
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'DASHBOARD_FAILED'
         if isinstance(exc, DataError) and len(exc.args) == 1 and exc.args[0] in SAFE_ERRORS:
             code = exc.args[0]

@@ -6,6 +6,7 @@ log message, exception, provider identifier, or arbitrary metadata is accepted.
 """
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -54,15 +55,15 @@ STAGES = {
     "tradier_chain": "Fetching monthly option chain",
     "summary": "Writing sanitized review summary",
 }
-COUNT_KEYS = {"master_symbols","symbols_failed", "requests","tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
+COUNT_KEYS = {"rows", "chains_received","master_symbols","symbols_failed", "requests","tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
 
 
 class RunProgress:
-    """One run, one exclusive JSONL log. Progress percentages are per stage.
+    """Structured durable events and a single transient terminal progress line.
 
-Newline-delimited ASCII output works in terminals, IDEs and redirected stdout
-without terminal probing or environment reads. Events are flushed immediately.
-"""
+    Local wall time is for people; UTC and monotonic elapsed time are retained
+    for correlation and durations. Redirected output never contains control codes.
+    """
     def __init__(self, log_directory: Path, run_id: str, command: str, profile: str,
                  revision: str, stream=None):
         if not re.fullmatch(r"[a-f0-9]{32}", run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
@@ -73,10 +74,40 @@ without terminal probing or environment reads. Events are flushed immediately.
         self.stream = sys.stdout if stream is None else stream
         self.started = self.stage_started = monotonic()
         self.stage_name, self.completed, self.total = "run", 0, None
+        self.detail = None
         self.sequence = 0
+        self.last_counts = {}
+        self.line_width = 0
+        try:
+            self.interactive = self.stream.isatty()
+        except (AttributeError, OSError):
+            self.interactive = False
+        try:
+            self.columns = max(2, os.get_terminal_size(self.stream.fileno()).columns)
+        except (AttributeError, OSError, ValueError):
+            self.columns = 120
         log_directory.mkdir(parents=True, exist_ok=True)
         self.path = log_directory / f"{run_id}.jsonl"
         self.log = self.path.open("x", encoding="utf-8", newline="\n")
+        self.error_path = log_directory / f"{run_id}.errors.log"
+        try:
+            self.error_log = self.error_path.open("x", encoding="utf-8", newline="\n")
+        except OSError:
+            self.log.close()
+            raise
+
+    def pause(self):
+        """Clear transient output before a prompt or ordinary output line."""
+        if self.line_width:
+            self.stream.write("\r" + " " * self.line_width + "\r")
+            self.stream.flush()
+            self.line_width = 0
+
+    def _line(self, message, level="INFO"):
+        self.pause()
+        stamp = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+        self.stream.write(f"{stamp} {level:<7} [{self.command}/{self.profile}] {message}\n")
+        self.stream.flush()
 
     def _emit(self, event: str, level: str, message: str, *, counts=None, error_code=None):
         # Only internal calls provide event/level/message. Public methods accept
@@ -84,19 +115,26 @@ without terminal probing or environment reads. Events are flushed immediately.
         counts = {} if counts is None else counts
         if any(k not in COUNT_KEYS or type(v) is not int or v < 0 for k, v in counts.items()):
             raise ValueError("INVALID_LOG_COUNTS")
+        self.last_counts.update(counts)
         elapsed = monotonic() - self.started
+        utc_stamp = datetime.now(timezone.utc)
+        local_stamp = utc_stamp.astimezone()
         percent = None if self.total is None else self.completed * 100 // self.total
         self.sequence += 1
-        record = {"schema_version": 1, "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        record = {"schema_version": 2, "timestamp_utc": utc_stamp.isoformat(),
+                  "timestamp": local_stamp.isoformat(), "timezone": local_stamp.tzname(),
                   "sequence": self.sequence, "level": level, "run_id": self.run_id,
                   "code_revision": self.revision, "command": self.command, "profile": self.profile,
-                  "event": event, "stage": self.stage_name, "message": message,
+                  "event": event, "stage": self.stage_name, "step": self.detail or self.stage_name, "message": message,
                   "completed": self.completed, "total": self.total, "percent": percent,
                   "elapsed_seconds": round(elapsed, 3),
                   "stage_elapsed_seconds": round(monotonic() - self.stage_started, 3),
                   "counts": counts, "error_code": error_code}
         self.log.write(json.dumps(record, allow_nan=False) + "\n")
         self.log.flush()
+        if level in ("WARNING", "ERROR"):
+            self.error_log.write(json.dumps(record, allow_nan=False) + "\n")
+            self.error_log.flush()
         if percent is None:
             bar = "[....................]  --%"
         else:
@@ -104,11 +142,31 @@ without terminal probing or environment reads. Events are flushed immediately.
             bar = f"[{'#' * filled}{'-' * (20 - filled)}] {percent:3}%"
         units = "symbols" if self.stage_name == "tradier_batch" else "batches" if self.stage_name == "prices" else "pages" if self.stage_name == "ota_fetch" else "steps"
         count_text = "" if self.total is None else f" ({self.completed}/{self.total} {units})"
-        self.stream.write(f"{level:<7} {bar} {message}{count_text} | elapsed {elapsed:.1f}s\n")
-        self.stream.flush()
+        line = f"{local_stamp.isoformat(timespec='seconds')} {level:<7} {bar} {message}{count_text} | elapsed {elapsed:.1f}s"
+        # Prompts need a normal line; no carriage return may interfere with input.
+        transient = (self.interactive and event in ("stage_started", "stage_progress")
+                     and self.stage_name not in ("ota_auth", "tradier_auth", "token_store", "config_parse"))
+        if transient:
+            # Leave one column unused to prevent wrapping at the right margin.
+            compact = f"{local_stamp.isoformat(timespec='seconds')} {level} {bar} {self.completed}/{self.total} {STAGES[self.detail or self.stage_name]}"
+            if self.columns < 110:
+                step = (self.detail or self.stage_name).replace("_", " ")
+                compact = f"{local_stamp.strftime('%H:%M:%S%z')} {bar} {self.completed}/{self.total} {step}"
+            if self.columns < 75:
+                compact = f"{self.completed}/{self.total} {step} {percent if percent is not None else '--'}%"
+            compact = compact[:self.columns - 1]
+            self.stream.write("\r" + compact + " " * max(0, self.line_width - len(compact)))
+            self.line_width = len(compact)
+            self.stream.flush()
+        else:
+            self.pause()
+            self.stream.write(line + "\n")
+            self.stream.flush()
 
     def begin(self):
         self._emit("run_started", "INFO", "Starting scanner")
+        self._line(f"Run log: {self.path}")
+        self._line(f"Error log: {self.error_path}")
 
     def set_profile(self, profile: str):
         if profile not in {"synthetic", "public"}:
@@ -119,28 +177,39 @@ without terminal probing or environment reads. Events are flushed immediately.
     def start(self, stage: str, total: int = 1):
         if stage not in STAGES or stage == "run" or type(total) is not int or total <= 0:
             raise ValueError("INVALID_PROGRESS_STAGE")
+        self.detail = None
         self.stage_name, self.completed, self.total = stage, 0, total
         self.stage_started = monotonic()
         self._emit("stage_started", "INFO", f"Currently running: {STAGES[stage]}")
 
-    def advance(self, completed: int, *, counts=None):
+    def advance(self, completed: int, *, counts=None, detail=None):
         if self.total is None or type(completed) is not int or not self.completed <= completed <= self.total:
             raise ValueError("INVALID_PROGRESS_COUNT")
+        if detail is not None and detail not in STAGES:
+            raise ValueError("INVALID_PROGRESS_STAGE")
+        self.detail = detail
         self.completed = completed
-        self._emit("stage_progress", "INFO", f"Currently running: {STAGES[self.stage_name]}", counts=counts)
+        self._emit("stage_progress", "INFO", f"Currently running: {STAGES[detail or self.stage_name]}", counts=counts)
 
     def finish(self, *, counts=None):
         if self.total is None:
             raise ValueError("NO_PROGRESS_STAGE")
+        self.detail = None
         self.completed = self.total
         self._emit("stage_finished", "INFO", f"Completed: {STAGES[self.stage_name]}", counts=counts)
+
+    def error(self, code, *, counts=None):
+        safe = code if code in SAFE_ERRORS else "SCAN_FAILED"
+        self._emit("operation_error", "ERROR", f"Operation error: {safe}", counts=counts, error_code=safe)
 
     def exclusions(self, count: int):
         self._emit("symbols_excluded", "WARNING", "Some symbols were excluded; review exclusions CSV",
                    counts={"excluded": count})
 
     def end(self, error_code: str | None = None, *, counts=None):
+        counts = {**self.last_counts, **({} if counts is None else counts)}
         if error_code is None:
+            self.detail = None
             self.stage_name, self.completed, self.total = "run", 1, 1
             self.stage_started = self.started
             self._emit("run_finished", "INFO", "Run completed", counts=counts)
@@ -151,5 +220,17 @@ without terminal probing or environment reads. Events are flushed immediately.
             self._emit("run_cancelled" if cancelled else "run_failed", "WARNING" if cancelled else "ERROR",
                        f"Run {'cancelled' if cancelled else 'failed'}: {safe}", counts=counts, error_code=safe)
 
+        status = "completed" if error_code is None else "cancelled" if error_code == "RUN_CANCELLED" else "partial" if error_code == "TRADIER_BATCH_PARTIAL" else "failed"
+        count_text = " ".join(f"{key}={value}" for key, value in sorted(counts.items()))
+        self._line(f"Summary: status={status} elapsed={monotonic() - self.started:.1f}s {count_text}")
+        self._line(f"Run log: {self.path}")
+        self._line(f"Error log: {self.error_path}")
+
     def close(self):
-        self.log.close()
+        try:
+            self.pause()
+        finally:
+            try:
+                self.log.close()
+            finally:
+                self.error_log.close()

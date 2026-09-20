@@ -176,3 +176,18 @@ prompt, paced requests, master mismatch and retention of unranked members.
 Live full-universe collection and dashboard batch validation remain user-run and
 pending. Daily orchestration of Tradier, resume, freshness validation and automatic
 cross-run profile drift comparisons remain pending.
+
+
+### Structured local-time logging and terminal progress — 2026-09-19
+
+Shared progress now refreshes one line on interactive terminals, retains plain
+lines when redirected, and clears the display for prompts and errors. Tradier
+batch substeps identify expiration/quote/chain work. Stdout uses OS local time
+with offset; log schema 2 retains UTC and adds local timestamp, zone label and step.
+Every run prints full-log and warning/error-log paths at startup and completion.
+Final summaries show status, elapsed time and available aggregate operation counts.
+Tradier per-symbol errors are recorded as safe codes without source identifiers.
+140 guarded offline tests passed, including synthetic TTY redraw/prompt behavior,
+redirected output, error log/privacy boundaries, partial summaries and local offset
+conversion across a date boundary. Actual user terminal rendering and native
+Windows/macOS verification remain pending; no credentialed fetch was executed.
