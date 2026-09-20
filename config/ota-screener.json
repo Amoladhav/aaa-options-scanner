@@ -25,7 +25,7 @@
     {
       "field": "ivGauge",
       "valueFilter": "SELECT_CODED",
-      "valueChoices": "2,1,4,0,5,6",
+      "valueChoices": "2,1,4,3,0,5,6",
       "criteria": "false"
     },
     {
@@ -96,6 +96,30 @@
       "valueFilter": "BOOLEAN",
       "valueChoices": "Yes",
       "criteria": "true"
+    },
+    {
+      "field": "beta",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 96685.4,
+      "valueMin": -12808361,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "false"
+    },
+    {
+      "field": "alphaBeta",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 98.25,
+      "valueMin": -1871,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "false"
+    },
+    {
+      "field": "betaPcntl",
+      "valueFilter": "RANGE_INSIDE",
+      "valueMax": 125,
+      "valueMin": 0.2101,
+      "valueChoices": "RANGE_INSIDE",
+      "criteria": "false"
     }
   ]
 }
