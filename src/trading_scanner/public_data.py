@@ -106,9 +106,13 @@ def fetch_snapshot(etf_path: Path, now: datetime | None = None, *, progress=None
         progress.finish()
         progress.start("constituents")
     now = now or datetime.now(timezone.utc)
-    request = urllib.request.Request(CONSTITUENTS_URL, headers={"User-Agent": "MomentumResearch/0.1 (personal research)"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        body = response.read(4_000_001)
+    from .throttling import Governor
+    from .public_transport import read_constituents, make_yahoo_session
+    feedback = (progress.path.parent.parent if progress is not None else etf_path.parent.parent / 'artifacts') / 'throttling'
+    with Governor(feedback, 'wikipedia', progress=progress) as governor:
+        governor.plan(1, provisional=False)
+        body = read_constituents(CONSTITUENTS_URL, governor)
+        governor.unit_done()
     if len(body) > 4_000_000:
         raise DataError("CONSTITUENTS_RESPONSE_TOO_LARGE")
     universe = normalize_universe(parse_constituents(body.decode("utf-8")) + load_etfs(etf_path))
@@ -131,21 +135,26 @@ def fetch_snapshot(etf_path: Path, now: datetime | None = None, *, progress=None
     prices = {}
     if progress is not None:
         progress.start("prices", total=(len(universe) + 39) // 40)
-    for offset in range(0, len(universe), 40):
-        symbols = [r["symbol"] for r in universe[offset:offset + 40]]
-        frame = yf.download(symbols, start=start, end=end, interval="1d", auto_adjust=True,
-                            back_adjust=False, repair=False, actions=False, threads=False,
-                            progress=False, group_by="ticker", multi_level_index=True,
-                            timeout=30, keepna=True, rounding=False, prepost=False)
-        if frame is not None and not frame.empty:
-            for symbol in symbols:
-                if symbol in frame.columns.get_level_values(0):
-                    prices[symbol] = series_prices(frame[symbol]["Close"], allowed)
-        if progress is not None:
-            # An empty response still completes an attempted batch, not a
-            # successful data validation. Ranking reports missing histories.
-            progress.advance(offset // 40 + 1, counts={"symbols_requested": min(offset + 40, len(universe)),
-                                                      "symbols_received": sum(bool(p) for p in prices.values())})
+    with Governor(feedback, 'yahoo', progress=progress) as governor:
+        governor.plan((len(universe) + 39) // 40)
+        with make_yahoo_session(governor) as session:
+            for offset in range(0, len(universe), 40):
+                symbols = [r["symbol"] for r in universe[offset:offset + 40]]
+                frame = yf.download(symbols, start=start, end=end, interval="1d", auto_adjust=True,
+                                    back_adjust=False, repair=False, actions=False, threads=False,
+                                    progress=False, group_by="ticker", multi_level_index=True,
+                                    timeout=30, session=session, keepna=True, rounding=False, prepost=False)
+                governor.check()
+                governor.unit_done()
+                if frame is not None and not frame.empty:
+                    for symbol in symbols:
+                        if symbol in frame.columns.get_level_values(0):
+                            prices[symbol] = series_prices(frame[symbol]["Close"], allowed)
+                if progress is not None:
+                    # An empty response still completes an attempted batch, not a
+                    # successful data validation. Ranking reports missing histories.
+                    progress.advance(offset // 40 + 1, counts={"symbols_requested": min(offset + 40, len(universe)),
+                                                              "symbols_received": sum(bool(p) for p in prices.values())})
     if progress is not None:
         progress.finish()
     return {"schema_version": 1, "profile": "public", "as_of": cutoff,

@@ -11,6 +11,15 @@ The token expires with the OTA session. Default fetch prompts each time; optiona
 native OS storage can save the current token but cannot extend its lifetime.
 Daily runs are explicitly user-started; no login automation or scheduler exists.
 
+## Latest increment: conservative provider throttling
+
+Shared request pacing now covers OTA, Tradier and public-fetch transports, with
+local ignored feedback/history, conservative ETAs and bounded GET retries. See
+[throttling](THROTTLING.md) for defaults, stopping rules and operational limits.
+152 offline tests passed using the isolated standard-library runner. No live
+provider calls were executed; optional yfinance backend and live pacing checks
+remain user-run and pending.
+
 ## Implemented
 
 - Independent Git repository with origin; no agent pushes or authenticated calls.

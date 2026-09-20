@@ -221,7 +221,8 @@ correctness from evidence about strategy performance.
 - Use one shared progress/logging component for fetches and other long-running
   commands. Show the current operation or substep and meaningful completed/total
   counts. Distinguish progress against a limit from known total work; completion
-  of attempts is not proof that every result is usable. Do not invent an ETA.
+  of attempts is not proof that every result is usable. Base ETAs on pacing and
+  observed workload/latency; label provisional estimates.
 - Refresh the progress display in place when stdout is an interactive terminal.
   Keep durable stage completions, warnings, errors and summaries on separate lines.
   Fit the terminal width; use a compact step/count display on narrow terminals.
@@ -398,3 +399,13 @@ Carry these requirements into implementation and acceptance tests where relevant
   transition. Use synthetic schemas, explicit modes, and user-run live validation.
 
 These are reviewed requirements, not claims that the incoming code meets them.
+
+## Provider pacing maintenance
+
+Preserve the [shared throttling policy](docs/THROTTLING.md) when adding providers.
+Route user-run fetch traffic through an explicit provider governor, keep feedback
+local and ignored, and test with virtual time. Prioritize avoiding rate limits over
+speed. Learn slower pacing automatically; use timing feedback to improve honest,
+provisional ETAs without automatically speeding up. Never bypass a cooldown or
+retry authentication blindly. Assess future shared-job quota coordination against
+the architecture planner before adding concurrency.

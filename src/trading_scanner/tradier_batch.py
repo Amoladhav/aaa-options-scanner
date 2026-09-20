@@ -2,7 +2,6 @@
 from datetime import datetime, timezone
 import hashlib
 import json
-import time
 import uuid
 
 from .core import DataError, normalize_universe
@@ -24,19 +23,6 @@ def master_universe(snapshot):
 
 def master_id(rows):
     return hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
-
-
-class RequestPacer:
-    """One sequential process, below documented limits; other clients share quota."""
-    def __init__(self, profile, clock=time.monotonic, sleep=time.sleep):
-        self.interval = 0.65 if profile == 'production' else 1.1
-        self.clock, self.sleep, self.next_at = clock, sleep, 0.0
-
-    def __call__(self):
-        delay = self.next_at - self.clock()
-        if delay > 0:
-            self.sleep(delay)
-        self.next_at = self.clock() + self.interval
 
 
 def run_batch(root, args):
@@ -75,40 +61,42 @@ def run_batch(root, args):
                       if args.prompt_token else load_token(provider='tradier', profile=args.profile))
         progress.finish()
         progress.start('tradier_batch', total=len(master))
-        pacer = RequestPacer(args.profile)
-        # Stop systemic failures instead of sending the same failing request hundreds of times.
-        local_errors = {'TRADIER_INVALID_INPUT', 'TRADIER_SCHEMA_INVALID',
-                        'TRADIER_MONTHLY_UNVERIFIED', 'TRADIER_NO_ATM_PAIR'}
-        for index, row in enumerate(state['rows']):
-            counts['symbols_requested'] += 1
-            row['status'] = 'in_progress'
-            atomic_json(destination / 'batch.json', state)
-            capture, capture_state = capture_writer(destination / 'symbols' / f'{index:04}',
-                                                     args.profile, run_id, revision)
-            def before_request(endpoint=None):
-                pacer()
-                counts['requests'] += 1
-                detail = {'expirations': 'tradier_expirations', 'quote': 'tradier_quote', 'chain': 'tradier_chain'}.get(endpoint)
-                progress.advance(index, counts=counts, detail=detail)
-            try:
-                provider_symbol = symbol_checked(row['symbol'])
-                row['provider_symbol'] = provider_symbol
-                result = fetch_probe(args.profile, provider_symbol, credential, as_of=as_of,
-                                     capture=capture, before_request=before_request)
-                row.update(status='returned', result=result)
-                counts['symbols_received'] += 1
-                capture_state['status'] = 'completed_probe'
-                atomic_json(destination / 'symbols' / f'{index:04}' / 'capture/manifest.json', capture_state)
-            except DataError as exc:
-                safe = exc.args[0] if len(exc.args) == 1 and exc.args[0] in ERRORS else 'TRADIER_FETCH_FAILED'
-                row.update(status='failed', error_code=safe)
-                counts['symbols_failed'] += 1
-                progress.error(safe, counts=counts)
+        from .throttling import Governor
+        with Governor(root / 'artifacts/throttling', 'tradier-' + args.profile, progress=progress) as governor:
+            governor.plan(len(master))
+            # Stop systemic failures instead of sending the same failing request hundreds of times.
+            local_errors = {'TRADIER_INVALID_INPUT', 'TRADIER_SCHEMA_INVALID',
+                            'TRADIER_MONTHLY_UNVERIFIED', 'TRADIER_NO_ATM_PAIR'}
+            for index, row in enumerate(state['rows']):
+                counts['symbols_requested'] += 1
+                row['status'] = 'in_progress'
                 atomic_json(destination / 'batch.json', state)
-                if safe not in local_errors:
-                    raise DataError(safe) from None
-            atomic_json(destination / 'batch.json', state)
-            progress.advance(index + 1, counts=counts)
+                capture, capture_state = capture_writer(destination / 'symbols' / f'{index:04}',
+                                                         args.profile, run_id, revision)
+                def before_request(endpoint=None):
+                    counts['requests'] += 1
+                    detail = {'expirations': 'tradier_expirations', 'quote': 'tradier_quote', 'chain': 'tradier_chain'}.get(endpoint)
+                    progress.advance(index, counts=counts, detail=detail)
+                try:
+                    provider_symbol = symbol_checked(row['symbol'])
+                    row['provider_symbol'] = provider_symbol
+                    result = fetch_probe(args.profile, provider_symbol, credential, as_of=as_of,
+                                         capture=capture, before_request=before_request, governor=governor)
+                    row.update(status='returned', result=result)
+                    counts['symbols_received'] += 1
+                    capture_state['status'] = 'completed_probe'
+                    atomic_json(destination / 'symbols' / f'{index:04}' / 'capture/manifest.json', capture_state)
+                except DataError as exc:
+                    safe = exc.args[0] if len(exc.args) == 1 and exc.args[0] in ERRORS else 'TRADIER_FETCH_FAILED'
+                    row.update(status='failed', error_code=safe)
+                    counts['symbols_failed'] += 1
+                    progress.error(safe, counts=counts)
+                    atomic_json(destination / 'batch.json', state)
+                    if safe not in local_errors:
+                        raise DataError(safe) from None
+                atomic_json(destination / 'batch.json', state)
+                progress.advance(index + 1, counts=counts)
+                governor.unit_done()
         state['status'] = 'completed_with_errors' if counts['symbols_failed'] else 'completed'
         state['finished_at'] = datetime.now(timezone.utc).isoformat()
         atomic_json(destination / 'batch.json', state)

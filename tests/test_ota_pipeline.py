@@ -1,4 +1,5 @@
 """Synthetic end-to-end ingestion, profiling and replay checks."""
+from throttle_fixtures import virtual_throttle_time
 from copy import deepcopy
 from contextlib import redirect_stdout
 from unittest.mock import Mock, patch
@@ -15,6 +16,9 @@ from trading_scanner.core import DataError
 CRITERIA = [{'field':'optionable','valueFilter':'BOOLEAN','valueChoices':'Yes','criteria':'true'}]
 
 class PipelineTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(virtual_throttle_time())
+
     def test_lossless_rows_and_profile_partition(self):
         values = [-1, '45.2', '', '  ', None, 'N/A', True, {'nested': 1}, [1,2]]
         rows = [{'symbol':f'S{i}', 'values':{'meanIvPcnt':v, 'unknown':v}} for i,v in enumerate(values)]

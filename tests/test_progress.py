@@ -37,7 +37,7 @@ class ProgressTests(unittest.TestCase):
         expected = {'schema_version', 'timestamp', 'timezone', 'timestamp_utc', 'sequence', 'level', 'run_id',
                     'code_revision', 'command', 'profile', 'event', 'stage', 'step', 'message',
                     'completed', 'total', 'percent', 'elapsed_seconds',
-                    'stage_elapsed_seconds', 'counts', 'error_code'}
+                    'stage_elapsed_seconds', 'counts', 'error_code', 'estimate'}
         summary = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
         for r in records:
             self.assertEqual(set(r), expected)

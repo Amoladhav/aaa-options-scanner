@@ -1,3 +1,4 @@
+from throttle_fixtures import virtual_throttle_time
 from argparse import Namespace
 from contextlib import redirect_stdout
 from copy import deepcopy
@@ -11,11 +12,12 @@ from offline_boundary import temp
 from trading_scanner.core import DataError
 from trading_scanner.dashboard import combine, synthetic_ota, attach_tradier
 from trading_scanner.demo import make_snapshot
-from trading_scanner.tradier_batch import master_universe, master_id, RequestPacer, run_batch
+from trading_scanner.tradier_batch import master_universe, master_id, run_batch
 
 
 class BatchTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(virtual_throttle_time())
         self.snapshot = make_snapshot()
         self.snapshot['profile'] = 'public'
         # Legal provider symbols; includes share-class mapping.
@@ -44,7 +46,6 @@ class BatchTests(unittest.TestCase):
                 raise DataError(fail)
             return self.probe(symbol)
         with patch('trading_scanner.tradier_batch.fetch_probe', side_effect=fetch), \
-             patch('trading_scanner.tradier_batch.RequestPacer', return_value=lambda: None), \
              patch('trading_scanner.token_store.prompt_api_key', return_value='synthetic-local-input') as prompt, \
              patch('trading_scanner.token_store.load_token') as store, redirect_stdout(io.StringIO()):
             code = run_batch(root, args)
@@ -96,18 +97,6 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(report['error_code'], 'TRADIER_AUTH_REJECTED')
         self.assertEqual(report['counts']['symbols_failed'], 1)
 
-    def test_pacer_waits_per_request_without_real_sleep(self):
-        clock = [10.0]
-        sleeps = []
-        def sleep(delay):
-            sleeps.append(delay)
-            clock[0] += delay
-        pacer = RequestPacer('sandbox', clock=lambda: clock[0], sleep=sleep)
-        for _ in range(3):
-            pacer()
-        self.assertEqual(len(sleeps), 2)
-        self.assertTrue(all(abs(delay - 1.1) < 1e-9 for delay in sleeps))
-
     def test_master_dashboard_retains_price_exclusions(self):
         snapshot = make_snapshot()
         # The extra member lacks price history and must remain visible with provider fields.
@@ -140,7 +129,7 @@ class BatchTests(unittest.TestCase):
                          'option_type': side, 'strike': 100, 'contract_size': 100,
                          'bid': 1, 'ask': 2} for side in ('call', 'put')]}}]
         with patch('trading_scanner.tradier.request_json', side_effect=payloads) as request, \
-             patch('trading_scanner.tradier_batch.RequestPacer.__call__') as gate:
+             patch('trading_scanner.throttling.Governor.call') as gate:
             fetch_probe('production', 'AAA', 'synthetic-local-input', as_of=date(2026, 9, 19),
                         before_request=gate)
         self.assertEqual(request.call_count, 3)

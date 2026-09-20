@@ -195,11 +195,15 @@ both local and UTC timestamps; elapsed durations use a monotonic clock.
 2026-09-19T15:04:05-07:00 INFO [######--------------]  30% 3/10 Fetching monthly option chain
 ```
 
-During blocking work the latest step remains visible; there is no guessed ETA or
-background heartbeat. Prompts clear the transient display before accepting input.
+Fetches display conservative, provisional completion estimates based on pacing,
+request workload and observed latency. During pacing waits the current step stays
+visible. Prompts clear the transient display before accepting input.
 Redirected output and IDE output panes that do not expose a terminal use plain
 newline-delimited messages, with no carriage returns or escape sequences. No new
 package is required. Existing fetch commands stay the same.
+
+Fetch pacing, conservative ETAs and local feedback are described in
+[Provider throttling](docs/THROTTLING.md). Feedback is ignored by Git.
 
 Every run creates two exclusive UTF-8 files, whose paths are printed at startup
 and again in the final summary:
@@ -815,11 +819,12 @@ switch happens automatically. Agents do not execute these requests.
 The batch reuses the tested nearest standard-monthly ATM selection and requests
 Greeks. Every underlying gets separate expiration, quote and chain requests;
 weekly chains can require multiple requests before finding the first monthly.
-Request starts are spaced at least 0.65 seconds in production and 1.1 seconds in
-sandbox, below the documented [120/60 market-data requests per minute](https://docs.tradier.com/docs/rate-limiting).
+Each request waits at least 2 seconds in production and 3 seconds in sandbox,
+in addition to response time, below the documented [120/60 market-data requests per minute](https://docs.tradier.com/docs/rate-limiting).
 Other clients using the same token share its quota. A full universe may take tens
-of minutes or over an hour, depending on expirations and response latency. There
-is no parallel flood, automatic retry or fallback to old quotes.
+of minutes or over an hour, depending on expirations and response latency.
+Transient GET failures have at most one conservative retry; authentication failures
+stop immediately. See [throttling and feedback](docs/THROTTLING.md).
 
 Each symbol writes raw response bodies and field profiles under an indexed
 `symbols/` directory. `master.json` records membership; its content hash is carried
@@ -829,7 +834,7 @@ Symbol-specific schema/selection failures do not prevent remaining symbols from
 being attempted. Authentication, throttling and other systemic failures stop the
 batch; remaining rows stay `not_attempted`. A completed batch with failed symbols
 returns nonzero with `TRADIER_BATCH_PARTIAL`. Interrupted runs preserve completed
-work but automatic resume/retry is not implemented. Captures are private ignored
+work but automatic batch resume is not implemented. Captures are private ignored
 user files; monitor disk space and remove old runs locally when no longer needed.
 
 Attach the printed batch path using the same master snapshot:

@@ -1,4 +1,5 @@
 """Offline integration of the download orchestration with synthetic transports."""
+from throttle_fixtures import virtual_throttle_time
 import offline_boundary  # Fail closed if collected without the guarded runner.
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +19,9 @@ from trading_scanner.public_data import fetch_snapshot
 
 
 class PublicAdapterTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(virtual_throttle_time())
+
     def test_download_batches_adjustment_cutoff_and_universe_join(self):
         fixture = make_snapshot()
         days = fixture['sessions']
@@ -54,7 +58,7 @@ class PublicAdapterTests(unittest.TestCase):
         now = datetime.fromisoformat(days[-1]+'T22:00:00+00:00')
         tracker = RunProgress(temp/'adapter-progress', 'c'*32, 'refresh', 'public', 'd'*64, stream=io.StringIO())
         try:
-            with patch.dict('sys.modules', {'exchange_calendars':fake_calendars, 'yfinance':fake_yf}), patch.object(urllib.request, 'urlopen', return_value=Response()):
+            with patch.dict('sys.modules', {'exchange_calendars':fake_calendars, 'yfinance':fake_yf}), patch('trading_scanner.public_transport.read_constituents', return_value=html.encode()), patch('trading_scanner.public_transport.make_yahoo_session'):
                 snapshot = fetch_snapshot(Path(__file__).resolve().parents[1]/'config/etfs.csv', now, progress=tracker)
         finally:
             tracker.close()
@@ -68,10 +72,10 @@ class PublicAdapterTests(unittest.TestCase):
         events = [json.loads(line) for line in tracker.path.read_text().splitlines()]
         self.assertEqual([r['stage'] for r in events if r['event'] == 'stage_started'],
                          ['dependencies', 'constituents', 'calendar', 'prices'])
-        batches = [r for r in events if r['event'] == 'stage_progress']
-        self.assertEqual([r['completed'] for r in batches], list(range(1,14)))
+        batches = [r for r in events if r['event'] == 'stage_progress' and r['stage'] == 'prices' and r['step'] == 'prices']
+        self.assertEqual([r['completed'] for r in batches[:13]], list(range(1,14)))
         self.assertEqual(batches[1]['counts']['symbols_received'], batches[0]['counts']['symbols_received'])
-        self.assertEqual(batches[-1]['counts'], {'symbols_requested':511, 'symbols_received':471})
+        self.assertEqual(batches[12]['counts'], {'symbols_requested':511, 'symbols_received':471})
 
     def test_safe_report_cannot_include_exception_text(self):
         from trading_scanner.cli import review_summary

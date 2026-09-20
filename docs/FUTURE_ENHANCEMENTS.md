@@ -208,8 +208,8 @@ Dependency: usable P2. Remains personal and local.
 - User-run multi-screener/provider validation, snapshot retention controls,
   disk-capacity handling, recovery, database migration and backup/restore drills.
 - Cross-run schema/type drift summaries, field interpretation inspection, request
-  telemetry and explicit retry/resume controls. Add bounded provider-aware backoff
-  only after reviewing safe retry conditions; do not retry authentication blindly.
+  telemetry and explicit batch resume controls. Shared bounded request backoff is
+  implemented; validate it live without retrying authentication blindly.
 - Assess master refresh policy, alias changes, quote freshness and time-aligned
   comparisons. Add filter rejection counts before tuning candidate thresholds.
 - Review optional web dependencies and portable setup. Validate native Windows,
@@ -312,3 +312,14 @@ These sources inform bounded design decisions; their products are not required:
   suitability and the point at which client/server storage may be preferable.
 - [OWASP CSRF prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html):
   informs browser mutation controls; this plan is not evidence those controls exist.
+
+## Adopted increment: provider governor
+
+The shared `throttling.py` service now owns conservative provider pacing, local
+feedback, retry/cooldown decisions and workload estimates. HTTP adapters feed it
+status/quota observations; CLI progress renders its estimates. See
+[the operational policy](THROTTLING.md). A workspace lease serializes each provider
+profile locally. Future web jobs should reuse this boundary and add account-aware
+coordination across workers/machines, explicit cancellation and checkpoint resume.
+Those distributed/job features remain pending; local feedback is not shared cloud
+state. Live provider validation of this increment remains user-run.

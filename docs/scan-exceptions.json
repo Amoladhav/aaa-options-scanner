@@ -31,7 +31,7 @@
     },
     {
       "path": "src/trading_scanner/tradier.py",
-      "sha256": "0d96e2cf29d88b328ecb63d0b4f7629f8c6820378ad9e604d6b5a92ebd8ac57f",
+      "sha256": "21b74c9e5e7327f27a60d18edaaf210fd0ff985c578e897df1281c88da616c6a",
       "findings": [
         {
           "line": 47,

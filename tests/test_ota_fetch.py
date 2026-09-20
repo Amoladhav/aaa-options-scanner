@@ -1,3 +1,4 @@
+from throttle_fixtures import virtual_throttle_time
 from contextlib import redirect_stdout
 import getpass
 import io
@@ -16,6 +17,9 @@ CRITERIA = [{'field':'optionable', 'valueFilter':'BOOLEAN', 'valueChoices':'Yes'
 
 
 class OtaFetchTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(virtual_throttle_time())
+
     def connection(self, status=200, body=b'[]'):
         connection = Mock()
         response = connection.getresponse.return_value

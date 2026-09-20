@@ -1,3 +1,4 @@
+from throttle_fixtures import virtual_throttle_time
 from contextlib import redirect_stdout
 from datetime import date
 import io
@@ -20,6 +21,9 @@ def contracts(expiration='2026-10-16', kind='standard'):
 
 
 class TradierTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(virtual_throttle_time())
+
     def connection(self, status=200, body=b'{}'):
         connection = Mock()
         connection.getresponse.return_value.status = status

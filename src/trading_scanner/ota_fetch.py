@@ -37,7 +37,7 @@ DEFAULT_PAGE_SIZE = 100
 DEFAULT_MAX_PAGES = 50
 PATH = '/api/secure/screeners/criteria/results?rows=100&realtime=true&type=NON_OTC&view=criteria&sortField=symbol&sortOrder=asc&page=1'
 MAX_RESPONSE = 2_000_000
-ERRORS = {'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
+ERRORS = {'THROTTLE_BUSY', 'THROTTLE_STATE_INVALID', 'THROTTLE_COOLDOWN_ACTIVE', 'THROTTLE_CIRCUIT_OPEN', 'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
           'OTA_AUTH_REJECTED', 'OTA_RATE_LIMITED', 'OTA_REDIRECT_REJECTED',
           'OTA_HTTP_ERROR', 'OTA_NETWORK_ERROR', 'OTA_RESPONSE_TOO_LARGE',
           'OTA_SCHEMA_INVALID', 'OTA_ENVELOPE_UNSUPPORTED', 'OTA_FETCH_FAILED', 'RUN_CANCELLED',
@@ -62,7 +62,7 @@ def prompt_token():
             raise DataError('OTA_PROMPT_UNAVAILABLE') from None
 
 
-def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE, capture=None):
+def _fetch_page_once(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE, capture=None, governor=None):
     path = request_path(page, page_size)
     if not isinstance(token, str) or not re.fullmatch(r'[\x21-\x7e]{1,8192}', token):
         raise DataError('OTA_TOKEN_INVALID')
@@ -81,6 +81,8 @@ def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE, capture=
                                     'Accept-Encoding': 'identity'})
         response = connection.getresponse()
         status = response.status
+        if governor is not None:
+            governor.observe(status, response.getheader('Retry-After'))
         if status in (401, 403):
             raise DataError('OTA_AUTH_REJECTED')
         if status == 429:
@@ -109,8 +111,13 @@ def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE, capture=
             connection.close()
 
 
+def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE, capture=None, governor=None):
+    operation = lambda: _fetch_page_once(criteria, token, page=page, page_size=page_size, capture=capture, governor=governor)
+    return operation() if governor is None else governor.call(operation, retries=0)
+
+
 def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
-              progress=None, counts=None, capture=None):
+              progress=None, counts=None, capture=None, governor=None):
     request_path(1, page_size)
     if type(max_pages) is not int or not 1 <= max_pages <= 100:
         raise DataError('OTA_PAGINATION_INVALID')
@@ -119,7 +126,7 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
     rows, seen = [], set()
     for page in range(1, max_pages + 1):
         counts['pages_requested'] += 1
-        batch = fetch_page(criteria, token, page=page, page_size=page_size, **({'capture': capture} if capture is not None else {}))
+        batch = fetch_page(criteria, token, page=page, page_size=page_size, **({'capture': capture} if capture is not None else {}), **({'governor': governor} if governor is not None else {}))
         counts['pages_received'] += 1
         for row in batch:
             from .core import normalize_symbol
@@ -131,6 +138,8 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
         counts['symbols_received'] = len(rows)
         if progress is not None:
             progress.advance(page, counts=counts)
+        if governor is not None:
+            governor.unit_done()
         # Match the reference adapter: do not probe beyond a short final page.
         # A short page is not proof that the provider honored the requested size.
         if len(batch) < page_size:
@@ -195,8 +204,11 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
             atomic_json(destination / 'capture.json', snapshot)
         progress.start('ota_fetch', total=max_pages)
         try:
-            rows = fetch_all(checked['criteria'], token, page_size=page_size,
-                             max_pages=max_pages, progress=progress, counts=pagination_counts, capture=capture)
+            from .throttling import Governor
+            with Governor(root / 'artifacts/throttling', 'ota', progress=progress) as governor:
+                governor.plan(max_pages)
+                rows = fetch_all(checked['criteria'], token, page_size=page_size,
+                                 max_pages=max_pages, progress=progress, counts=pagination_counts, capture=capture, governor=governor)
         finally:
             # No persistence; Python cannot promise secure erasure from memory.
             token = None
@@ -224,7 +236,7 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         if isinstance(exc, OtaSchemaError):
             schema_diagnostic = {'field': exc.field, 'reason': exc.reason}
             print(f'OTA schema check: {exc.field} / {exc.reason}')
-        print(f'{code}: request stopped; no retry or synthetic fallback.')
+        print(f'{code}: request stopped; no further retry or synthetic fallback.')
     if code and snapshot is not None:
         try:
             snapshot.update(acquisition_status='incomplete', coverage='incomplete', error_code=code)

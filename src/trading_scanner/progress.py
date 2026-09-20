@@ -4,7 +4,8 @@ Write directly to the original stdout stream so application progress remains
 visible while noisy provider stdout/stderr and logging are suppressed. No raw
 log message, exception, provider identifier, or arbitrary metadata is accepted.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import math
 import json
 import os
 from pathlib import Path
@@ -12,7 +13,7 @@ import re
 import sys
 from time import monotonic
 
-SAFE_ERRORS = {"TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
+SAFE_ERRORS = {"THROTTLE_BUSY", "THROTTLE_STATE_INVALID", "THROTTLE_COOLDOWN_ACTIVE", "THROTTLE_CIRCUIT_OPEN", "PUBLIC_NETWORK_ERROR", "PUBLIC_ACCESS_REJECTED", "PUBLIC_RATE_LIMITED", "PUBLIC_HTTP_ERROR","TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
                "CONSTITUENTS_COUNT_INVALID", "CONSTITUENTS_RESPONSE_TOO_LARGE",
                "NO_VALID_PEER_GROUP", "INVALID_SNAPSHOT", "INSUFFICIENT_CALENDAR",
                "MISSING_SNAPSHOT", "INVALID_SESSION_ORDER", "WEEKEND_SESSION",
@@ -31,6 +32,7 @@ SAFE_ERRORS = {"TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", 
                "TRADIER_NETWORK_ERROR", "TRADIER_RESPONSE_TOO_LARGE", "TRADIER_SCHEMA_INVALID",
                "TRADIER_MONTHLY_UNVERIFIED", "TRADIER_NO_ATM_PAIR", "TRADIER_FETCH_FAILED"}
 STAGES = {
+    "throttle_wait": "Waiting for conservative provider pacing",
     "tradier_batch": "Fetching Tradier data for master-list symbols",
     "ota_profile": "Profiling captured fields and preparing typed data",
     "run": "Scanner",
@@ -55,7 +57,7 @@ STAGES = {
     "tradier_chain": "Fetching monthly option chain",
     "summary": "Writing sanitized review summary",
 }
-COUNT_KEYS = {"rows", "chains_received","master_symbols","symbols_failed", "requests","tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
+COUNT_KEYS = {"http_requests", "retries", "rate_limit_events", "throttle_wait_seconds","rows", "chains_received","master_symbols","symbols_failed", "requests","tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
 
 
 class RunProgress:
@@ -74,6 +76,7 @@ class RunProgress:
         self.stream = sys.stdout if stream is None else stream
         self.started = self.stage_started = monotonic()
         self.stage_name, self.completed, self.total = "run", 0, None
+        self.forecast = None
         self.detail = None
         self.sequence = 0
         self.last_counts = {}
@@ -129,7 +132,7 @@ class RunProgress:
                   "completed": self.completed, "total": self.total, "percent": percent,
                   "elapsed_seconds": round(elapsed, 3),
                   "stage_elapsed_seconds": round(monotonic() - self.stage_started, 3),
-                  "counts": counts, "error_code": error_code}
+                  "counts": counts, "error_code": error_code, "estimate": self.forecast}
         self.log.write(json.dumps(record, allow_nan=False) + "\n")
         self.log.flush()
         if level in ("WARNING", "ERROR"):
@@ -144,7 +147,7 @@ class RunProgress:
         count_text = "" if self.total is None else f" ({self.completed}/{self.total} {units})"
         line = f"{local_stamp.isoformat(timespec='seconds')} {level:<7} {bar} {message}{count_text} | elapsed {elapsed:.1f}s"
         # Prompts need a normal line; no carriage return may interfere with input.
-        transient = (self.interactive and event in ("stage_started", "stage_progress")
+        transient = (self.interactive and event in ("stage_started", "stage_progress", "estimate")
                      and self.stage_name not in ("ota_auth", "tradier_auth", "token_store", "config_parse"))
         if transient:
             # Leave one column unused to prevent wrapping at the right margin.
@@ -154,6 +157,8 @@ class RunProgress:
                 compact = f"{local_stamp.strftime('%H:%M:%S%z')} {bar} {self.completed}/{self.total} {step}"
             if self.columns < 75:
                 compact = f"{self.completed}/{self.total} {step} {percent if percent is not None else '--'}%"
+            if self.forecast and self.columns >= 110:
+                compact = f"{local_stamp.strftime('%H:%M:%S%z')} {self.completed}/{self.total} {bar} {STAGES[self.detail or self.stage_name]} | ETA ~{math.ceil(self.forecast['remaining_seconds']/60)}m"
             compact = compact[:self.columns - 1]
             self.stream.write("\r" + compact + " " * max(0, self.line_width - len(compact)))
             self.line_width = len(compact)
@@ -197,6 +202,23 @@ class RunProgress:
         self.detail = None
         self.completed = self.total
         self._emit("stage_finished", "INFO", f"Completed: {STAGES[self.stage_name]}", counts=counts)
+
+    def estimate(self, seconds, interval, *, provisional=True, announce=False):
+        if type(seconds) not in (float, int) or not math.isfinite(seconds) or seconds < 0:
+            raise ValueError("INVALID_ESTIMATE")
+        if type(interval) not in (float, int) or not math.isfinite(interval) or interval <= 0:
+            raise ValueError("INVALID_ESTIMATE")
+        first = announce or self.forecast is None
+        try:
+            finish = (datetime.now(timezone.utc) + timedelta(seconds=seconds)).astimezone().isoformat(timespec='seconds')
+        except OverflowError:
+            finish = 'beyond_display_range'
+        self.forecast = {'remaining_seconds': math.ceil(seconds), 'completion_local': finish,
+                         'interval_seconds': interval, 'provisional': bool(provisional)}
+        message = f"Estimated completion: {finish} | remaining ~{math.ceil(seconds / 60)}m | pacing {interval:g}s | {'provisional workload' if provisional else 'known workload'}"
+        if first:
+            self._line(message)
+        self._emit('estimate', 'INFO', message)
 
     def error(self, code, *, counts=None):
         safe = code if code in SAFE_ERRORS else "SCAN_FAILED"

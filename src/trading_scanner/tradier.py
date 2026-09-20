@@ -19,7 +19,7 @@ from .progress import RunProgress
 HOSTS = {'production': 'api.tradier.com', 'sandbox': 'sandbox.tradier.com'}
 MAX_RESPONSE = 5_000_000
 MAX_CHAINS = 32
-ERRORS = {'TRADIER_INVALID_INPUT', 'TRADIER_TOKEN_INVALID', 'TRADIER_AUTH_REJECTED',
+ERRORS = {'THROTTLE_BUSY', 'THROTTLE_STATE_INVALID', 'THROTTLE_COOLDOWN_ACTIVE', 'THROTTLE_CIRCUIT_OPEN', 'TRADIER_INVALID_INPUT', 'TRADIER_TOKEN_INVALID', 'TRADIER_AUTH_REJECTED',
           'TRADIER_RATE_LIMITED', 'TRADIER_REDIRECT_REJECTED', 'TRADIER_HTTP_ERROR',
           'TRADIER_NETWORK_ERROR', 'TRADIER_RESPONSE_TOO_LARGE', 'TRADIER_SCHEMA_INVALID',
           'TRADIER_MONTHLY_UNVERIFIED', 'TRADIER_NO_ATM_PAIR', 'TRADIER_FETCH_FAILED',
@@ -32,7 +32,7 @@ def symbol_checked(value):
     return value.upper().replace('.', '/').replace('-', '/')
 
 
-def request_json(profile, endpoint, params, credential, *, diagnostic=None, capture=None):
+def _request_json_once(profile, endpoint, params, credential, *, diagnostic=None, capture=None, governor=None):
     allowed = {'expirations': ('options/expirations', {'symbol', 'includeAllRoots', 'expirationType'}),
                'quote': ('quotes', {'symbols', 'greeks'}),
                'chain': ('options/chains', {'symbol', 'expiration', 'greeks'})}
@@ -50,6 +50,9 @@ def request_json(profile, endpoint, params, credential, *, diagnostic=None, capt
         response = connection.getresponse()
         if diagnostic is not None:
             diagnostic['http_status'] = response.status if type(response.status) is int and 100 <= response.status <= 599 else None
+        if governor is not None:
+            governor.observe(response.status, response.getheader('Retry-After'), response.getheader('X-Ratelimit-Available'),
+                             response.getheader('X-Ratelimit-Expiry'), response.getheader('X-Ratelimit-Allowed'))
         if response.status in (401, 403):
             raise DataError('TRADIER_AUTH_REJECTED')
         if response.status == 429:
@@ -75,6 +78,12 @@ def request_json(profile, endpoint, params, credential, *, diagnostic=None, capt
     finally:
         if connection is not None:
             connection.close()
+
+
+def request_json(profile, endpoint, params, credential, *, diagnostic=None, capture=None, governor=None):
+    operation = lambda: _request_json_once(profile, endpoint, params, credential,
+                                          diagnostic=diagnostic, capture=capture, governor=governor)
+    return operation() if governor is None else governor.call(operation)
 
 
 def expiration_dates(payload, as_of):
@@ -153,7 +162,7 @@ def chain_rows(payload, symbol, expiration):
         raise DataError('TRADIER_SCHEMA_INVALID') from None
 
 
-def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=None, diagnostic=None, capture=None, before_request=None):
+def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=None, diagnostic=None, capture=None, before_request=None, governor=None):
     from .chain_spreads import select_atm_spreads
     symbol = symbol_checked(symbol)
     counts = {} if counts is None else counts
@@ -164,7 +173,7 @@ def fetch_probe(profile, symbol, credential, *, as_of, progress=None, counts=Non
             before_request(endpoint)
         diagnostic.clear()
         diagnostic.update(endpoint=endpoint, http_status=None)
-        payload = request_json(profile, endpoint, params, credential, diagnostic=diagnostic, **({'capture': capture} if capture is not None else {}))
+        payload = request_json(profile, endpoint, params, credential, diagnostic=diagnostic, **({'capture': capture} if capture is not None else {}), **({'governor': governor} if governor is not None else {}))
         diagnostic['shape'] = response_shape(payload)
         return payload
     if progress:
@@ -280,8 +289,12 @@ def run_probe(root, args):
         progress.finish()
         try:
             # Same-day expiry is excluded using the New York trading date.
-            result = fetch_probe(args.profile, symbol, credential, as_of=as_of,
-                                 progress=progress, counts=counts, diagnostic=diagnostic, capture=capture)
+            from .throttling import Governor
+            with Governor(root / 'artifacts/throttling', 'tradier-' + args.profile, progress=progress) as governor:
+                governor.plan(1)
+                result = fetch_probe(args.profile, symbol, credential, as_of=as_of,
+                                     progress=progress, counts=counts, diagnostic=diagnostic, capture=capture, governor=governor)
+                governor.unit_done()
         finally:
             credential = None
         progress.start('reports')
@@ -299,7 +312,7 @@ def run_probe(root, args):
         code = 'RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else 'TRADIER_FETCH_FAILED'
         if isinstance(exc, DataError) and len(exc.args) == 1 and exc.args[0] in ERRORS:
             code = exc.args[0]
-        print(f'{code}: request stopped; no retry or synthetic fallback.')
+        print(f'{code}: request stopped; no further retry or synthetic fallback.')
     try:
         if progress:
             progress.end(code, counts=counts)
