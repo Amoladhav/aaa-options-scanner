@@ -127,3 +127,10 @@ logout/reboot. OS startup integration is a separate platform-specific setup step
 For the future web setup wizard, call the same preference validation/service API
 and display enable/pause, next due time, history and recovery controls. Every new
 personal preference must retain one CLI/web-compatible source of truth.
+
+## Optional environment injection
+
+See [Infisical setup](SECRETS.md) for OS-specific installation, browser login,
+profile-scoped injection and safe format checks. Complete the no-credential demo
+first. All authentication and provider commands are user-run. Keep scheduling
+disabled during the C1–C6 web checkpoints; no worker activation is implied.

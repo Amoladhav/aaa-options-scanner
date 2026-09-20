@@ -9,3 +9,5 @@ artifacts/
 .venv/
 __pycache__/
 .ipynb_checkpoints/
+
+.infisical.json

@@ -962,3 +962,10 @@ PowerShell: `py -3 -I -S run.py credential-check --provider tradier --profile sa
 Only status and a sanitized `artifacts/agent-review/` report are emitted. Format
 validity is not authentication. Demo/saved-report paths never load credentials.
 Scheduling remains disabled; C1 does not activate or configure a worker.
+
+## Optional environment injection
+
+See [Infisical setup](docs/SECRETS.md) for OS-specific installation, browser login,
+profile-scoped injection and safe format checks. Complete the no-credential demo
+first. All authentication and provider commands are user-run. Keep scheduling
+disabled during the C1–C6 web checkpoints; no worker activation is implied.

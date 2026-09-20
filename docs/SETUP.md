@@ -178,3 +178,10 @@ your ignored personal workspace; another user does not inherit them through Git.
 A local worker must remain open and the computer awake. OTA needs a current session
 token in the OS store; scheduling does not keep that session valid. The setup agent
 can guide these choices at your preferred detail level.
+
+## Optional environment injection
+
+See [Infisical setup](SECRETS.md) for OS-specific installation, browser login,
+profile-scoped injection and safe format checks. Complete the no-credential demo
+first. All authentication and provider commands are user-run. Keep scheduling
+disabled during the C1–C6 web checkpoints; no worker activation is implied.

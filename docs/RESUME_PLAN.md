@@ -15,7 +15,8 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 2. Latest implementation checkpoint: `ec66c33` (readable run IDs and Tradier
    attachment diagnostics); prior `1204335` adds HTML CRS tail filtering and
    `6051eef` preserves all OTA fields in combined reports. 184 offline tests passed.
-3. C1 is implemented and offline verified (192 tests). Continue with C2 below.
+3. C1 is implemented and offline verified (192 tests). C2 documentation is prepared; user-run acceptance remains pending.
+   Continue with credential-free C3/C3a.
    Original C1 scope: the shared credential loader and synthetic tests. No Infisical
    SDK in the scanner; retain run.py and existing commands. Do not begin the
    database migration or cloud deployment at the same time.
@@ -100,7 +101,7 @@ profile separation, output redaction and no import-time reads. Inject synthetic
 mapping/getpass dependencies; do not weaken offline environment/network guards.
 Focused local commit; user-run live validation remains separate.
 
-### C2 — Infisical onboarding (after C1)
+### C2 — Infisical onboarding (docs prepared; user acceptance pending)
 
 - Add docs/SECRETS.md, link README, extend SETUP_AGENT.md/SETUP.md. Avoid replacing
   the project README with a generic app.py tutorial or creating a second app.

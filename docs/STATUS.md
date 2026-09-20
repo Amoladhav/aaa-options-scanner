@@ -323,3 +323,12 @@ explicit credential strings. No dependency or scheduling changes.
 precedence, malformed/missing input, no-TTY/echo-warning failures, one-key reads,
 CLI redaction and auth-failure behavior. Offline checks passed; live checks pending.
 Infisical installation and Windows/macOS verification remain user-run and pending.
+
+## C2 Infisical onboarding — 2026-09-20
+
+[SECRETS.md](SECRETS.md) now documents reviewed official installation URLs,
+separate OS commands, explicit environment/folder/profile wrappers, format checks,
+renewal/revocation and keyring limitations. No installation or authentication ran.
+C1's 192 synthetic tests cover the CLI contract; docs/links/commands reviewed.
+User-run Tradier-through-Infisical and Windows/macOS/WSL verification remain pending.
+Proceeding with credential-free C3/C3a does not close that acceptance gate.
