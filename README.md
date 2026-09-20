@@ -4,6 +4,18 @@ Cross-sectional momentum with a combined OTA research dashboard, session history
 configurable shortlist filters and a user-run daily workflow. Synthetic examples
 need no packages or credentials. Authenticated requests remain user-run.
 
+## Direction and development scope
+
+This is currently **one user's personal local workspace**. Development and tests
+stay local. The planned progression is shared application services, durable local
+jobs, a local web interface, then a separately approved sharing/hosting phase.
+There is no local web server or cloud deployment implemented by this plan.
+
+See [Future enhancements and architecture plan](docs/FUTURE_ENHANCEMENTS.md) for
+module boundaries, migration steps, acceptance gates and deferred decisions.
+Every implementation request is reviewed against that direction, proportionally,
+while preserving the current CLI and avoiding speculative infrastructure.
+
 ## First combined output
 
 From the project root, generate the draft with invented data:

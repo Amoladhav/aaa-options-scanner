@@ -201,3 +201,15 @@ review. Shared policy revision 5 requires explicit user activation of hosted CI.
 Local tests remain unchanged. The remote workflow may remain enabled until the
 user disables it on GitHub or pushes the local removal; no remote action was
 performed by the agent.
+
+
+### Future architecture planning — 2026-09-19
+
+Added [the future-enhancement planner](FUTURE_ENHANCEMENTS.md): incremental service
+extraction, durable local jobs/metadata, a personal local web interface, local
+hardening and an explicitly deferred multi-user/cloud gate. It maps current modules
+to responsibilities and specifies compatibility, verification and recovery criteria.
+Shared policy revision 6 and scanner instructions require proportional assessment
+of every request against the roadmap, with material decisions recorded and no
+speculative infrastructure. This increment changes documentation only; no web
+server, database, worker, account system or cloud component was added.

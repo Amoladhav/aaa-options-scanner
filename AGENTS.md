@@ -1,6 +1,6 @@
 # Shared development policy
 
-Policy revision: 5 (2026-09-19). Owner-maintained; collaboration is supported.
+Policy revision: 6 (2026-09-19). Owner-maintained; collaboration is supported.
 This workspace contains independent projects. Do not initialize one umbrella
 repository or move/import project files without reviewing the intended boundary.
 Keep project instructions self-contained when a project is cloned elsewhere.
@@ -37,6 +37,32 @@ policy repository and automated copy process are not yet configured.
   The intake scanner may process incoming files locally to detect and remove
   hardcoded credentials, with values suppressed; this does not authorize viewing
   those values, accessing personal secret stores, or using any credential.
+
+## Architecture and future-enhancement review
+
+- Evaluate every request proportionally against the project's documented future
+  enhancements and current delivery phase. Before implementation, read the relevant
+  planner and current status, identify affected boundaries, and choose the smallest
+  change that solves the present need without obstructing the agreed direction.
+- Preserve reusable application logic across current and future interfaces.
+  Keep calculations independent of UI, provider I/O, storage and credential access;
+  make dependencies and workspace configuration explicit. Prefer one implementation
+  with thin interfaces over duplicated CLI/web logic or hidden global state.
+- Assess data ownership, provenance, schema compatibility, migration, testability,
+  job lifecycle, operational cost and privacy when relevant. Explain consequential
+  tradeoffs and established practices; distinguish a future design from implemented
+  or verified behavior. Routine compatible fixes need only a lightweight review.
+- Future requirements are a design constraint, not authorization to build every
+  planned component. Avoid speculative abstractions, wholesale rewrites, new hosted
+  infrastructure or scope expansion without a present need. Do not delay useful
+  local fixes for hypothetical scale or introduce unnecessary approval ceremonies.
+- When a request changes the architecture, roadmap or a significant assumption,
+  update the future-enhancement planner and status in the same increment. Record
+  consequential choices and rejected alternatives in a concise decision note when
+  useful. Preserve compatibility or document and verify migration/recovery.
+- Current explicit user instructions take precedence over the planner. Reconcile
+  material conflicts candidly; do not silently treat a historical plan as a binding
+  product requirement. Keep execution, credential and publication boundaries intact.
 
 ## Engineering guidance and external-data ingestion
 
@@ -275,8 +301,24 @@ This is guidance, not an active model configuration or a correctness guarantee.
   messages or exception text. Preserve the agent-review-only public intake boundary.
 - Offline tests run on Python 3.14.4 / Ubuntu. Real provider access, optional
   dependencies, and native Windows/macOS remain unverified. Hooks and CI are absent.
-- Shared policy revision 5 is copied above so standalone clones retain the rules.
+- Shared policy revision 6 is copied above so standalone clones retain the rules.
   Update copies by an explicit reviewed diff; do not weaken execution boundaries.
+
+## Scanner architecture roadmap
+
+- The current product is strictly a personal local workspace. A local web interface
+  is the next planned interface; hosting/sharing is deferred and requires explicit
+  user direction. No active hosted CI, public server or multi-user access by default.
+- Read [the future-enhancement planner](docs/FUTURE_ENHANCEMENTS.md) and relevant
+  [status](docs/STATUS.md) before implementing changes. Apply its proportional change
+  review to every request, including small fixes, without adding ceremonial output.
+- Favor the planned modular monolith: shared domain/application services, thin
+  CLI/web interfaces, isolated provider/storage adapters and explicit workspace
+  context. Preserve the master universe and raw-data lineage across provider joins.
+- Migrate incrementally with existing CLI/artifact compatibility and offline parity
+  checks. The planner's proposed module layout, job system and web/storage choices
+  are not implemented merely by being documented. Update the plan when decisions
+  change; do not build future phases automatically.
 
 ## Initial development mandate
 
