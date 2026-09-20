@@ -1,5 +1,6 @@
 """Local screener payload -> versioned configuration. Never evaluates pasted code."""
 import json
+import hashlib
 import math
 from pathlib import Path
 import re
@@ -160,3 +161,12 @@ def save_config(config, destination: Path):
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+
+
+def config_identity(config):
+    """Non-secret request identity; excludes criteria values from review reports."""
+    criteria = config['criteria']
+    canonical = json.dumps(criteria, sort_keys=True, separators=(',', ':'), allow_nan=False)
+    return {'criteria_sha256': hashlib.sha256(canonical.encode('utf-8')).hexdigest(),
+            'criteria_count': len(criteria),
+            'enabled_count': sum(row.get('criteria') in (True, 'true') for row in criteria)}

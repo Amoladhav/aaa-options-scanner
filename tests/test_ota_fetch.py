@@ -94,7 +94,7 @@ class OtaFetchTests(unittest.TestCase):
                 self.assertEqual(main(['ota-fetch','--profile','ota'], root), 0 if status == 200 else 1)
             report = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
             self.assertEqual(report['error_code'], None if status == 200 else 'OTA_AUTH_REJECTED')
-            self.assertEqual(set(report), {'schema_version','run_id','code_revision','profile','checks','counts','error_code','data_profile'})
+            self.assertEqual(set(report), {'schema_version','run_id','code_revision','profile','checks','counts','error_code','data_profile','request_config'})
             self.assertNotIn('synthetic-local-input', output.getvalue())
             for path in root.glob('artifacts/**/*.json*'):
                 self.assertNotIn('synthetic-local-input', path.read_text())
@@ -214,13 +214,15 @@ class OtaFetchTests(unittest.TestCase):
         with patch('trading_scanner.ota_fetch.run_fetch', return_value=0) as fetch:
             self.assertEqual(main(['ota-fetch', '--profile', 'ota'], temp), 0)
         self.assertEqual(fetch.call_args.kwargs['page_size'], 100)
+        self.assertEqual(fetch.call_args.kwargs['max_pages'], 100)
         with patch('trading_scanner.workflow.run_daily', return_value=0) as daily:
             self.assertEqual(main(['daily', '--profile', 'public'], temp), 0)
         self.assertEqual(daily.call_args.args[1].page_size, 100)
+        self.assertEqual(daily.call_args.args[1].max_pages, 100)
 
     def test_screener_matrix_with_unusable_iv_on_page_nineteen(self):
         from trading_scanner.ota import parse_rows, IV_FIELDS
-        for total in (0, 77, 100, 237, 1837):
+        for total in (0, 77, 100, 237, 1837, 5642):
             def page(criteria, token, *, page, page_size):
                 raw = [{'symbol': f'S{i}', 'values': {IV_FIELDS[i % 3]: -1, 'totalOptionsVolume': 0}}
                        for i in range((page-1)*page_size, min(page*page_size, total))]
@@ -234,3 +236,36 @@ class OtaFetchTests(unittest.TestCase):
                 field = IV_FIELDS[i % 3]
                 self.assertIsNone(row[field])
                 self.assertEqual(row[field + '_status'], 'negative_unusable')
+
+    def test_large_screener_stops_at_57_pages_with_default_budget(self):
+        counts = {}
+        def page(criteria, token, *, page, page_size):
+            return [{'symbol': f'S{i}'} for i in range((page - 1) * page_size, min(page * page_size, 5642))]
+        with patch('trading_scanner.ota_fetch.fetch_page', side_effect=page) as fetch:
+            rows = fetch_all(CRITERIA, 'synthetic-local-input', counts=counts)
+        self.assertEqual(len(rows), 5642)
+        self.assertEqual(len({row['symbol'] for row in rows}), 5642)
+        self.assertEqual(fetch.call_count, 57)
+        self.assertEqual(counts, {'pages_requested': 57, 'pages_received': 57, 'symbols_received': 5642})
+        self.assertEqual(fetch.call_args.kwargs, {'page': 57, 'page_size': 100})
+
+    def test_applied_criteria_are_the_exact_next_fetch_body(self):
+        from trading_scanner.ota_config import config_identity
+        root = temp / 'ota-apply-then-fetch'
+        root.mkdir()
+        updated = [{'field': 'optionable', 'valueFilter': 'BOOLEAN', 'valueChoices': 'No', 'criteria': 'true'}]
+        pasted = root / 'criteria.txt'
+        pasted.write_text(json.dumps(updated))
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main(['ota-config', '--apply', '--input', str(pasted)], root), 0)
+        connection = self.connection()
+        with patch('trading_scanner.ota_fetch.prompt_token', return_value='synthetic-local-input'), patch('trading_scanner.ota_fetch.ssl.create_default_context'), patch('trading_scanner.ota_fetch.http.client.HTTPSConnection', return_value=connection), redirect_stdout(output):
+            self.assertEqual(main(['ota-fetch', '--profile', 'ota'], root), 0)
+        self.assertEqual(json.loads(connection.request.call_args.kwargs['body']), updated)
+        report = json.loads(next(root.glob('artifacts/agent-review/*.json')).read_text())
+        identity = config_identity(parse_config(json.dumps(updated)))
+        self.assertEqual(report['request_config'], {**identity, 'page_size': 100, 'max_pages': 100})
+        self.assertEqual(output.getvalue().count(identity['criteria_sha256']), 2)
+        self.assertEqual(output.getvalue().count(str((root / 'config/ota-screener.json').resolve())), 2)
+        self.assertNotIn('valueChoices', json.dumps(report))

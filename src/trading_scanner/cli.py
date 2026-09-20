@@ -80,7 +80,7 @@ def main(argv=None, root: Path | None = None) -> int:
     ota_fetch = subs.add_parser('ota-fetch', help='USER-RUN: fetch OTA pages with a hidden token prompt')
     ota_fetch.add_argument('--profile', choices=['ota'], required=True)
     ota_fetch.add_argument('--page-size', type=int, choices=range(1, 601), default=100, metavar='1..600', help='Rows per OTA page (default: 100)')
-    ota_fetch.add_argument('--max-pages', type=int, choices=range(1, 101), default=50, metavar='1..100')
+    ota_fetch.add_argument('--max-pages', type=int, choices=range(1, 101), default=100, metavar='1..100', help='Safety ceiling, not expected page count (default: 100); stops on a short page')
     ota_fetch.add_argument('--use-stored-token', action='store_true', help='USER-RUN: read the token from the OS credential store')
     subs.add_parser('dashboard-demo', help='Create a synthetic combined dashboard with prior-session history')
     dashboard = subs.add_parser('dashboard', help='USER-RUN: join cached prices and OTA; defaults to latest successful files')
@@ -92,7 +92,7 @@ def main(argv=None, root: Path | None = None) -> int:
     daily = subs.add_parser('daily', help='USER-RUN: refresh public prices, fetch OTA, write combined dashboard')
     daily.add_argument('--profile', choices=['public'], required=True)
     daily.add_argument('--page-size', type=int, choices=range(1,601), default=100, metavar='1..600', help='Rows per OTA page (default: 100)')
-    daily.add_argument('--max-pages', type=int, choices=range(1,101), default=50, metavar='1..100')
+    daily.add_argument('--max-pages', type=int, choices=range(1,101), default=100, metavar='1..100', help='Safety ceiling, not expected page count (default: 100); stops on a short page')
     daily.add_argument('--use-stored-token', action='store_true')
     daily.add_argument('--filters', type=Path)
     token = subs.add_parser('ota-token', help='USER-RUN: set or delete the session token in the OS credential store')
@@ -258,7 +258,7 @@ def main(argv=None, root: Path | None = None) -> int:
 
 
 def configure_ota(args, root):
-    from .ota_config import parse_config, save_config, read_paste, MAX_INPUT
+    from .ota_config import parse_config, save_config, read_paste, MAX_INPUT, config_identity
     progress = None
     try:
         progress = RunProgress(root / 'artifacts' / 'logs', uuid.uuid4().hex,
@@ -279,7 +279,9 @@ def configure_ota(args, root):
             progress.start('config_save')
             save_config(config, root / 'config' / 'ota-screener.json')
             progress.finish()
-            print('Saved config/ota-screener.json. No provider request was made.')
+            print(f"Saved config: {(root / 'config/ota-screener.json').resolve()}")
+            print(f"Criteria SHA256: {config_identity(config)['criteria_sha256']}")
+            print('No provider request was made.')
         else:
             print('Preview only. Use --apply to replace config/ota-screener.json.')
         progress.end()

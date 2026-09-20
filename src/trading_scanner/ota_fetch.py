@@ -34,7 +34,7 @@ BROWSER_HEADERS = {
     'User-Agent': USER_AGENT,
 }
 DEFAULT_PAGE_SIZE = 100
-DEFAULT_MAX_PAGES = 50
+DEFAULT_MAX_PAGES = 100
 PATH = '/api/secure/screeners/criteria/results?rows=100&realtime=true&type=NON_OTC&view=criteria&sortField=symbol&sortOrder=asc&page=1'
 MAX_RESPONSE = 2_000_000
 ERRORS = {'THROTTLE_BUSY', 'THROTTLE_STATE_INVALID', 'THROTTLE_COOLDOWN_ACTIVE', 'THROTTLE_CIRCUIT_OPEN', 'OTA_CONFIG_INVALID', 'OTA_TOKEN_INVALID', 'OTA_PROMPT_UNAVAILABLE',
@@ -153,6 +153,7 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
     revision = code_revision()
     progress, count, code = None, 0, None
     schema_diagnostic = None
+    request_config = None
     snapshot, profile = None, None
     from .dashboard import atomic_json
     from .ota_pipeline import raw_rows, write_processing, profile_summary
@@ -173,7 +174,11 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
                 raise ValueError()
         except (OSError, ValueError, KeyError, TypeError, RecursionError):
             raise DataError('OTA_CONFIG_INVALID') from None
+        from .ota_config import config_identity
+        request_config = {**config_identity(checked), 'page_size': page_size, 'max_pages': max_pages}
         progress.finish()
+        print(f"Using config: {(root / 'config/ota-screener.json').resolve()}")
+        print(f"Criteria SHA256: {request_config['criteria_sha256']} | criteria={request_config['criteria_count']} enabled={request_config['enabled_count']} | page_size={page_size} max_pages={max_pages}")
         progress.start('ota_auth')
         if use_stored_token:
             from .token_store import load_token
@@ -251,6 +256,8 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         report = {'schema_version': 1, 'run_id': run_id, 'code_revision': revision,
                   'profile': 'ota', 'checks': [{'name': 'ota_paginated_fetch', 'status': 'failed' if code else 'passed'}],
                   'counts': {'rows': count, **pagination_counts}, 'error_code': code}
+        if request_config is not None:
+            report['request_config'] = request_config
         if profile is not None:
             report['data_profile'] = profile_summary(profile)
         if schema_diagnostic is not None:

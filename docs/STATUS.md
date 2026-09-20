@@ -11,7 +11,18 @@ The token expires with the OTA session. Default fetch prompts each time; optiona
 native OS storage can save the current token but cannot extend its lifetime.
 Daily runs are explicitly user-started; no login automation or scheduler exists.
 
-## Latest increment: conservative provider throttling
+## Latest increment: larger OTA pagination budget
+
+OTA fetch and daily commands default to a 100-page safety ceiling, retaining
+100 rows per page and short-page termination. Synthetic regression coverage
+collects 5,642 unique rows in exactly 57 requests. Save/fetch stdout now identifies
+the absolute config path and criteria fingerprint; sanitized fetch reports carry
+the fingerprint, criteria counts and page settings. 154 offline tests passed,
+including apply-to-request body parity. The reported live 77-row short page is
+not a page-limit failure. Config identity diagnostics support the next user-run
+comparison; the expanded screener has not yet been verified live.
+
+## Previous increment: conservative provider throttling
 
 Shared request pacing now covers OTA, Tradier and public-fetch transports, with
 local ignored feedback/history, conservative ETAs and bounded GET retries. See

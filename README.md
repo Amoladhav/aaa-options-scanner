@@ -553,16 +553,28 @@ interpretation remain unverified; the current offline suite passed 125 tests.
 
 ### Pagination and limits
 
-The default page size is **100**, with at most **50 requests**, including the final
+The default page size is **100**, with at most **100 requests**, including the final
 short-page response. Page numbers start at 1 and increase; the payload and symbol-ascending
 sort remain unchanged. Fetching stops when a page has fewer rows than requested,
 matching the reference adapter. For 77 matches with the default size, only one
-request is made. Full pages continue to the next page.
+request is made. Full pages continue to the next page. A 5,642-row result takes
+57 pages: 56 full pages and one page of 42 rows.
+
+`ota-config --apply` updates screening criteria, not the fetch page budget.
+After `ota-config --apply`, note the absolute saved path and Criteria SHA256.
+The next fetch prints the same path and fingerprint for the criteria it actually
+sends. Different fingerprints mean different criteria; different paths indicate
+different checkouts. Changing the website alone does not update this local file.
+Sanitized fetch review reports include `request_config` with that fingerprint,
+criteria/enabled counts and page settings, excluding criteria values and paths.
+
+The default budget is shared by `ota-fetch` and `daily`. It is a safety ceiling,
+not a requested result count; an explicit `--max-pages 50` still stops at 50.
 
 Override limits when needed:
 
 ```bash
-python3 -I -S run.py ota-fetch --profile ota --page-size 100 --max-pages 50
+python3 -I -S run.py ota-fetch --profile ota --page-size 100 --max-pages 100
 ```
 
 PowerShell uses `py -3 -I -S` instead of `python3 -I -S`. Allowed page sizes are
