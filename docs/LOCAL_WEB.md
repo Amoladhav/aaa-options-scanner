@@ -156,9 +156,13 @@ verified controls for this preview, not authorization to expose it remotely.
 
 ## Resource use and shared-machine constraint
 
-The owner runs other resource-intensive applications concurrently. Keep this app
-small and demand-driven; measure meaningful new features before adding background
-work or parallel report processing. No machine-wide WSL limits were changed.
+Design for shared machines with 8–16 GB installed RAM running TradingView, TOS and
+other demanding applications simultaneously. The owner's 32 GB machine is
+development headroom, not the minimum requirement or a reason to increase resource
+use. This is a design target; acceptance on 8 GB and 16 GB machines is pending.
+Keep this app small and demand-driven; measure meaningful new features before
+adding background work or parallel report processing. No machine-wide WSL limits
+were changed.
 
 Current implementation: one Python server process using Flask/Jinja/Waitress,
 ordinary HTML/CSS, four request threads and an embedded SQLite metadata file.
@@ -191,4 +195,8 @@ usage. Four request threads are not a memory/CPU quota. Generating one report is
 serialized, while page/export requests are not. Keep the default 25-row view and
 measure real-data usage during user-run acceptance before selecting additional
 caching, lazy diagnostics, streaming exports or other bounded optimizations.
-User device capacity and an acceptable resource budget are not yet established.
+Installed RAM is not available RAM. A measured resource budget for realistic saved
+inputs is still pending. Acceptance should distinguish Python process usage,
+Chrome tab usage and WSL overhead where applicable, and check responsiveness of
+the user's other applications during report generation and export. Keep provider
+operations user-run and scheduling disabled throughout this acceptance work.

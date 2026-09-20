@@ -423,10 +423,12 @@ HTTP checks. Do not treat C3a as C6 acceptance or begin Finviz/IBKR prematurely.
 ## Shared-machine resource constraint (2026-09-20)
 
 The user confirmed basic synthetic report visibility in Windows Chrome and asks
-that CPU/memory overhead stay low alongside other resource-intensive apps. Keep
+that CPU/memory overhead stay low alongside TradingView, TOS and other demanding
+apps. Target shared 8–16 GB RAM machines; the owner's 32 GB machine provides
+development headroom. This target has not yet been validated on 8–16 GB hardware. Keep
 server-rendered, demand-driven pages and disabled scheduling. Before C4–C6 adds
 history or workers, assess peak memory, concurrent requests and background work.
-Budget selection depends on the user's available RAM/CPU and realistic saved data;
+Budget selection depends on remaining available RAM/CPU and realistic saved data;
 no hard quota or global WSL limit is implemented. Measure first rather than adding
 unbounded caches or changing frameworks. C3a currently decodes full reports for
 views and builds CSV in memory; future optimization should retain shared selection

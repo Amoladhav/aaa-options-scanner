@@ -371,7 +371,9 @@ See [dependency review](WEB_DEPENDENCIES.md) and [decision 0002](decisions/0002-
 
 ## Shared-machine resource review — 2026-09-20
 
-User requests low CPU/memory overhead while other demanding applications run.
+User requests low CPU/memory overhead alongside TradingView, TOS and other apps.
+The owner has 32 GB RAM; the design target is shared 8–16 GB machines. Acceptance
+on that hardware and a realistic-workload resource budget remain pending.
 Synthetic 60/600-symbol checks (150 sessions) observed about 46/58 MiB peak Python
 process RSS and 29/85 ms report builds. These in-process figures exclude Chrome,
 the full WSL VM and real-provider payloads. No runtime settings or global resource
