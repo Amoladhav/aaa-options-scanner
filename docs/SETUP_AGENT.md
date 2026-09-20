@@ -60,6 +60,7 @@ paste several incompatible command blocks and ask the beginner to guess.
 | First output | Run dashboard-demo with the explicit interpreter | Completed run and synthetic dashboard path |
 | View result | Open that HTML file locally | User can see a clearly labeled synthetic dashboard |
 | Optional data | Explain the selected source, dependencies and profile | User chooses the source; user runs any provider request |
+| Personalization | Ask timezone, daily time, OTA versus daily workflow and automatic-run preference | Confirmed choices saved locally; worker startup remains user-run |
 | Handoff | Summarize working setup, remaining gaps and next command | User knows how to resume without repeating setup |
 
 [SETUP.md](SETUP.md) supplies concrete commands. Use the actual chosen interpreter;
@@ -101,3 +102,28 @@ For setup, recommend inspecting the demo before configuring one real data source
 For development, choose from the future plan and explain the immediate benefit.
 Do not auto-start optional provider operations or future phases while awaiting a
 preference. Do not interrupt unfinished authorized work merely to ask this question.
+
+## Personalization and scheduling
+
+After the first successful selected provider run, ask whether the user wants a
+schedule. Adapt the explanation to their comfort level: explain that a worker is
+a program which must stay running, and saving a time does not keep it alive.
+Ask only for missing preferences: named timezone/local time, OTA versus full daily
+workflow, whether to enable, and the acceptable late-start window. Interpret
+ambiguous abbreviations explicitly; distinguish Pacific local time (PST/PDT) from
+a fixed standard-time offset. These are each user's choices, not repository defaults.
+
+Use [SCHEDULING.md](SCHEDULING.md) and the actual selected interpreter to configure
+settings. New configurations are disabled unless explicitly enabled. Review the
+printed timezone and next due time together. Explain OTA session expiry and OS-store
+availability before user-run activation; never promise a schedule renews a token.
+No credentials belong in schedule settings or chat. Agents may prepare settings,
+but the user starts workers and any credentialed checks.
+
+For a novice, start with `schedule show`, then guide one step at a time through
+local token storage, enabling and worker startup. Do not silently install OS tasks,
+start background jobs, enable GitHub Actions, or claim a terminal worker survives
+logout/reboot. OS startup integration is a separate platform-specific setup step.
+For the future web setup wizard, call the same preference validation/service API
+and display enable/pause, next due time, history and recovery controls. Every new
+personal preference must retain one CLI/web-compatible source of truth.

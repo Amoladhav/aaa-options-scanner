@@ -47,6 +47,15 @@ def audit_guard(event, args):
     if event.startswith(("socket.", "subprocess.", "os.exec", "os.spawn", "ctypes.", "os.posix_spawn")) or event in {
             "os.system", "os.fork", "os.forkpty", "os.putenv", "os.unsetenv"}:
         raise PermissionError("OFFLINE_OPERATION_DENIED")
+    if event == "sqlite3.connect":
+        # SQLite opens its files in native code, outside Python's open event.
+        database = args[0]
+        if database != ':memory:':
+            if not isinstance(database, (str, bytes, os.PathLike)):
+                raise PermissionError("OFFLINE_DATABASE_DENIED")
+            path = Path(os.fsdecode(database)).resolve()
+            if Path(TEMP.name) not in path.parents:
+                raise PermissionError("OFFLINE_DATABASE_DENIED")
     if event == "open":
         if not isinstance(args[0], (str, bytes, os.PathLike)):
             raise PermissionError("OFFLINE_FILE_DESCRIPTOR_DENIED")

@@ -95,7 +95,7 @@ class ProgressTests(unittest.TestCase):
 
     def test_interrupt_logs_cancellation_without_success(self):
         root, output = self.root(), io.StringIO()
-        with patch('trading_scanner.cli.calculate', side_effect=KeyboardInterrupt), redirect_stdout(output):
+        with patch('trading_scanner.scan_service.calculate', side_effect=KeyboardInterrupt), redirect_stdout(output):
             self.assertEqual(main(['demo'], root), 130)
         records = read_log(root)
         self.assertEqual(records[-1]['event'], 'run_cancelled')
@@ -119,7 +119,7 @@ class ProgressTests(unittest.TestCase):
         root = self.root()
         snapshot = make_snapshot()
         del snapshot['prices']['S00']
-        with patch('trading_scanner.cli.make_snapshot', return_value=snapshot), redirect_stdout(io.StringIO()):
+        with patch('trading_scanner.scan_service.make_snapshot', return_value=snapshot), redirect_stdout(io.StringIO()):
             self.assertEqual(main(['demo'], root), 0)
         records = read_log(root)
         warning = next(r for r in records if r['event'] == 'symbols_excluded')
@@ -129,7 +129,7 @@ class ProgressTests(unittest.TestCase):
 
     def test_log_creation_failure_is_sanitized_and_does_not_run_scan(self):
         root, output = self.root(), io.StringIO()
-        with patch('trading_scanner.cli.RunProgress', side_effect=OSError('synthetic-private-path')), patch('trading_scanner.cli.make_snapshot') as generate, redirect_stdout(output):
+        with patch('trading_scanner.scan_service.RunProgress', side_effect=OSError('synthetic-private-path')), patch('trading_scanner.scan_service.make_snapshot') as generate, redirect_stdout(output):
             self.assertEqual(main(['demo'], root), 1)
             generate.assert_not_called()
         self.assertNotIn('synthetic-private-path', output.getvalue())

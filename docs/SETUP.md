@@ -168,3 +168,13 @@ terminal/environment dump. Avoid rerunning a long fetch merely to reproduce outp
 Your setup is ready for the selected goal when you can repeat its command, locate
 the output, understand whether it is synthetic or live, and find its diagnostics.
 The next milestone is one verified real data source, then the combined dashboard.
+
+## Optional: personalize a daily schedule
+
+After a manual provider run succeeds, choose your local time, named timezone and
+whether to fetch OTA only or run public prices → OTA → dashboard. Follow
+[SCHEDULING.md](SCHEDULING.md) for your platform's commands. These settings stay in
+your ignored personal workspace; another user does not inherit them through Git.
+A local worker must remain open and the computer awake. OTA needs a current session
+token in the OS store; scheduling does not keep that session valid. The setup agent
+can guide these choices at your preferred detail level.

@@ -323,3 +323,26 @@ profile locally. Future web jobs should reuse this boundary and add account-awar
 coordination across workers/machines, explicit cancellation and checkpoint resume.
 Those distributed/job features remain pending; local feedback is not shared cloud
 state. Live provider validation of this increment remains user-run.
+
+## Adopted increment: personal schedule preferences (2026-09-20)
+
+`scheduling.py` now supplies a versioned personal schedule and SQLite daily claims,
+next-occurrence/status/history APIs and explicit interrupted-job acknowledgement.
+`schedule_cli.py` is the thin CLI/worker adapter; `scheduled_workflows.py` dispatches
+allowlisted services. `scan_service.py` extracts scan execution from the CLI so the
+daily workflow no longer recursively parses command-line arguments. Existing CLI
+commands and artifact formats remain compatible.
+
+All new user-facing controls, not only schedules, must be modeled as reusable
+settings/services with explicit workspace ownership and a documented future web
+control. Keep personal preferences outside Git and secrets in separate storage.
+The P2 settings/setup wizard must expose schedule time, IANA timezone, selected task,
+enabled state, grace window, next due time and job history/recovery using this API.
+The setup-agent flow now covers personalization after a first provider run.
+
+This is a bounded P1 slice, not the complete job architecture. One personal daily
+schedule is supported; multiple schedules, Tradier task registration, web endpoints,
+remote cancellation, distributed coordination and OS service installation remain
+pending. Per-day claims prevent automatic duplicate attempts but cannot guarantee
+exactly-once provider effects. Provider-session expiry remains a live limitation.
+See [Scheduling](SCHEDULING.md) for semantics and user-run activation.

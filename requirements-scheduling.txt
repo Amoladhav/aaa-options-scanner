@@ -1,0 +1,3 @@
+# Optional IANA timezone fallback, required on systems without an OS timezone database.
+# Reviewed release metadata; install only for user-run scheduling, never offline tests.
+tzdata==2026.4

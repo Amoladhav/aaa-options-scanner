@@ -28,7 +28,7 @@ def backend():
 
 
 def operate(action, value=None, *, provider='ota', profile=None):
-    from .cli import DiscardOutput
+    from .scan_service import DiscardOutput
     if provider not in ('ota', 'tradier') or (provider == 'tradier' and profile not in ('sandbox', 'production')) or (provider == 'ota' and profile is not None):
         raise DataError('TOKEN_STORE_UNAVAILABLE')
     service = SERVICE if provider == 'ota' else f'aaa-options-scanner.tradier.{profile}'

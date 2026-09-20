@@ -85,7 +85,8 @@ and its own log/review report. A failed stage stops the workflow; it never silen
 uses yesterday's output. `--page-size` and `--max-pages` are available. Cached
 `dashboard` is the no-download reuse path; daily refresh deliberately downloads
 full adjusted histories to avoid incorrect incremental split/dividend merging.
-This is a manual command, not an unattended login or scheduler.
+This command runs immediately. For a personal daily time, see
+[Scheduling](docs/SCHEDULING.md); session renewal remains manual.
 
 ## Optional local credential storage
 
@@ -286,7 +287,8 @@ prices. Missing symbols remain in the master list and appear in exclusions.
 The downloaded snapshot is the local cache: re-running a ranking uses it without
 network access. A refresh deliberately obtains a new complete snapshot, because
 adjusted historical prices can change after corporate actions. Incremental cache
-merging and automatic scheduling are deferred.
+merging remains deferred. Personal local scheduling is available through
+[the shared schedule service](docs/SCHEDULING.md).
 
 ## Replay a saved snapshot offline
 
@@ -545,7 +547,8 @@ guarantee secure erasure of in-memory strings.
 
 Results retain vendor metric names and a retrieval time; the market observation
 time is unknown. Pages use your selected filters. `daily` and `dashboard` join
-saved OTA values to momentum rankings; unattended scheduling is not provided.
+saved OTA values to momentum rankings. [Local scheduling](docs/SCHEDULING.md)
+can trigger these workflows, but cannot renew an expired OTA session.
 The earlier single-page
 user-run check passed with 77 rows and no errors
 (review report `126d95ced37a4481b0e217b61b7d89e2`). Full coverage and metric
@@ -868,3 +871,12 @@ batch selection occurs. `tradier_matched` counts successful joined results only;
 aggregate counts and safe errors, never symbols, quotes or credentials. Retrieval
 time is not proof of quote freshness, and data collected sequentially is not a
 simultaneous market snapshot. CRS and candidate rules do not use these quotes yet.
+
+## Personal schedules and future web settings
+
+Use [Scheduling](docs/SCHEDULING.md) to save a daily time/timezone, choose OTA or
+full daily workflow, enable/pause, inspect history and start a local worker.
+Preferences are stored outside Git in this workspace. The future web settings page
+will use the same service; browser controls are not implemented yet. The
+[setup agent](docs/SETUP_AGENT.md) now asks about these personal choices after the
+first successful provider run. No hosted jobs or OS startup tasks are installed.

@@ -291,6 +291,20 @@ This is guidance, not an active model configuration or a correctness guarantee.
   observation cutoff, units, and methodology for every derived financial metric.
   Do not substitute similar-sounding provider fields without verifying definitions.
 
+## Personalization and interface parity
+
+- Treat time, timezone, task selection and similar user choices as personal
+  workspace settings, separate from committed defaults and credential storage.
+  Do not hardcode an individual owner's preferences into reusable implementation.
+- Every new user-facing setting/action must have shared validation and application
+  services so CLI, setup agent and future web controls can expose the same behavior.
+  Document its setup/web mapping; do not put business logic in shell commands or
+  browser handlers, or claim a future interface already exists.
+- Include personalization in adaptive setup after the first useful output. Ask only
+  for missing choices, explain timezone/DST and scheduler availability, and keep
+  activation of credentialed workers user-run. Preparing a schedule does not imply
+  a running worker, valid session, installed OS task or verified unattended access.
+
 ## aaa-options-scanner: project state (2026-09-13)
 
 - This directory is the intended independent project/repository root.

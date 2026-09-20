@@ -13,7 +13,7 @@ import re
 import sys
 from time import monotonic
 
-SAFE_ERRORS = {"THROTTLE_BUSY", "THROTTLE_STATE_INVALID", "THROTTLE_COOLDOWN_ACTIVE", "THROTTLE_CIRCUIT_OPEN", "PUBLIC_NETWORK_ERROR", "PUBLIC_ACCESS_REJECTED", "PUBLIC_RATE_LIMITED", "PUBLIC_HTTP_ERROR","TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
+SAFE_ERRORS = {"SCHEDULE_TASK_FAILED", "THROTTLE_BUSY", "THROTTLE_STATE_INVALID", "THROTTLE_COOLDOWN_ACTIVE", "THROTTLE_CIRCUIT_OPEN", "PUBLIC_NETWORK_ERROR", "PUBLIC_ACCESS_REJECTED", "PUBLIC_RATE_LIMITED", "PUBLIC_HTTP_ERROR","TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
                "CONSTITUENTS_COUNT_INVALID", "CONSTITUENTS_RESPONSE_TOO_LARGE",
                "NO_VALID_PEER_GROUP", "INVALID_SNAPSHOT", "INSUFFICIENT_CALENDAR",
                "MISSING_SNAPSHOT", "INVALID_SESSION_ORDER", "WEEKEND_SESSION",
@@ -32,6 +32,7 @@ SAFE_ERRORS = {"THROTTLE_BUSY", "THROTTLE_STATE_INVALID", "THROTTLE_COOLDOWN_ACT
                "TRADIER_NETWORK_ERROR", "TRADIER_RESPONSE_TOO_LARGE", "TRADIER_SCHEMA_INVALID",
                "TRADIER_MONTHLY_UNVERIFIED", "TRADIER_NO_ATM_PAIR", "TRADIER_FETCH_FAILED"}
 STAGES = {
+    "scheduled_job": "Running scheduled workflow",
     "throttle_wait": "Waiting for conservative provider pacing",
     "tradier_batch": "Fetching Tradier data for master-list symbols",
     "ota_profile": "Profiling captured fields and preparing typed data",
@@ -70,7 +71,7 @@ class RunProgress:
                  revision: str, stream=None):
         if not re.fullmatch(r"[a-f0-9]{32}", run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
             raise ValueError("INVALID_LOG_METADATA")
-        if command not in {"demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe", "tradier-fetch"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
+        if command not in {"schedule-run", "demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe", "tradier-fetch"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
             raise ValueError("INVALID_LOG_METADATA")
         self.run_id, self.command, self.profile, self.revision = run_id, command, profile, revision
         self.stream = sys.stdout if stream is None else stream

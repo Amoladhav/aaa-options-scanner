@@ -102,16 +102,18 @@ def run_dashboard(root, args):
 
 def run_daily(root, args):
     """Each stage has its own standard logs; never reuse old output after failure."""
-    from .cli import main
+    from .scan_service import run_scan
     from .ota_fetch import run_fetch
     from argparse import Namespace
     before_prices = set(root.glob('artifacts/runs/public/*/snapshot.json'))
     before_ota = set(root.glob('artifacts/ota/*/results.json'))
-    if main(['refresh', '--profile', 'public'], root):
-        return 1
+    code = run_scan(Namespace(command='refresh', profile='public', options_file=None), root)
+    if code:
+        return code
     prices = set(root.glob('artifacts/runs/public/*/snapshot.json')) - before_prices
-    if run_fetch(root, page_size=args.page_size, max_pages=args.max_pages, use_stored_token=args.use_stored_token):
-        return 1
+    code = run_fetch(root, page_size=args.page_size, max_pages=args.max_pages, use_stored_token=args.use_stored_token)
+    if code:
+        return code
     ota = set(root.glob('artifacts/ota/*/results.json')) - before_ota
     if len(prices) != 1 or len(ota) != 1:
         print('DASHBOARD_INPUT_MISSING: daily stage output missing or ambiguous.')

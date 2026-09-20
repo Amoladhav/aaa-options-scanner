@@ -55,7 +55,7 @@ class WorkflowTests(unittest.TestCase):
         def fetch(*args, **kwargs):
             ota.parent.mkdir(parents=True); ota.write_text('{}'); return 0
         args = Namespace(page_size=600, max_pages=50, use_stored_token=False, filters=None)
-        with patch('trading_scanner.cli.main', side_effect=refresh), patch('trading_scanner.ota_fetch.run_fetch', side_effect=fetch), patch.object(workflow, 'run_dashboard', return_value=0) as report:
+        with patch('trading_scanner.scan_service.run_scan', side_effect=refresh), patch('trading_scanner.ota_fetch.run_fetch', side_effect=fetch), patch.object(workflow, 'run_dashboard', return_value=0) as report:
             self.assertEqual(workflow.run_daily(root, args), 0)
         actual = report.call_args.args[1]
         self.assertEqual(actual.snapshot, price)
@@ -63,7 +63,7 @@ class WorkflowTests(unittest.TestCase):
 
     def test_daily_failed_fetch_never_uses_old_output(self):
         args = Namespace(page_size=600, max_pages=50, use_stored_token=False, filters=None)
-        with patch('trading_scanner.cli.main', return_value=0), patch('trading_scanner.ota_fetch.run_fetch', return_value=1), patch.object(workflow, 'run_dashboard') as report:
+        with patch('trading_scanner.scan_service.run_scan', return_value=0), patch('trading_scanner.ota_fetch.run_fetch', return_value=1), patch.object(workflow, 'run_dashboard') as report:
             self.assertEqual(workflow.run_daily(temp / 'daily-failed', args), 1)
         report.assert_not_called()
 

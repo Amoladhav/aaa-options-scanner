@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-09-19. Phase: combined CRS/OTA dashboard and standalone Tradier probe prepared.
+Updated: 2026-09-20. Phase: combined CRS/OTA dashboard and standalone Tradier probe prepared.
 
 OTA live checkpoint: the user's short-page run returned 77 rows after one page
 with no error (`ec8d6c0cf18743e38ef32fa4f0832993`). This proves the observed
@@ -9,9 +9,20 @@ No authenticated request was executed by agents.
 
 The token expires with the OTA session. Default fetch prompts each time; optional
 native OS storage can save the current token but cannot extend its lifetime.
-Daily runs are explicitly user-started; no login automation or scheduler exists.
+Manual runs and the optional local schedule worker are user-started. No login
+automation or OS startup service exists.
 
-## Latest increment: larger OTA pagination budget
+## Latest increment: personal local schedules
+
+Reusable personal schedule settings and SQLite daily claims support time/timezone,
+OTA or daily workflow, enable/disable, next due time, grace windows and history.
+Interrupted claims require explicit acknowledgement; no automatic same-day replay.
+Public scan execution is extracted into a shared application service. Setup-agent,
+manual setup and future web-control requirements are updated; see
+[Scheduling](SCHEDULING.md). 167 isolated offline tests passed. No worker or provider
+request was started by the agent; native OS timer/keyring and web checks remain pending.
+
+## Previous increment: larger OTA pagination budget
 
 OTA fetch and daily commands default to a 100-page safety ceiling, retaining
 100 rows per page and short-page termination. Synthetic regression coverage
