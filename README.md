@@ -932,3 +932,7 @@ joining a different universe.
 See [the ordered resume plan](docs/RESUME_PLAN.md) for the Infisical credential
 loader, SQLite history/versioning, Git ownership and acceptance gates. The next
 implementation checkpoint is C1. These planned features are not yet implemented.
+
+The planned first localhost preview follows the artifact catalog (C3a); complete
+local web testing precedes Finviz/Interactive Brokers extensions (C7). See the
+resume plan for screens, acceptance checks and the distinction from later hosting.

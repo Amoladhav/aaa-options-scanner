@@ -23,7 +23,9 @@ Suggested next-thread prompt:
 > Read docs/RESUME_PLAN.md and AGENTS.md. Resume at C1: implement the shared
 > environment credential loader and tests, preserving existing OS-store/prompt
 > commands and explicit provider profiles. Then prepare the Infisical onboarding
-> guide. Keep provider operations user-run and scheduling disabled.
+> guide. Deliver the localhost saved-results preview after C3, then complete the
+> local web test gates before exploring Finviz or Interactive Brokers. Keep
+> provider operations user-run and scheduling disabled.
 
 ## Confirmed direction and unresolved evidence
 
@@ -141,6 +143,36 @@ Gate: fresh DB, upgrade, failed migration rollback, interrupted publication,
 idempotent indexing, foreign-key and path checks. Old UUID and new timestamp IDs
 both work. Synthetic parity; any indexing of actual provider files is user-run.
 
+### C3a — First localhost preview (immediately after C3)
+
+Deliver a runnable local web interface before completing advanced history features.
+Use a small same-origin Python web application with server-rendered pages and
+minimal JavaScript; choose and pin the framework after dependency review. Avoid
+requiring Node or a frontend build pipeline for the first release.
+
+- Shared application services supply master rows, CRS and provider joins. Do not
+  scrape generated HTML or implement a second scoring engine in JavaScript.
+- Start with a synthetic demo, then user-selected saved artifacts: explicit public
+  price/master, OTA and Tradier batch selection. Show source IDs, timestamps,
+  master compatibility and provider attached/missing/failed counts prominently.
+- Master table: search, stocks/ETFs, top/bottom/both X% CRS selection, sortable
+  scores, complete-dataset pagination, ATM quotes and field-diagnostic details.
+- Download full CSV and explicitly labeled filtered CSV using the same selection
+  rules; preserve raw values and spreadsheet formula protection.
+- A source picker lists validated workspace artifact IDs, not arbitrary paths.
+  Never serve the entire artifacts tree, credentials, raw captures or database.
+- Bind only to 127.0.0.1. Validate Host and Origin; protect mutations against CSRF.
+  No automatic fetches on startup, navigation, filtering or page refresh.
+- Provide documented start/stop commands for WSL/macOS and PowerShell, selected
+  URL/port, readable startup errors, log paths and a no-secret health check.
+  Exact command names are implementation deliverables, not available yet.
+
+Gate: in-process offline route tests for escaping, path traversal, loopback/Host
+rules, missing provider rows and CLI/table/CSV parity. User opens the synthetic
+preview and then selects their saved OTA/Tradier results. Confirm quotes appear,
+CRS top/bottom filtering works and Excel opens the export. Record actual browser
+and OS validation separately. A server merely starting is not feature acceptance.
+
 ### C4 — Append-only history and reproducible reports
 
 - Add crs_results keyed by run ID and symbol with score, percentile, returns,
@@ -178,11 +210,36 @@ Gate: restore drill, corrupted/missing artifact detection, migration-after-resto
 no secret inclusion, reviewed staged scan. OS/disk encryption and backup destination
 remain user configuration; SQLite itself is not automatically encrypted.
 
-### C6 — Local web and eventual hosting (later)
+### C6 — Complete and validate the personal localhost workflow
 
 - Local web pages call the same credential, settings, history and report services.
   Add source pickers, coverage, run history, saved report controls and downloads.
   Display-only tail filters remain distinct from persisted strategy settings.
+- Add editable personal settings and saved screeners through shared validation,
+  with revision history. Scheduling controls must show disabled by default.
+- Fetch/start/cancel/progress controls require P1 durable job claims, interruption
+  recovery and provider pacing first; C3 catalog tables alone are insufficient.
+  The user initiates every credentialed operation locally. Keep secrets out of
+  browser responses; missing/expired credentials produce actionable safe errors.
+- Test navigation/reconnect during a slow synthetic job, cancellation between
+  requests, partial results, failed auth without retry, and restart recovery.
+- User acceptance: saved report parity, Tradier coverage, filters/downloads,
+  settings persistence, history/replay, visible logs and explicit fetch lifecycle.
+  Record outstanding gaps rather than marking the whole milestone complete.
+
+### C7 — Additional providers after local web acceptance
+
+Evaluate Finviz and Interactive Brokers only after C6 is tested with the user.
+Review current official APIs, accounts/subscriptions, permissions, rate limits,
+market-data entitlements and redistribution constraints before choosing adapters.
+Do not assume an unauthenticated Finviz API exists or an IBKR account grants all
+market data. Begin with read-only acquisition and synthetic adapters; no trading
+orders. Preserve raw capture, profiling, master joins, provenance and throttling.
+Each provider needs its own user-run acceptance checkpoint. No provider account
+or subscription purchase is authorized by this plan.
+
+### C8 — Eventual hosting (separate future phase)
+
 - Shared hosting requires authentication, workspace authorization and per-user
   credential references. Never mutate process-wide env for different web users.
 - Environment injection remains suitable for application-owned server secrets.

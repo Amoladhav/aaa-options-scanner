@@ -15,7 +15,9 @@ automation or OS startup service exists.
 ## Next session: credentials and history roadmap
 
 Read [RESUME_PLAN.md](RESUME_PLAN.md). C0 (planning) is complete; C1 (credential
-loader) is next. Infisical integration and the general history database are not
+loader) is next. C3a delivers the first runnable localhost preview; C6 completes
+local web acceptance before C7 Finviz/Interactive Brokers work. No localhost server
+is implemented or running from this planning change. Infisical integration and the general history database are not
 yet implemented. The current runtime baseline remains ec66c33 / 184 offline tests.
 No scheduling, hosted CI or provider operation was enabled during planning.
 

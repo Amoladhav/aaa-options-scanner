@@ -380,10 +380,15 @@ use explicit timestamps/timezones for chronology rather than parsing IDs.
 
 ## Next delivery sequence: secrets and versioned history
 
-[RESUME_PLAN.md](RESUME_PLAN.md) specifies C1-C6 and the next-thread handoff.
+[RESUME_PLAN.md](RESUME_PLAN.md) specifies C1-C8 (including C3a) and the next-thread handoff.
 It refines P0/P1: first a provider-independent credential loader and Infisical
 onboarding; then SQLite catalog, append-only CRS history/canonical session views,
 backup/restore and local-web reuse. Git owns code/migrations/reviewed defaults;
 private database and artifact files own runtime history. Large raw responses stay
 in immutable files. Existing schedule storage and legacy history need explicit
 compatibility/migration, not replacement by a parallel implementation.
+
+Delivery priority: C3a provides the first runnable localhost saved-results preview
+after the artifact catalog, ahead of advanced history work. Complete C6 local web
+acceptance before C7 Finviz/Interactive Brokers feasibility and adapters. Hosting
+is C8, separate from testing the personal local web application.
