@@ -16,8 +16,8 @@ def csv_cell(value):
     return value
 
 
-def write_csv(path: Path, rows: list[dict], fields) -> None:
-    with path.open("w", encoding="utf-8", newline="") as stream:
+def write_csv(path: Path, rows: list[dict], fields, *, excel=False) -> None:
+    with path.open("w", encoding="utf-8-sig" if excel else "utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows({k: csv_cell(v) for k, v in row.items()} for row in rows)

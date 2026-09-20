@@ -362,3 +362,10 @@ job, and reuse this model rather than rebuilding financial interpretation in the
 web layer. Report preferences may later be persisted through the personal settings
 service; this increment uses explicit per-run options. Browser controls for saved
 files exist; web-server endpoints remain pending. See [OTA reports](OTA_REPORTS.md).
+
+The combined report also retains all OTA fields under `ota_raw.*`, separate from
+interpreted filter metrics and master-owned columns. Reuse `combine()` and
+`write_dashboard()` through the existing workflow service for future web jobs;
+keep source selection and export controls in the UI, with join and CRS rules in
+the shared model. Raw-field presentation and Excel CSV output now have isolated
+regression coverage. Web endpoints and persistent column preferences remain future work.

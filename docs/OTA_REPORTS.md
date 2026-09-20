@@ -95,6 +95,23 @@ It requires a saved public master/price snapshot and OTA results. Use explicit
 explained in README. The dashboard's long/short labels come from CRS; this new
 inventory does not recreate the INBOX report's earlier scoring/strategy rules.
 
+The combined dashboard now includes all observed OTA fields as `ota_raw.*`
+columns alongside CRS score, rank, percentile and 21/63/126-session returns.
+`master.csv` and `combined.csv` contain the same complete master list, including
+rows lacking sufficient prices for CRS. They use an Excel-friendly UTF-8 BOM;
+returns and percentile remain fractions. This does not expand the master to every
+OTA symbol. Received, matched and outside-master counts explain the join.
+
+Raw fields retain negatives, strings, nested JSON and unknown fields. `[missing]`
+means an absent field, `null` an explicit null, and quoted blanks a blank string.
+`[not returned]` means no matching source row; `[not captured]` identifies older
+typed-only inputs. Source sector and last price never overwrite the master sector
+or adjusted close. Raw columns sort as text; interpreted numeric columns sort
+numerically. CSV formula protection may prefix source text with an apostrophe.
+The copied `ota-input.json` preserves original source values for replay, while
+`results.json` retains raw values for matched master rows. Neither CSV formatting
+nor existing candidate filters changes CRS calculations.
+
 ## Synthetic preview and future web controls
 
 ```bash

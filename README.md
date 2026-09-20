@@ -47,7 +47,13 @@ python3 -I -S run.py dashboard
 Windows equivalents: `py -3.11 -I -S run.py dashboard-demo` and
 `py -3.11 -I -S run.py dashboard`. Open the printed `dashboard.html` path.
 The table joins CRS and OTA by normalized symbol, with search, sorting, stock/ETF
-and long/short filters. It exports combined/candidate CSVs and departed symbols.
+and long/short filters. `master.csv` (also exported as `combined.csv`) includes
+every master symbol, CRS score/rank/percentile, 21/63/126-session returns, all
+captured OTA fields under `ota_raw.*`, and interpreted metrics. CSV files use
+UTF-8 with a BOM for Excel. Returns and percentile are fractions: format those
+columns as percentages in Excel. Candidate and departed-symbol exports remain
+separate. OTA symbols outside the master are counted, not added to its rankings;
+use `ota-report` for the complete OTA inventory.
 OTA does not alter CRS scores. Missing matches mean absent from the filtered
 screener, not zero volume. Provider definitions remain unverified.
 

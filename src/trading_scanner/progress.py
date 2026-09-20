@@ -59,7 +59,7 @@ STAGES = {
     "tradier_chain": "Fetching monthly option chain",
     "summary": "Writing sanitized review summary",
 }
-COUNT_KEYS = {"fields", "mixed_type_fields", "missing_cells", "null_cells", "blank_strings", "negative_values", "http_requests", "retries", "rate_limit_events", "throttle_wait_seconds","rows", "chains_received","master_symbols","symbols_failed", "requests","tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
+COUNT_KEYS = {"ota_received", "ota_outside_master", "fields", "mixed_type_fields", "missing_cells", "null_cells", "blank_strings", "negative_values", "http_requests", "retries", "rate_limit_events", "throttle_wait_seconds","rows", "chains_received","master_symbols","symbols_failed", "requests","tradier_matched","rows_profiled","ranked", "excluded", "symbols_requested", "symbols_received", "pages_requested", "pages_received", "matched", "candidates"}
 
 
 class RunProgress:

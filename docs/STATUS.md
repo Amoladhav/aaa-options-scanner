@@ -12,7 +12,19 @@ native OS storage can save the current token but cannot extend its lifetime.
 Manual runs and the optional local schedule worker are user-started. No login
 automation or OS startup service exists.
 
-## Latest increment: comprehensive OTA saved-data reports
+## Latest increment: CRS with complete OTA columns
+
+The combined HTML and Excel-readable master CSV now include CRS score, rank,
+percentile, 21/63/126-session returns and all captured OTA source fields. Raw
+values remain separate from interpreted filter metrics. The master remains the
+driver; outside-master OTA rows are counted and remain in the standalone inventory.
+Original OTA values are retained in the copied dashboard input.
+181 isolated offline tests passed, including a synthetic 5,642-row OTA join,
+unchanged CRS ranks, missing-price rows and spreadsheet/HTML escaping. The
+synthetic dashboard CLI ran successfully. Real-data combined output and interactive
+browser validation remain user-run and pending; strategy performance is unvalidated.
+
+## Previous increment: comprehensive OTA saved-data reports
 
 Console preview, paginated/searchable HTML, all-row CSV/JSON, symbol export and
 field-quality details are available through `ota-report`. The source snapshot is

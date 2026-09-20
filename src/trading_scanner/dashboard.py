@@ -194,7 +194,13 @@ def ota_checked(payload, profile):
 def combine(snapshot, ota, filters=None, *, now=None, previous=None):
     result = calculate(snapshot)
     filters = filters_checked(FILTER_DEFAULTS if filters is None else filters)
+    # Keep source values separate from interpreted metrics used for filtering.
+    source_ota = ota
     ota = ota_checked(ota, result['profile'])
+    raw_lookup = ({normalize_symbol(row['symbol']): deepcopy(row['values']) for row in source_ota['rows']}
+                  if source_ota.get('representation') == 'ota_raw' else None)
+    from .ota_reporting import COLUMNS, cell
+    raw_fields = list(COLUMNS) + sorted({key for values in (raw_lookup or {}).values() for key in values} - set(COLUMNS))
     now = now or datetime.now(timezone.utc)
     age_hours = (now - datetime.fromisoformat(ota['retrieved_at'])).total_seconds() / 3600
     timing = 'future' if age_hours < -0.1 else 'stale' if age_hours > filters['max_ota_age_hours'] else 'returned'
@@ -221,6 +227,12 @@ def combine(snapshot, ota, filters=None, *, now=None, previous=None):
                   'price_status': price_status,
                   'ota_status': timing if matched else 'not_returned_by_screener',
                   'rank_change': None, 'history_status': 'no_prior_session'}
+        raw_values = raw_lookup.get(row['symbol']) if raw_lookup is not None else None
+        joined['ota_raw_status'] = 'not_returned' if matched is None else 'not_captured' if raw_values is None else 'captured'
+        joined['ota_raw_values'] = raw_values
+        for field in raw_fields:
+            value = raw_values.get(field) if raw_values is not None else None
+            joined['ota_raw.' + field] = (value if type(value) in (int, float) else cell(raw_values, field)) if raw_values is not None else ('[not returned]' if matched is None else '[not captured]')
         if history_ok:
             prior = previous_rows.get((row['group'], row['symbol']))
             joined['history_status'] = 'new_to_ranked_universe' if prior is None else 'previous_session' if consecutive else 'history_gap'
@@ -241,7 +253,9 @@ def combine(snapshot, ota, filters=None, *, now=None, previous=None):
         combined.append(joined)
     keys = {(r['group'], r['symbol']) for r in result['ranked']}
     from .tradier_batch import master_id
-    result.update(master_id=master_id(master), combined=combined, ota_metadata={k: v for k, v in ota.items() if k != 'rows'},
+    result.update(master_id=master_id(master), combined=combined, ota_raw_fields=raw_fields,
+                  ota_join_counts={'received': len(lookup), 'matched':sum(r['ota_status'] != 'not_returned_by_screener' for r in combined),
+                                   'outside_master':len(set(lookup) - {r['symbol'] for r in master})}, ota_metadata={k: v for k, v in ota.items() if k != 'rows'},
                   filters=filters, generated_at=now.isoformat(), price_status=price_status,
                   previous_session=previous['as_of'] if history_ok else None,
                   departed=[r for key, r in previous_rows.items() if key not in keys])
@@ -290,10 +304,11 @@ def synthetic_ota(snapshot):
 
 def write_dashboard(result, destination):
     write_reports(result, destination)
-    fields = (*CRS_FIELDS, *EXTRA_FIELDS, *TRADIER_FIELDS)
-    write_csv(destination / 'master.csv', result['combined'], fields)
-    write_csv(destination / 'combined.csv', result['combined'], fields)
-    write_csv(destination / 'candidates.csv', [r for r in result['combined'] if r['review_status'] == 'matches_config_unverified'], fields)
+    raw_columns = tuple('ota_raw.' + field for field in result.get('ota_raw_fields', ()))
+    fields = (*CRS_FIELDS, 'ota_raw_status', *raw_columns, *EXTRA_FIELDS, *TRADIER_FIELDS)
+    write_csv(destination / 'master.csv', result['combined'], fields, excel=True)
+    write_csv(destination / 'combined.csv', result['combined'], fields, excel=True)
+    write_csv(destination / 'candidates.csv', [r for r in result['combined'] if r['review_status'] == 'matches_config_unverified'], fields, excel=True)
     write_csv(destination / 'departed.csv', result['departed'], ('symbol','group','rank','score','bias'))
     labels = {'symbol':'Symbol', 'company':'Company', 'group':'Group', 'sector':'Sector', 'bias':'CRS bias',
               'rank':'Rank', 'score':'CRS score', 'percentile':'Percentile', 'rank_change':'Rank change ↑',
@@ -301,9 +316,13 @@ def write_dashboard(result, destination):
               'meanIvPcnt':'Mean IV %', 'ivHi1YrPcnt':'1y IV high %', 'ivLow1YrPcnt':'1y IV low %',
               'meanIvPcnt_status':'Mean IV status', 'ivHi1YrPcnt_status':'IV high status', 'ivLow1YrPcnt_status':'IV low status', 'ivGauge':'IV gauge', 'spreadLiquidityPcnt':'OTA liquidity', 'totalOpenInterest':'Open interest',
               'totalOptionsVolume':'Options volume', 'daysToEarnings':'Days to earnings', 'avgVol30d':'Underlying avg volume (OTA 30d)'}
-    columns = ('symbol','company','group','rank','score','bias', *EXTRA_FIELDS, *TRADIER_FIELDS)
+    columns = ('symbol','company','group','rank','score','percentile','bias','adjusted_close','r21','r63','r126',
+               'ota_raw_status', *raw_columns, *EXTRA_FIELDS, *TRADIER_FIELDS)
+    labels.update({key: 'OTA raw · ' + key.removeprefix('ota_raw.') for key in raw_columns})
+    labels.update({'r21':'21-session return', 'r63':'63-session return', 'r126':'126-session return',
+                   'adjusted_close':'Adjusted close', 'ota_raw_status':'OTA raw coverage'})
     labels.update({key: key.replace('tradier_', 'Tradier ').replace('_', ' ').title() for key in TRADIER_FIELDS})
-    numeric = {'rank','score','rank_change', *OTA_FIELDS,
+    numeric = {'rank','score','percentile','adjusted_close','r21','r63','r126','rank_change', *OTA_FIELDS,
                *(key for key in TRADIER_FIELDS if key.endswith(('_strike', '_price', '_bid', '_ask', '_spread', '_spread_pct', '_open_interest', '_volume')))}
     th = ''.join(f'<th><button data-col="{i}" data-numeric="{str(k in numeric).lower()}">{escape(labels.get(k,k))}</button></th>' for i,k in enumerate(columns))
     body = []
@@ -312,6 +331,10 @@ def write_dashboard(result, destination):
         for key in columns:
             value = row.get(key)
             shown = '—' if value is None else f'{value:,.2f}' if isinstance(value,float) else f'{value:,}' if isinstance(value,int) else str(value)
+            if key.startswith('ota_raw.') and value is not None:
+                shown = str(value)
+            elif key in ('r21','r63','r126','percentile') and value is not None:
+                shown = f'{value:.2%}'
             cells.append(f'<td data-value="{escape(str(value) if value is not None else "", quote=True)}">{escape(shown)}</td>')
         body.append(f'<tr data-group="{row["group"]}" data-bias="{row["bias"]}" data-review="{row["review_status"]}">' + ''.join(cells) + '</tr>')
     matched = sum(r['ota_status'] == 'returned' for r in result['combined'])
@@ -323,6 +346,9 @@ def write_dashboard(result, destination):
 </style><main>'''
     html += f'<div class="eyebrow">{label}</div><h1>Momentum + options research</h1><p class="muted">Price session: {escape(result["as_of"])} · OTA retrieved: {escape(result["ota_metadata"]["retrieved_at"])}<br>Prior recorded session: {escape(result["previous_session"] or "none")}</p>'
     html += '<div class="cards">' + ''.join(f'<div class="card"><b>{n}</b>{caption}</div>' for n,caption in [(len(result['ranked']),'Ranked symbols'),(matched,'Freshly retrieved OTA matches'),(shortlist,'Tail rows matching config'),(len(result['excluded']),'Price exclusions')]) + '</div>'
+    joins = result.get('ota_join_counts', {})
+    html += '<p class="muted">OTA rows received: ' + str(joins.get('received',0)) + ' · Matched to master: ' + str(joins.get('matched',0)) + ' · Outside master: ' + str(joins.get('outside_master',0)) + '.</p>'
+    html += '<p class="muted">OTA raw columns retain original source values; interpreted metrics later in the table support existing filters. [missing] means an absent field; null is explicit; blank strings are quoted. [not captured] identifies legacy typed-only inputs. Source sector/price never overwrite master sector or adjusted close. CSV returns and percentile are fractions; format those cells as percentages in Excel.</p>'
     html += '<p class="muted">CRS ranks stocks and ETFs separately. OTA metrics do not change CRS scores. IV rank and IV percentile are not available here; provider mean IV and gauge retain their original meaning. Green rows match your numeric settings, not a validated trading signal. Quote time and metric methodology are unverified. Not returned means absent from the filtered screener, not zero liquidity.</p>'
     html += '<p class="muted">Tradier ATM quotes: explicitly supplied saved results; freshness unverified. * marks the selected standard monthly expiry. Bid, ask and spread are dollars per share; spread_pct is percent of midpoint. Call/put volume is current contract volume, not an average. Underlying average volume retains its provider period. Greeks retain provider values and update times; missing results are not zero.</p>'
     html += '<p><a href="master.csv">Enriched master CSV</a> · <a href="combined.csv">Combined CSV</a> · <a href="candidates.csv">Review candidates CSV</a> · <a href="report.html">CRS calculation detail</a> · <a href="departed.csv">Departed symbols</a></p>'

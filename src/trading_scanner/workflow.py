@@ -31,11 +31,16 @@ def run_dashboard(root, args):
         if demo:
             snapshot = make_snapshot()
             ota = synthetic_ota(snapshot)
+            members = {row['symbol']: row for row in snapshot['universe']}
+            ota.update(schema_version=2, representation='ota_raw', acquisition_status='completed_short_page')
+            ota['rows'] = [{'symbol': row['symbol'], 'values':{**{k:v for k,v in row.items() if k != 'symbol'},
+                           'sector':members[row['symbol']].get('sector',''), 'industry':'Invented example',
+                           'avgVol30d':1234567, 'last':42.12345, 'customExample':{'invented':True}}} for row in ota['rows']]
             now = datetime.fromisoformat(ota['retrieved_at'])
         else:
             snapshot_path = args.snapshot or newest(root.glob('artifacts/runs/public/*/snapshot.json'))
             ota_path = args.ota or newest([*root.glob('artifacts/ota/*/results.json'), *root.glob('artifacts/ota/*/page.json')])
-            snapshot, ota = read_json(snapshot_path), read_json(ota_path)
+            snapshot, ota = read_json(snapshot_path), read_json(ota_path, limit=220_000_000)
             now = datetime.now(timezone.utc)
             if snapshot.get('profile') != 'public':
                 raise DataError('DASHBOARD_INPUT_INVALID')
@@ -58,7 +63,8 @@ def run_dashboard(root, args):
         attach_tradier(result, probes)
         if not result['combined']:
             raise DataError('NO_VALID_PEER_GROUP')
-        counts = {'master_symbols': len(result['combined']), 'tradier_matched': sum(r['tradier_status'] == 'supplied_freshness_unverified' for r in result['combined']),
+        counts = {'ota_received': result['ota_join_counts']['received'], 'ota_outside_master':result['ota_join_counts']['outside_master'],
+                  'master_symbols': len(result['combined']), 'tradier_matched': sum(r['tradier_status'] == 'supplied_freshness_unverified' for r in result['combined']),
                   'ranked': len(result['ranked']), 'excluded': len(result['excluded']),
                   'matched': sum(r['ota_status'] == 'returned' for r in result['combined']),
                   'candidates': sum(r['review_status'] == 'matches_config_unverified' for r in result['combined'])}
@@ -67,13 +73,17 @@ def run_dashboard(root, args):
         destination = root / 'artifacts' / 'dashboards' / profile / run_id
         destination.mkdir(parents=True, exist_ok=False)
         atomic_json(destination / 'snapshot.json', snapshot)
-        atomic_json(destination / 'ota-input.json', ota_checked(ota, profile))
+        atomic_json(destination / 'ota-input.json', ota)
         write_csv(destination / 'universe.csv', normalize_universe(snapshot['universe']), ('symbol','group','company','sector','sector_etf'))
         atomic_json(destination / 'tradier-inputs.json', probes)
         write_dashboard(result, destination)
         save_history(history_dir, result)
         progress.finish()
         print(f'Dashboard: {destination / "dashboard.html"}')
+        print(f'Excel CSV (all master rows): {destination / "master.csv"}')
+        print(f'Combined CSV: {destination / "combined.csv"}')
+        print(f'Rankings CSV: {destination / "rankings.csv"}')
+        print(f'OTA received: {result["ota_join_counts"]["received"]}; matched to master: {result["ota_join_counts"]["matched"]}; outside master: {result["ota_join_counts"]["outside_master"]}.')
         print(f'{counts["ranked"]} ranked; {counts["matched"]} fresh OTA matches; {counts["candidates"]} tail rows match settings (unverified metrics).')
     except (Exception, KeyboardInterrupt) as exc:
         if progress:
