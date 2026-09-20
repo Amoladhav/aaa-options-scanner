@@ -57,7 +57,7 @@
       "valueMax": 400000000000000,
       "valueMin": 2000000000,
       "valueChoices": "RANGE_INSIDE",
-      "criteria": "true"
+      "criteria": "false"
     },
     {
       "field": "volume",
@@ -65,7 +65,7 @@
       "valueMax": 505000000000,
       "valueMin": 2000000,
       "valueChoices": "RANGE_INSIDE",
-      "criteria": "true"
+      "criteria": "false"
     },
     {
       "field": "spreadLiquidityPcnt",
@@ -73,7 +73,7 @@
       "valueMax": 99.56,
       "valueMin": 85,
       "valueChoices": "RANGE_INSIDE",
-      "criteria": "true"
+      "criteria": "false"
     },
     {
       "field": "totalOpenInterest",
@@ -81,7 +81,7 @@
       "valueMax": 21555623,
       "valueMin": 10000,
       "valueChoices": "RANGE_INSIDE",
-      "criteria": "true"
+      "criteria": "false"
     },
     {
       "field": "totalOptionsVolume",
@@ -89,7 +89,7 @@
       "valueMax": 110900000,
       "valueMin": 90000,
       "valueChoices": "RANGE_INSIDE",
-      "criteria": "true"
+      "criteria": "false"
     },
     {
       "field": "optionable",
