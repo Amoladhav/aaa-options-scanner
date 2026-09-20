@@ -87,6 +87,57 @@ report. Simultaneous builds receive a busy response; this bounded synchronous
 saved-report operation is not a durable provider job. Large saved files may take
 longer to compose. No cancellation/worker-resume claim is made at C3a.
 
+## Column filters, sorting and TradingView export
+
+Restart your existing server after updating the code, then reopen a saved report.
+Reports do not need rebuilding for these view controls. This feature is in the
+localhost dashboard; legacy standalone HTML reports keep their existing controls.
+
+- Open **Column filters**, select a column, comparison and value, then **Apply
+  column filters**. An additional blank rule appears after applying. Up to 32
+  active rules combine with AND. Choose **No filter** to remove a rule.
+- Every saved report field is available, including raw OTA columns, quote fields,
+  statuses and diagnostics. Numeric comparisons accept finite numeric strings;
+  booleans do not count as numbers. Text comparisons ignore case. Equality compares
+  numeric values when both operands parse numerically, otherwise displayed text.
+- Absent fields and explicit nulls fail ordinary comparisons, including not-equal.
+  Separate **Field absent**, **Explicit null**, **Blank text**, and **Has a value**
+  checks take an empty value box. Raw OTA checks use retained originals rather
+  than display markers. Structured values support text matching on compact JSON;
+  nested-key arithmetic is not implemented.
+- Numeric comparisons use saved units: returns/percentiles are fractions, so
+  `0.10` means 10%; OTA percentage fields retain provider units. View filters do
+  not change strategy thresholds, scores, source artifacts or master membership.
+- Sort any field from **Sort**, or click a visible column heading to reverse its
+  order. Numeric values (including numeric strings) sort first, then text; absent,
+  null and blank values remain last in either direction. Ties use symbol order.
+- **Visible columns** controls the table only. An empty selection restores the
+  default columns. Filters and sorting can use hidden columns. CSV retains its
+  full schema. Applying controls or changing sort resets pagination to page 1.
+- **TradingView watchlist** exports every matching symbol across all pages, grouped
+  by the saved `ivGauge`: 1 becomes `###IV1`, 2 becomes `###IV2`, and so on. Gauge
+  numbers sort ascending (including IV0 if supplied); unavailable/invalid values
+  go under `###IV_UNKNOWN`. Within a section, the selected sort order is retained.
+  Symbols are deduplicated; no matches produces an empty UTF-8 `.txt` file.
+
+Synthetic example:
+
+```text
+###IV1,AAA,CCC,###IV2,BBB,###IV_UNKNOWN,DDD
+```
+
+This uses the requested section syntax. [TradingView's import guide](https://www.tradingview.com/support/solutions/43000487233-how-to-import-or-export-a-watchlist/)
+specifies comma-separated, exchange-prefixed symbols in a `.txt` file. Current
+reports do not provide a verified TradingView exchange mapping, so this export
+preserves saved symbols without guessing prefixes or changing share-class spelling.
+Review symbol resolution during import; real TradingView import/section behavior
+remains user-validation pending. Missing gauge is not an inferred IV category.
+
+Cross-column comparisons such as `A > 1.5 * B` and nested AND/OR groups are planned
+at **C3b**, after this preview's acceptance and before C4 history. Saved personal
+screener revisions follow in C6. Filters currently travel in local page URLs;
+there is no saved preset or automatic application to another report.
+
 ## Browser acceptance checkpoint
 
 After the synthetic preview, test your saved-data report yourself:
@@ -99,6 +150,10 @@ After the synthetic preview, test your saved-data report yourself:
 - Try stocks/ETFs, search and top/bottom/both X% tails, score ordering and next page.
   Selection applies to the complete report before pagination. Tied percentiles may
   yield more/fewer rows than exactly X%. Fixed CRS labels/candidate rules stay fixed.
+- Try multiple column rules, sort raw/quote/status columns in both directions,
+  hide/show columns, move between pages and reset. Confirm missing values stay last.
+- Export the **TradingView watchlist** with a filter spanning multiple pages;
+  confirm IV sections, symbol resolution and membership against the filtered CSV.
 - Download **full CSV** and **filtered CSV**. Filtered means every selected row,
   not just the visible page. Open in Excel and verify formulas stay text and
   decimals/negative returns remain numeric; returns/percentiles use fractions.

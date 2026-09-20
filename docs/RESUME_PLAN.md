@@ -15,8 +15,8 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 2. Implemented checkpoints: C1 `c86eddf`, C2 docs `c7d800d`, C3 `c18ae0b`;
    C3a preview is implemented in `94b37fc`. Resource evidence and the shared
    8–16 GB design target are recorded in `6ddf2e9` and `ec80232`.
-   205 guarded core tests and 11 optional guarded web tests passed; a separate
-   synthetic loopback HTTP smoke check passed and stopped cleanly.
+   212 guarded core tests and 13 optional guarded web tests passed for the column-view increment; the prior
+   synthetic loopback HTTP smoke check passed and stopped cleanly (before this increment).
 3. User confirmed synthetic report visibility in Windows Chrome on 2026-09-20.
    Next checkpoint: [LOCAL_WEB.md](LOCAL_WEB.md), filters and user-selected saved
    OTA/Tradier inputs, quote coverage and Excel exports. Keep CPU/memory use small
@@ -25,7 +25,8 @@ questions. Read it before implementing; findings are dated, not live guarantees.
    resource measurements and full-report-loading limits. No provider operations,
    scheduling activation or real-data migration ran. C2 Infisical/Tradier
    acceptance and remaining browser/native OS checks are pending.
-4. Continue C4 append-only history after preview feedback, then C5 backup/restore
+4. After preview acceptance, implement C3b typed expressions, then C4 append-only
+   history, C5 backup/restore
    and C6 settings/durable fetch lifecycle. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
    User performs pushes and every credentialed operation. C7 remains after C6
@@ -41,7 +42,8 @@ Suggested next-thread prompt:
 > Keep provider operations user-run and scheduling disabled. Finviz/IBKR follows
 > C6 acceptance. Preserve shared CLI/web services and existing environments.
 
-Paused by user request on 2026-09-20; this handoff does not start the next phase.
+Resumed on 2026-09-20 for C3a all-column filters/sorting and grouped watchlist
+exports. C3b expression filters are planned next after C3a user acceptance.
 Reuse the existing WSL `.venv` if still compatible; do not repeat installation
 merely because a new thread began. From the project root, the established demo
 command is `.venv/bin/python -I run.py web --demo --port 8765`; open
@@ -179,6 +181,8 @@ requiring Node or a frontend build pipeline for the first release.
   master compatibility and provider attached/missing/failed counts prominently.
 - Master table: search, stocks/ETFs, top/bottom/both X% CRS selection, sortable
   scores, complete-dataset pagination, ATM quotes and field-diagnostic details.
+- All-column filters (AND), sorting, selectable visible columns and IV-gauge
+  TradingView text export are implemented; browser/import acceptance is pending.
 - Download full CSV and explicitly labeled filtered CSV using the same selection
   rules; preserve raw values and spreadsheet formula protection.
 - A source picker lists validated workspace artifact IDs, not arbitrary paths.
@@ -194,6 +198,33 @@ rules, missing provider rows and CLI/table/CSV parity. User opens the synthetic
 preview and then selects their saved OTA/Tradier results. Confirm quotes appear,
 CRS top/bottom filtering works and Excel opens the export. Record actual browser
 and OS validation separately. A server merely starting is not feature acceptance.
+
+### C3b — Typed cross-column expressions and AND/OR groups (planned)
+
+Sequence: finish C3a basic column filters/watchlist acceptance first, then C3b,
+then C4 history, C5 recovery and C6 saved screener/settings controls. Define the
+versioned expression contract before history/replay needs to pin it. Do not delay
+this usable basic-filter increment to build the expression language.
+
+- Extend the shared pure selection service with a versioned typed rule tree:
+  column-versus-literal first, then column-versus-column with a bounded numeric
+  multiplier, e.g. `meanIvPcnt > 1.5 * ivLow1YrPcnt`.
+- Add explicit nested ALL (AND) / ANY (OR) groups with visible parentheses and
+  predictable precedence. Migrate today's AND-only rules without changing results.
+- Resolve fields from the report column registry. Validate compatible units and
+  numeric types; do not silently compare fractions with percentage points.
+  Specify absent/null/blank/non-numeric semantics before adding negation.
+- Use a structured builder and typed evaluator, never Python/JavaScript `eval`,
+  arbitrary functions, filesystem names or executable source. Bound depth, rule
+  count, string length and evaluation cost on shared 8–16 GB machines.
+- Keep CLI/web consumers on the same service; table, CSV and IV-section watchlist
+  must select identical full-dataset membership. C4 can record versioned rules
+  with report provenance; user-managed saved presets/revisions belong in C6.
+
+Gate: synthetic truth tables for grouped AND/OR and precedence, cross-column
+numeric comparisons, unit mismatch, missing data, malformed/oversized expressions,
+old-rule compatibility and export parity. User accepts the builder before adding
+persisted screener controls. No scoring or candidate-policy change is implied.
 
 ### C4 — Append-only history and reproducible reports
 

@@ -1,5 +1,4 @@
 """Same-origin localhost adapter. No provider/credential/scheduling routes."""
-from dataclasses import asdict
 from datetime import datetime
 import hmac
 import secrets
@@ -12,6 +11,8 @@ from werkzeug.exceptions import HTTPException
 
 from ..core import DataError
 from ..report_service import ReportService, Selection, select_rows, csv_export, coverage
+from ..report_selection import (ColumnFilter, report_columns, watchlist_export,
+                                DEFAULT_COLUMNS, OPERATORS, MAX_RULES, cell_text)
 
 
 def validate_port(port):
@@ -31,6 +32,7 @@ def create_app(catalog, *, port=8765, service=None):
     origin=f'http://127.0.0.1:{port}'
     service=service or ReportService(catalog)
     mutation_lock=threading.Lock()
+    app.add_template_filter(cell_text, 'cell_text')
 
     @app.template_filter('local_time')
     def local_time(value):
@@ -100,10 +102,21 @@ def create_app(catalog, *, port=8765, service=None):
         return redirect(url_for('report',artifact_id=aid),code=303)
 
     def selection():
-        if any(len(request.args.getlist(key))!=1 for key in request.args):
+        if set(request.args)-{'search','group','tail','percent','sort','direction','page','page_size',
+                              'field','op','value','column','scope'}:
+            raise DataError('REPORT_SELECTION_INVALID')
+        if len(request.query_string)>24000 or any(len(request.args.getlist(key))!=1 for key in request.args if key not in ('field','op','value','column')):
             raise DataError('REPORT_SELECTION_INVALID')
         values=request.args.to_dict()
         values.pop('scope',None)
+        fields,ops,terms=(request.args.getlist(key) for key in ('field','op','value'))
+        if not len(fields)==len(ops)==len(terms) or len(fields)>MAX_RULES+1:
+            raise DataError('REPORT_FILTER_INVALID')
+        for key in ('field','op','value','column'):
+            values.pop(key,None)
+        # An empty column removes a rule. The final empty row adds the next one.
+        rules=tuple(ColumnFilter(field,op,term) for field,op,term in zip(fields,ops,terms) if field)
+        values.update(filters=rules,columns=tuple(request.args.getlist('column')))
         return Selection.from_mapping(values)
 
     @app.get('/reports/<artifact_id>')
@@ -111,14 +124,22 @@ def create_app(catalog, *, port=8765, service=None):
         result=service.load(artifact_id)
         selected=selection();rows=select_rows(result,selected)
         start=(selected.page-1)*selected.page_size
-        params=asdict(selected)
+        params=selected.query()
         links={}
         for key,page in (('previous',selected.page-1),('next',selected.page+1)):
-            links[key]=url_for('report',artifact_id=artifact_id)+'?'+urlencode({**params,'page':page})
+            links[key]=url_for('report',artifact_id=artifact_id)+'?'+urlencode([(k,v) for k,v in params if k!='page']+[('page',page)])
         links['full']=url_for('export',artifact_id=artifact_id)+'?scope=full'
-        links['filtered']=url_for('export',artifact_id=artifact_id)+'?'+urlencode({**params,'scope':'filtered'})
+        links['filtered']=url_for('export',artifact_id=artifact_id)+'?'+urlencode(params+[('scope','filtered')])
+        links['watchlist']=url_for('watchlist',artifact_id=artifact_id)+'?'+urlencode(params)
+        columns=report_columns(result)
+        displayed=selected.columns or DEFAULT_COLUMNS
+        sort_links={col:url_for('report',artifact_id=artifact_id)+'?'+urlencode(
+            [(k,v) for k,v in params if k not in ('sort','direction','page')]+
+            [('sort',col),('direction','asc' if selected.sort==col and selected.direction=='desc' else 'desc')]) for col in displayed}
+        rule_rows=list(selected.filters)+([None] if len(selected.filters)<MAX_RULES else [])
         return render_template('report.html',artifact_id=artifact_id,result=result,rows=rows[start:start+selected.page_size],
-                               selection=selected,total=len(rows),start=start,links=links,counts=coverage(result))
+                               selection=selected,total=len(rows),start=start,links=links,counts=coverage(result),
+                               columns=columns,displayed=displayed,rule_rows=rule_rows,operators=OPERATORS,sort_links=sort_links)
 
     @app.get('/reports/<artifact_id>/export')
     def export(artifact_id):
@@ -129,6 +150,12 @@ def create_app(catalog, *, port=8765, service=None):
         result=service.load(artifact_id)
         data=csv_export(result,selected if scope=='filtered' else None)
         return Response(data,mimetype='text/csv',headers={'Content-Disposition':f'attachment; filename="master-{scope}.csv"'})
+
+    @app.get('/reports/<artifact_id>/watchlist')
+    def watchlist(artifact_id):
+        selected=selection()
+        data=watchlist_export(service.load(artifact_id),selected)
+        return Response(data,mimetype='text/plain',headers={'Content-Disposition':'attachment; filename="filtered-watchlist.txt"'})
 
     @app.get('/runs')
     def runs():

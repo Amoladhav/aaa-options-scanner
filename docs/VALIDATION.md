@@ -274,3 +274,20 @@ Greek names or values enter the sanitized report, original bodies persist, and
 missing/mixed-type Greeks do not reject a valid pair. No live provider operation
 was executed. Production Greeks remain user-validation pending; documented sandbox
 entitlement does not include Greeks. Existing user's screener config is untouched.
+
+## C3a column selection and IV-section watchlists — 2026-09-20
+
+On local Ubuntu/Python 3.14.4, `python3 -I -S tools/test_offline.py` passed
+212 tests and `python3 -I -S tools/test_web.py --deps artifacts/web-test-deps`
+passed 13 tests using the existing reviewed dependencies. Both guarded suites
+retain network/process/environment/real-database denial before discovery.
+
+Synthetic checks cover every-column sorting, numeric-string precision, stable
+mixed-type ordering, AND rules, raw absent/null/blank lineage, bounded input,
+HTML escaping, selection continuity across pages/links, table/CSV/watchlist
+membership, IV section ordering, empty exports and delimiter injection rejection.
+A route regression caught and now rejects unsupported query keys instead of
+silently ignoring them. No credentialed operation or real artifact inspection ran.
+No dependency, migration, hosted workflow or scheduler activation was added.
+Browser ergonomics, Excel, real saved quotes, TradingView import/symbol resolution,
+native Windows/macOS and realistic shared-machine resource checks remain pending.

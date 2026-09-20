@@ -1,16 +1,15 @@
 """Shared saved-data composition, selection and exports for CLI and local web."""
 import csv
-from dataclasses import dataclass
 from datetime import datetime, timezone
 import io
 import json
-import math
 
 from .catalog import encoded
 from .core import DataError
 from .dashboard import combine, attach_tradier, FILTER_DEFAULTS, EXTRA_FIELDS, TRADIER_FIELDS
 from .ota_config import pairs
 from .report import FIELDS, csv_cell
+from .report_selection import Selection, select_rows, watchlist_export, report_columns
 
 
 def compose_report(snapshot, ota, *, probes=(), filters=None, now=None, previous=None):
@@ -28,62 +27,6 @@ def compose_report(snapshot, ota, *, probes=(), filters=None, now=None, previous
         for row in result['combined']:
             row['ota_status']='not_supplied'
     return result
-
-
-@dataclass(frozen=True)
-class Selection:
-    search: str = ''
-    group: str = 'all'
-    tail: str = 'all'
-    percent: float = 10
-    sort: str = 'score'
-    direction: str = 'desc'
-    page: int = 1
-    page_size: int = 25
-
-    def __post_init__(self):
-        if (not isinstance(self.search,str) or len(self.search)>100
-                or self.group not in ('all','stock','etf','sector')
-                or self.tail not in ('all','top','bottom','both')
-                or type(self.percent) not in (int,float) or not math.isfinite(self.percent) or not .1<=self.percent<=50
-                or self.sort not in ('symbol','company','score','percentile','rank')
-                or self.direction not in ('asc','desc')
-                or type(self.page) is not int or not 1<=self.page<=100000
-                or self.page_size not in (25,50,100,250)):
-            raise DataError('REPORT_SELECTION_INVALID')
-
-    @classmethod
-    def from_mapping(cls, values):
-        allowed=set(cls.__dataclass_fields__)
-        if set(values)-allowed:
-            raise DataError('REPORT_SELECTION_INVALID')
-        options=dict(values)
-        try:
-            for key in ('page','page_size'):
-                if key in options: options[key]=int(options[key])
-            if 'percent' in options: options['percent']=float(options['percent'])
-            return cls(**options)
-        except (TypeError,ValueError):
-            raise DataError('REPORT_SELECTION_INVALID') from None
-
-
-def select_rows(result, selection):
-    rows=[]
-    for row in result['combined']:
-        if selection.group!='all' and not (row['group']==selection.group or selection.group=='sector' and row.get('sector_etf')):
-            continue
-        # Search is deliberately symbol/company/sector, stable across table columns.
-        if selection.search.casefold() not in ' '.join(str(row.get(k,'')) for k in ('symbol','company','sector')).casefold():
-            continue
-        p=row.get('percentile'); x=selection.percent/100
-        if selection.tail!='all' and (p is None or not ((selection.tail in ('top','both') and p>=1-x) or (selection.tail in ('bottom','both') and p<=x))):
-            continue
-        rows.append(row)
-    present=[r for r in rows if r.get(selection.sort) is not None]
-    missing=[r for r in rows if r.get(selection.sort) is None]
-    present.sort(key=lambda r:r['symbol'])
-    present.sort(key=lambda r:r[selection.sort],reverse=selection.direction=='desc')
-    return present+sorted(missing,key=lambda r:r['symbol'])
 
 
 def csv_export(result, selection=None):

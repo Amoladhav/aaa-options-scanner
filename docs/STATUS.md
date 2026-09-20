@@ -1,14 +1,23 @@
 # Project status
 
-Updated: 2026-09-20. Phase: paused at remaining C3a localhost acceptance.
+Updated: 2026-09-20. Phase: C3a column filtering/watchlist increment; user acceptance pending.
 
-User requested a pause and next-thread handoff. Resume using
-[RESUME_PLAN.md](RESUME_PLAN.md); C1 is not the starting point again. Synthetic
-visibility is confirmed; filters, saved-source quote coverage, Excel and realistic
-resource use are next. C4–C6 remain open, scheduling stays disabled, and Finviz/IBKR
-follows C6 acceptance. No runtime change or new acceptance test is implied by this
-documentation handoff. The user may still have a demo server open; its current
-state has not been inspected or changed.
+Resumed with all-column filters/sorting, selectable table columns and filtered
+TradingView text export grouped by IV gauge. Shared pure selection drives the
+localhost table, filtered CSV and watchlist across all pages. Original data,
+strategy settings and legacy standalone HTML remain unchanged. No new dependency,
+provider access, scheduling or schema migration was needed.
+
+212 guarded core tests and 13 guarded web tests pass on Ubuntu/Python 3.14.4.
+Tests cover mixed types, raw missing/null/blank lineage, comparison semantics,
+query rejection, escaping, stable sorting and exact export membership/sections.
+Browser ergonomics, real saved quotes, Excel and TradingView import remain pending.
+The prior HTTP smoke check predates these changes; no server was started this turn.
+
+Next: C3a user acceptance, then the newly planned C3b cross-column expressions and
+AND/OR groups, C4 history, C5 backup/restore and C6 saved screeners/settings/durable
+jobs. Finviz/IBKR stays after C6 acceptance. See [RESUME_PLAN.md](RESUME_PLAN.md).
+The shared 8–16 GB design target and realistic resource acceptance remain open.
 
 OTA live checkpoint: the user's short-page run returned 77 rows after one page
 with no error (`ec8d6c0cf18743e38ef32fa4f0832993`). This proves the observed

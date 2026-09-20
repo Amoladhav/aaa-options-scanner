@@ -6,12 +6,15 @@ import io
 import json
 import re
 import unittest
+from urllib.parse import urlencode, urlsplit, parse_qs
+from html import unescape
 from unittest.mock import patch,Mock
 from offline_boundary import temp
 from trading_scanner.catalog import Catalog,encoded
 from trading_scanner.demo import make_snapshot
 from trading_scanner.dashboard import synthetic_ota
 from trading_scanner.report_service import ReportService,compose_report,csv_export
+from trading_scanner.report_selection import Selection, ColumnFilter, watchlist_export
 from trading_scanner.web import create_app
 from trading_scanner.core import DataError
 
@@ -126,7 +129,7 @@ class WebRoutesTests(unittest.TestCase):
         self.assertEqual(response.status_code,303,response.text)
         page=self.get(response.headers['Location'])
         self.assertEqual(page.status_code,200,page.text)
-        self.assertIn('2.25 / 2.5',page.text)
+        self.assertIn('<td>2.25</td><td>2.5</td>',page.text)
         self.assertIn('59',page.text)
         batch['master_id']='f'*64
         bad=self.catalog.publish(encoded(batch),kind='tradier',profile='sandbox')
@@ -184,3 +187,49 @@ class WebRoutesTests(unittest.TestCase):
         (self.catalog.root/self.catalog.record(aid)['relative_path']).unlink()
         self.assertEqual(self.get(path).status_code,400)
         self.assertEqual(self.get(path+'/export?scope=full').status_code,400)
+
+    def test_column_rules_sort_links_exports_and_pagination_share_selection(self):
+        path=self.report()
+        result=self.service.load(path.rsplit('/',1)[1])
+        selected=Selection(filters=(ColumnFilter('ivGauge','ge','0'),ColumnFilter('company','contains','')),
+                           sort='ivGauge',direction='asc',columns=('symbol','ivGauge','ota_raw.ivGauge'),page=2)
+        query=urlencode(selected.query())
+        before=len(self.catalog.runs())
+        with patch('trading_scanner.credentials.resolve',side_effect=AssertionError('credentials denied')),patch('trading_scanner.ota_fetch.run_fetch',side_effect=AssertionError('providers denied')):
+            response=self.get(path+'?'+query)
+            self.assertEqual(response.status_code,200,response.text)
+            links=[unescape(link) for link in re.findall('href="([^"]+)"',response.text)]
+            filtered=next(link for link in links if 'scope=filtered' in link)
+            watchlist=next(link for link in links if '/watchlist?' in link)
+            self.assertEqual(self.get(filtered).data,csv_export(result,selected))
+            download=self.get(watchlist)
+            self.assertEqual(download.data,watchlist_export(result,selected))
+            self.assertIn('filtered-watchlist.txt',download.headers['Content-Disposition'])
+            self.assertIn('text/plain',download.headers['Content-Type'])
+            previous=next(link for link in links if parse_qs(urlsplit(link).query).get('page')==['1'] and '/export' not in link and '/watchlist' not in link)
+            self.assertEqual(parse_qs(urlsplit(previous).query)['field'],['ivGauge','company'])
+            sort=next(link for link in links if parse_qs(urlsplit(link).query).get('sort')==['ivGauge'] and parse_qs(urlsplit(link).query).get('direction')==['desc'])
+            self.assertNotIn('page',parse_qs(urlsplit(sort).query))
+            self.assertEqual(self.get(sort).status_code,200)
+        self.assertEqual(len(self.catalog.runs()),before)
+
+    def test_rule_builder_removal_validation_and_escaping(self):
+        path=self.report()
+        query=[('field','ivGauge'),('op','eq'),('value','1'),('field',''),('op','contains'),('value','')]
+        response=self.get(path+'?'+urlencode(query))
+        self.assertEqual(response.status_code,200)
+        self.assertIn('1 active',response.text)
+        self.assertEqual(response.text.count('name="field"'),2)
+        for query in ('field=ivGauge&op=gt','field=ivGauge&op=gt&value=nan',
+                      'field=unknown&op=eq&value=1','column=unknown',
+                      'column=symbol&column=symbol','filters=arbitrary',
+                      'sort=score&sort=symbol','search='+('x'*24001)):
+            for suffix in ('','/watchlist','/export?scope=filtered&'):
+                url=path+suffix+('' if '?' in suffix else '?')+query
+                self.assertEqual(self.get(url).status_code,400,url[:100])
+        query=urlencode({'field':'company','op':'contains','value':'<script>bad</script>'})
+        response=self.get(path+'?'+query)
+        self.assertEqual(response.status_code,200)
+        self.assertNotIn('<script>bad</script>',response.text)
+        self.assertIn('&lt;script&gt;',response.text)
+        self.assertEqual(self.get(path+'/watchlist?'+query).data,b'')

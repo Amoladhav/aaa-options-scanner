@@ -1,6 +1,6 @@
 # Future enhancements and architecture plan
 
-Updated: 2026-09-19. Status: planning baseline; proposed phases below are not
+Updated: 2026-09-20. Status: planning baseline; proposed phases below are not
 implemented merely because they appear here. Owner: project user. Implementation
 priority changes with the user's requests; this document is not permission to
 perform credentialed operations, publish, enable hosted CI or deploy.
@@ -433,3 +433,20 @@ no hard quota or global WSL limit is implemented. Measure first rather than addi
 unbounded caches or changing frameworks. C3a currently decodes full reports for
 views and builds CSV in memory; future optimization should retain shared selection
 and full/filtered-export parity. See [measured scope](LOCAL_WEB.md#resource-use-and-shared-machine-constraint).
+
+## Column filtering and watchlist progression (2026-09-20)
+
+C3a now has shared all-column selection, numeric/text/presence rules combined
+with AND, stable mixed-type sorting, visible-column controls and filtered
+TradingView text export grouped by existing IV gauge. The local web adapter uses
+these services for table/CSV/watchlist membership before pagination. Original
+source values and CRS/candidate rules remain unchanged. Legacy standalone HTML
+is unchanged; this increment targets the active localhost dashboard.
+
+Next is **C3a user acceptance → C3b expressions → C4 history → C5 recovery → C6
+saved screeners/settings and durable jobs → C7 providers**. C3b defines a bounded,
+versioned typed rule tree for cross-column comparisons (`A > 1.5 * B`) and nested
+AND/OR, before C4 needs reproducible rule provenance. C6 provides personal preset
+persistence through shared validation. See [C3b acceptance](RESUME_PLAN.md#c3b--typed-cross-column-expressions-and-andor-groups-planned).
+Expressions are planned, not implemented. No evaluator based on executable text,
+new dependencies, automatic fetch, worker or scheduling activation is introduced.
