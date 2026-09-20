@@ -105,6 +105,10 @@ preference. Do not interrupt unfinished authorized work merely to ask this quest
 
 ## Personalization and scheduling
 
+During the current C1–C6 checkpoint sequence, keep scheduling disabled and skip
+the activation guidance below. A successful provider run does not override this
+boundary. The remaining guidance is for a later explicitly selected scheduling task.
+
 After the first successful selected provider run, ask whether the user wants a
 schedule. Adapt the explanation to their comfort level: explain that a worker is
 a program which must stay running, and saving a time does not keep it alive.
@@ -142,3 +146,16 @@ localhost demo. Reuse the established OS/shell/interpreter; explain the optional
 package install, exact URL and Ctrl+C stop. Record synthetic browser acceptance
 before guiding user-run saved-source indexing. Do not enable scheduling or suggest
 Finviz/IBKR implementation before C6 user acceptance.
+
+For a returning user, read [RESUME_PLAN.md](RESUME_PLAN.md) first and resume from
+recorded evidence. At the 2026-09-20 pause, the synthetic report is visible in
+Windows Chrome after WSL startup guidance; do not restart onboarding or reinstall
+packages without a failed prerequisite. Remaining checks are filters, saved-source
+quote coverage, Excel exports and realistic resource use. Verify a server's state
+before advising another launch; Ctrl+C in its terminal stops it.
+
+Explain the lightweight Python server and ordinary browser pages in plain terms.
+Target shared 8–16 GB machines alongside other trading apps. Installed RAM does
+not establish available RAM; synthetic measurements exclude Chrome and WSL overhead.
+Do not promise a resource cap or change global WSL settings. See
+[resource evidence](LOCAL_WEB.md#resource-use-and-shared-machine-constraint).

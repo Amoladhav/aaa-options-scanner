@@ -172,6 +172,10 @@ The next milestone is one verified real data source, then the combined dashboard
 
 ## Optional: personalize a daily schedule
 
+Scheduling stays disabled during the current C1–C6 local-web checkpoints. Skip
+this section for that workflow; the guidance below applies only to a later
+explicitly selected scheduling task.
+
 After a manual provider run succeeds, choose your local time, named timezone and
 whether to fetch OTA only or run public prices → OTA → dashboard. Follow
 [SCHEDULING.md](SCHEDULING.md) for your platform's commands. These settings stay in
@@ -186,3 +190,15 @@ See [Infisical setup](SECRETS.md) for OS-specific installation, browser login,
 profile-scoped injection and safe format checks. Complete the no-credential demo
 first. All authentication and provider commands are user-run. Keep scheduling
 disabled during the C1–C6 web checkpoints; no worker activation is implied.
+
+## Returning to the localhost preview
+
+Follow [LOCAL_WEB.md](LOCAL_WEB.md) for the selected OS and reuse your compatible
+environment. The development handoff is [RESUME_PLAN.md](RESUME_PLAN.md); it records
+completed steps so a new assistant does not restart setup. Current user evidence
+is synthetic report visibility in Windows Chrome after WSL startup guidance.
+Filters, saved-source quote coverage, Excel exports and realistic resource use
+remain to be checked. Keep the server terminal open while using the app; Ctrl+C
+in that terminal stops it. No automatic refresh, provider fetch or scheduler runs
+in the preview. Target shared 8–16 GB machines with other trading tools open;
+hardware acceptance remains pending.

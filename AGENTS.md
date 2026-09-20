@@ -333,8 +333,17 @@ This is guidance, not an active model configuration or a correctness guarantee.
 
 ## Scanner architecture roadmap
 
+- Resume from [RESUME_PLAN.md](docs/RESUME_PLAN.md) and its current acceptance
+  checkpoint, not the historical initial mandate below. At the 2026-09-20 pause,
+  C1/C3 and C3a are implemented, C2 docs prepared, and synthetic report visibility
+  in Windows Chrome is user-confirmed. Remaining C3a acceptance precedes C4–C6;
+  Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.
+- Target shared 8–16 GB RAM machines running other trading applications. Preserve
+  demand-driven operation and assess resource use before adding background work;
+  the owner's 32 GB machine is not a minimum requirement. Measurements and limits
+  are in [LOCAL_WEB.md](docs/LOCAL_WEB.md#resource-use-and-shared-machine-constraint).
 - The current product is strictly a personal local workspace. A local web interface
-  is the next planned interface; hosting/sharing is deferred and requires explicit
+  now has a saved-results preview; hosting/sharing is deferred and requires explicit
   user direction. No active hosted CI, public server or multi-user access by default.
 - Read [the future-enhancement planner](docs/FUTURE_ENHANCEMENTS.md) and relevant
   [status](docs/STATUS.md) before implementing changes. Apply its proportional change

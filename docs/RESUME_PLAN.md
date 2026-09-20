@@ -13,15 +13,18 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 1. Read project AGENTS.md, this file, STATUS.md and the relevant section of
    FUTURE_ENHANCEMENTS.md. Check Git status and preserve unrelated changes.
 2. Implemented checkpoints: C1 `c86eddf`, C2 docs `c7d800d`, C3 `c18ae0b`;
-   C3a preview is implemented in the following local commit (see Git log).
+   C3a preview is implemented in `94b37fc`. Resource evidence and the shared
+   8–16 GB design target are recorded in `6ddf2e9` and `ec80232`.
    205 guarded core tests and 11 optional guarded web tests passed; a separate
    synthetic loopback HTTP smoke check passed and stopped cleanly.
 3. User confirmed synthetic report visibility in Windows Chrome on 2026-09-20.
    Next checkpoint: [LOCAL_WEB.md](LOCAL_WEB.md), filters and user-selected saved
    OTA/Tradier inputs, quote coverage and Excel exports. Keep CPU/memory use small
-   alongside the user's other demanding apps; see the documented synthetic
+   alongside TradingView/TOS on shared 8–16 GB machines; the owner's machine has
+   32 GB. See the documented synthetic
    resource measurements and full-report-loading limits. No provider operations,
-   scheduling activation or real-data migration ran. C2 Infisical/Tradier acceptance and browser/native OS checks remain pending.
+   scheduling activation or real-data migration ran. C2 Infisical/Tradier
+   acceptance and remaining browser/native OS checks are pending.
 4. Continue C4 append-only history after preview feedback, then C5 backup/restore
    and C6 settings/durable fetch lifecycle. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
@@ -30,10 +33,21 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 
 Suggested next-thread prompt:
 
-> Read AGENTS.md, docs/RESUME_PLAN.md and docs/STATUS.md. Review C3a browser
-> acceptance feedback, preserving the shared CLI/web report services. Continue
-> with C4 history, then C5 and C6 checkpoints. Keep provider operations user-run
-> and scheduling disabled. Finviz/IBKR implementation follows C6 acceptance.
+> Read AGENTS.md, docs/RESUME_PLAN.md, docs/STATUS.md and
+> docs/IMPLEMENTATION_RESEARCH.md. Resume at remaining C3a acceptance; the synthetic
+> report is already visible in Windows Chrome after WSL startup guidance. Check
+> filters, saved-source quote coverage, Excel exports and realistic resource use
+> before continuing C4–C6. Target shared 8–16 GB machines alongside TradingView/TOS.
+> Keep provider operations user-run and scheduling disabled. Finviz/IBKR follows
+> C6 acceptance. Preserve shared CLI/web services and existing environments.
+
+Paused by user request on 2026-09-20; this handoff does not start the next phase.
+Reuse the existing WSL `.venv` if still compatible; do not repeat installation
+merely because a new thread began. From the project root, the established demo
+command is `.venv/bin/python -I run.py web --demo --port 8765`; open
+`http://127.0.0.1:8765` in Windows Chrome and stop with Ctrl+C in its terminal.
+Do not infer that a user-started server is still running or has been stopped.
+Native Windows Python requires its own environment; see [LOCAL_WEB.md](LOCAL_WEB.md).
 
 ## Confirmed direction and unresolved evidence
 

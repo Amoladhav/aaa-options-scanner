@@ -1,6 +1,14 @@
 # Project status
 
-Updated: 2026-09-20. Phase: C3a localhost saved-results preview ready for user acceptance.
+Updated: 2026-09-20. Phase: paused at remaining C3a localhost acceptance.
+
+User requested a pause and next-thread handoff. Resume using
+[RESUME_PLAN.md](RESUME_PLAN.md); C1 is not the starting point again. Synthetic
+visibility is confirmed; filters, saved-source quote coverage, Excel and realistic
+resource use are next. C4–C6 remain open, scheduling stays disabled, and Finviz/IBKR
+follows C6 acceptance. No runtime change or new acceptance test is implied by this
+documentation handoff. The user may still have a demo server open; its current
+state has not been inspected or changed.
 
 OTA live checkpoint: the user's short-page run returned 77 rows after one page
 with no error (`ec8d6c0cf18743e38ef32fa4f0832993`). This proves the observed
