@@ -346,3 +346,19 @@ remote cancellation, distributed coordination and OS service installation remain
 pending. Per-day claims prevent automatic duplicate attempts but cannot guarantee
 exactly-once provider effects. Provider-session expiry remains a live limitation.
 See [Scheduling](SCHEDULING.md) for semantics and user-run activation.
+
+## Adopted increment: OTA report model and export service (2026-09-20)
+
+`ota_reporting.py` provides a pure inventory model, option validation and renderers;
+`ota_report_service.py` loads a saved snapshot and publishes an immutable report
+bundle. New CLI commands use that service. Comprehensive OTA rows remain an
+inventory; existing master-driven CRS/Tradier joins keep their original boundary.
+No scoring or filtering rule was imported from the INBOX presentation reference.
+
+The future report page should expose saved-source selection, console/table preview
+limits, page size, search/sector/sort controls, profile inspection and downloads.
+Resolve browser artifact IDs inside the workspace, submit generation as a local
+job, and reuse this model rather than rebuilding financial interpretation in the
+web layer. Report preferences may later be persisted through the personal settings
+service; this increment uses explicit per-run options. Browser controls for saved
+files exist; web-server endpoints remain pending. See [OTA reports](OTA_REPORTS.md).

@@ -1,0 +1,26 @@
+[
+  {
+    "review_date": "2026-09-20",
+    "original_path": "INBOX/options-trading-scanner/src/trading_scanner/report.py",
+    "sanitized_review_sha256": "1c61242601d7e173150bfea7395a70e413a1e5f762c4f26a4d5c97b345b1b198",
+    "destination": null,
+    "relationship": "reference-only review of previously excluded material; no source intake",
+    "summary": "Reviewed console tables, saved snapshots and local report output patterns. No incoming code executed or copied; legacy scoring, mock options and strategy rules not adopted."
+  },
+  {
+    "review_date": "2026-09-20",
+    "original_path": "INBOX/options-trading-scanner/src/trading_scanner/momentum_dashboard.py",
+    "sanitized_review_sha256": "00600b64710f73715ec094b91b91014b063382681ac52f658ee3765a4d4d2b4e",
+    "destination": null,
+    "relationship": "reference-only review of previously excluded material; no source intake",
+    "summary": "Reviewed console tables, saved snapshots and local report output patterns. No incoming code executed or copied; legacy scoring, mock options and strategy rules not adopted."
+  },
+  {
+    "review_date": "2026-09-20",
+    "original_path": "INBOX/options-trading-scanner/run_scan.py",
+    "sanitized_review_sha256": "d82eb388b1ac308db0d6817df346e97c73aae803564e44b711a6b1b8d7f2a8be",
+    "destination": null,
+    "relationship": "reference-only review of previously excluded material; no source intake",
+    "summary": "Reviewed console tables, saved snapshots and local report output patterns. No incoming code executed or copied; legacy scoring, mock options and strategy rules not adopted."
+  }
+]

@@ -880,3 +880,15 @@ Preferences are stored outside Git in this workspace. The future web settings pa
 will use the same service; browser controls are not implemented yet. The
 [setup agent](docs/SETUP_AGENT.md) now asks about these personal choices after the
 first successful provider run. No hosted jobs or OS startup tasks are installed.
+
+## Comprehensive OTA report
+
+After a completed OTA fetch, run `.venv/bin/python -I run.py ota-report` for a
+console preview, searchable/paginated HTML, all-row CSV, JSON and field-quality
+summary. It reads saved data without fetching again. Check its input path/time
+because the default chooses the latest completed file, which may predate a fetch
+still in progress. Use `--input` to select an exact run.
+
+See [OTA reports](docs/OTA_REPORTS.md) for Windows commands, output definitions,
+CRS/dashboard joins and the offline `ota-report-demo` preview. All captured rows
+are retained; an OTA report does not replace the master universe or assign CRS.

@@ -74,9 +74,19 @@ def main(argv=None, root: Path | None = None) -> int:
     batch.add_argument('--as-of', help='Explicit New York date YYYY-MM-DD')
     process = subs.add_parser('ota-process', help='USER-RUN: profile/reprocess saved raw OTA data without network')
     process.add_argument('--input', type=Path, required=True)
+    ota_report = subs.add_parser('ota-report', help='USER-RUN: console, HTML, CSV and JSON report from a saved OTA fetch; no network')
+    ota_report.add_argument('--input', type=Path, help='Completed raw results.json; defaults to latest saved OTA results, never in-progress capture')
+    ota_demo = subs.add_parser('ota-report-demo', help='Offline OTA report preview with invented data')
+    for command in (ota_report, ota_demo):
+        command.add_argument('--console-rows', type=int, choices=range(101), default=20, metavar='0..100')
+        command.add_argument('--page-size', type=int, choices=(25,50,100,250), default=100, help='Initial HTML rows per page; all exports retain all rows')
     from .schedule_cli import add_commands, run_schedule
     add_commands(subs)
     args = parser.parse_args(argv)
+    if args.command in ('ota-report', 'ota-report-demo'):
+        from .ota_report_service import generate_report
+        from .ota_reporting import ReportOptions
+        return generate_report(root, source=getattr(args,'input',None), options=ReportOptions(args.console_rows,args.page_size), demo=args.command=='ota-report-demo')
     if args.command in ('schedule', 'schedule-worker'):
         return run_schedule(root, args)
     if args.command == 'tradier-fetch':

@@ -12,7 +12,17 @@ native OS storage can save the current token but cannot extend its lifetime.
 Manual runs and the optional local schedule worker are user-started. No login
 automation or OS startup service exists.
 
-## Latest increment: personal local schedules
+## Latest increment: comprehensive OTA saved-data reports
+
+Console preview, paginated/searchable HTML, all-row CSV/JSON, symbol export and
+field-quality details are available through `ota-report`. The source snapshot is
+preserved byte-for-byte in each report bundle; incomplete inputs fail explicitly.
+Shared model/options/services prepare future web reuse. 176 isolated offline tests
+passed, including 5,642-row parity. The synthetic CLI preview ran successfully;
+interactive browser and live-data checks remain pending. No provider data was
+read or fetched by the agent. See [OTA reports](OTA_REPORTS.md).
+
+## Previous increment: personal local schedules
 
 Reusable personal schedule settings and SQLite daily claims support time/timezone,
 OTA or daily workflow, enable/disable, next due time, grace windows and history.

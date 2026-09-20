@@ -62,3 +62,17 @@ provides access control.
 4. Scan the actual staged contents and review the exact diff before each commit.
 
 No incoming application code is approved for execution.
+
+## Report presentation reference review (2026-09-20)
+
+A fresh value-suppressing scan of the original tree covered 435 filesystem files
+and 599 archive members, with the same 40 candidate findings and zero coverage
+gaps. Only the redacted review view was inspected for console/file report patterns.
+No incoming imports, launchers or tests ran. Existing findings remain governed by
+the previous dispositions; this scan does not prove absence of credentials.
+
+[Reference review records](report-reference-review.json) identify the reviewed
+paths and sanitized-view hashes. No additional source file was accepted/copied.
+New report code implements the current project's raw-data/profiling boundaries;
+the earlier long/short strategy scoring and placeholder-derived metrics were not
+adopted. The existing accepted baseline and original INBOX remain unchanged.
