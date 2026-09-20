@@ -11,3 +11,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 .infisical.json
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm

@@ -400,3 +400,11 @@ commands retain prior defaults; explicit env injection is opt-in. Future web and
 worker callers must leave prompting disabled and pass resolved credentials to
 services. `credential-check` provides an allowlisted user-run format check, not
 authentication evidence. No secret-manager SDK or scheduler activation was added.
+
+## Adopted increment: local artifact catalog (C3)
+
+`Catalog` and `catalog_service` now supply explicit saved-source indexing,
+immutable copies, metadata migrations and reconciliation counts. This is a
+report/source catalog, not P1 durable fetch jobs. Existing scheduling storage is
+unchanged. See [catalog contracts](CATALOG.md) and [decision 0001](decisions/0001-local-catalog.md).
+C3a can use opaque IDs without scanning raw provider directories on startup.

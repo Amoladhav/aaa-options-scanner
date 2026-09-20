@@ -332,3 +332,14 @@ renewal/revocation and keyring limitations. No installation or authentication ra
 C1's 192 synthetic tests cover the CLI contract; docs/links/commands reviewed.
 User-run Tradier-through-Infisical and Windows/macOS/WSL verification remain pending.
 Proceeding with credential-free C3/C3a does not close that acceptance gate.
+
+## C3 local artifact catalog — 2026-09-20
+
+Implemented checksummed transactional SQL migrations, immutable file publication,
+run/input metadata, initial settings/master tables, explicit saved-source indexing
+and aggregate reconciliation. Existing scheduler DB/schema remain untouched.
+201 guarded offline tests passed, including rollback/upgrade, foreign keys,
+byte-preserving idempotent indexing, interrupted publication, missing/changed
+files and path confinement. Only temporary synthetic databases were opened.
+See [CATALOG.md](CATALOG.md) and [decision 0001](decisions/0001-local-catalog.md).
+C3a preview is next; C4 history and C5 backup/recovery remain pending.

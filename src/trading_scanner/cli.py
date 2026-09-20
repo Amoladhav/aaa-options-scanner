@@ -87,11 +87,19 @@ def main(argv=None, root: Path | None = None) -> int:
     check.add_argument('--provider', choices=('ota', 'tradier'), required=True)
     check.add_argument('--profile', choices=('ota', 'sandbox', 'production'), required=True)
     check.add_argument('--credential-source', choices=('env', 'store'), required=True)
+    subs.add_parser('catalog-init', help='Initialize local metadata only; never activate scheduling')
+    subs.add_parser('catalog-reconcile', help='USER-RUN: check registered files and orphan counts')
+    index = subs.add_parser('catalog-index', help='USER-RUN: index one saved source; no provider requests')
+    index.add_argument('--kind', choices=('prices','ota','tradier'), required=True)
+    index.add_argument('--input', type=Path, required=True)
     from .schedule_cli import add_commands, run_schedule
     add_commands(subs)
     args = parser.parse_args(argv)
     if getattr(args, 'credential_source', None) and (getattr(args, 'use_stored_token', False) or getattr(args, 'prompt_token', False)):
         parser.error('Choose --credential-source or the legacy credential flag, not both.')
+    if args.command.startswith('catalog-'):
+        from .catalog_service import run_catalog
+        return run_catalog(root, args)
     if args.command == 'credential-check':
         from .credentials import run_check
         return run_check(root, args)

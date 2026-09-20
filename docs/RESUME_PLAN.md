@@ -16,7 +16,7 @@ questions. Read it before implementing; findings are dated, not live guarantees.
    attachment diagnostics); prior `1204335` adds HTML CRS tail filtering and
    `6051eef` preserves all OTA fields in combined reports. 184 offline tests passed.
 3. C1 is implemented and offline verified (192 tests). C2 documentation is prepared; user-run acceptance remains pending.
-   Continue with credential-free C3/C3a.
+   C3 is offline verified (201 tests); continue with C3a.
    Original C1 scope: the shared credential loader and synthetic tests. No Infisical
    SDK in the scanner; retain run.py and existing commands. Do not begin the
    database migration or cloud deployment at the same time.
@@ -121,7 +121,7 @@ Gate: documented exact commands match C1, synthetic CLI tests pass, user complet
 one Tradier run through Infisical. Mark actual Windows/macOS/WSL verification
 individually. Infisical is optional for demo and saved-report use.
 
-### C3 — Local database foundation and artifact catalog
+### C3 — Local database foundation and artifact catalog (offline verified)
 
 Use Python sqlite3 and explicit versioned SQL migrations behind a repository
 interface. SQLite suits single-workspace local operation without a server.

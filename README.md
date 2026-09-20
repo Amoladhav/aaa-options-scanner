@@ -969,3 +969,9 @@ See [Infisical setup](docs/SECRETS.md) for OS-specific installation, browser log
 profile-scoped injection and safe format checks. Complete the no-credential demo
 first. All authentication and provider commands are user-run. Keep scheduling
 disabled during the C1–C6 web checkpoints; no worker activation is implied.
+
+## Local artifact catalog
+
+[C3 catalog commands and recovery limits](docs/CATALOG.md) cover explicit
+user-run saved-source indexing and reconciliation. No automatic fetch, history
+migration or schedule activation.
