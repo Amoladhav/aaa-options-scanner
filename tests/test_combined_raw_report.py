@@ -131,6 +131,8 @@ class CombinedRawReportTests(unittest.TestCase):
         self.assertEqual(source['representation'],'ota_raw')
         self.assertIn('customExample',source['rows'][0]['values'])
         self.assertIn('Excel CSV (all master rows):',output.getvalue())
+        self.assertIn('Tradier: input files=0; attached=0;',output.getvalue())
+        self.assertIn('No Tradier file attached.',output.getvalue())
         review=json.loads(next(self.root.glob('artifacts/agent-review/*.json')).read_text())
         self.assertEqual(review['counts']['ota_received'],48)
         self.assertNotIn('customExample',json.dumps(review))

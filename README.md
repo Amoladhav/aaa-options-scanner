@@ -912,3 +912,17 @@ still in progress. Use `--input` to select an exact run.
 See [OTA reports](docs/OTA_REPORTS.md) for Windows commands, output definitions,
 CRS/dashboard joins and the offline `ota-report-demo` preview. All captured rows
 are retained; an OTA report does not replace the master universe or assign CRS.
+
+## Readable run folders
+
+New operation IDs start with local `YYYYMMDDHHMM`, followed by a random suffix
+(e.g. `202609200507-a1b2c3d4e5f6`). The suffix avoids collisions between runs
+in the same minute or repeated daylight-saving clock times. Logs retain explicit
+timezone offsets. Existing UUID folders and saved input paths remain valid; no
+old folders are renamed. IDs identify runs, not market observation timestamps.
+
+Dashboard completion prints Tradier input-file, attached, failed, not-attempted,
+in-progress and not-supplied counts. A saved batch is not attached automatically;
+pass its exact path using `--tradier`. Partial batches retain successful rows and
+show per-symbol failure statuses. A master mismatch fails rather than silently
+joining a different universe.

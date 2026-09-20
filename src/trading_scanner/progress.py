@@ -9,6 +9,7 @@ import math
 import json
 import os
 from pathlib import Path
+from .run_ids import valid_run_id
 import re
 import sys
 from time import monotonic
@@ -70,7 +71,7 @@ class RunProgress:
     """
     def __init__(self, log_directory: Path, run_id: str, command: str, profile: str,
                  revision: str, stream=None):
-        if not re.fullmatch(r"[a-f0-9]{32}", run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
+        if not valid_run_id(run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
             raise ValueError("INVALID_LOG_METADATA")
         if command not in {"ota-report", "ota-report-demo", "schedule-run", "demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe", "tradier-fetch"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
             raise ValueError("INVALID_LOG_METADATA")

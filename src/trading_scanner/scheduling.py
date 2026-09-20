@@ -9,7 +9,7 @@ import json
 import re
 import sqlite3
 import time as clock
-import uuid
+from .run_ids import new_run_id
 
 from .core import DataError
 
@@ -136,7 +136,7 @@ class ScheduleService:
             if due is None or now < due or db.execute('SELECT 1 FROM jobs WHERE day=?', (day.isoformat(),)).fetchone():
                 return None
             status = 'missed' if now > due + timedelta(minutes=settings['grace_minutes']) else 'running'
-            job = {'day': day.isoformat(), 'id': uuid.uuid4().hex, 'settings': settings, 'due_utc': due.isoformat()}
+            job = {'day': day.isoformat(), 'id': new_run_id(), 'settings': settings, 'due_utc': due.isoformat()}
             db.execute('INSERT INTO jobs(day,id,status,settings,due_utc,started_utc) VALUES (?,?,?,?,?,?)',
                        (job['day'], job['id'], status, json.dumps(settings), job['due_utc'], now.isoformat() if status == 'running' else None))
             db.commit()

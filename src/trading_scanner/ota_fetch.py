@@ -5,7 +5,7 @@ import http.client
 import json
 import re
 import ssl
-import uuid
+from .run_ids import new_run_id
 import warnings
 
 from .core import DataError
@@ -149,7 +149,7 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
 
 def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES, use_stored_token=False):
     from .cli import code_revision
-    run_id = uuid.uuid4().hex
+    run_id = new_run_id()
     revision = code_revision()
     progress, count, code = None, 0, None
     schema_diagnostic = None

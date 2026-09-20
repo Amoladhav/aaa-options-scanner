@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
-import uuid
+from .run_ids import new_run_id
 
 from .core import DataError
 from .progress import RunProgress, SAFE_ERRORS
@@ -123,7 +123,7 @@ def configure_ota(args, root):
     from .ota_config import parse_config, save_config, read_paste, MAX_INPUT, config_identity
     progress = None
     try:
-        progress = RunProgress(root / 'artifacts' / 'logs', uuid.uuid4().hex,
+        progress = RunProgress(root / 'artifacts' / 'logs', new_run_id(),
                                'ota-config', 'unknown', code_revision())
         progress.begin()
         progress.start('config_parse')

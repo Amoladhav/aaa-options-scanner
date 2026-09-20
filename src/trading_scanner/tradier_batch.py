@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
-import uuid
+from .run_ids import new_run_id
 
 from .core import DataError, normalize_universe
 from .dashboard import atomic_json, read_json
@@ -29,7 +29,7 @@ def run_batch(root, args):
     from .cli import code_revision
     from .token_store import load_token, prompt_api_key, valid_token
     from .workflow import newest
-    run_id, revision = uuid.uuid4().hex, code_revision()
+    run_id, revision = new_run_id(), code_revision()
     progress, state, destination, credential, code = None, None, None, None, None
     counts = {'master_symbols': 0, 'symbols_requested': 0, 'symbols_received': 0, 'symbols_failed': 0, 'requests': 0}
     try:

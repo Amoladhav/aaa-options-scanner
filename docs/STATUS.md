@@ -12,7 +12,15 @@ native OS storage can save the current token but cannot extend its lifetime.
 Manual runs and the optional local schedule worker are user-started. No login
 automation or OS startup service exists.
 
-## Latest increment: interactive CRS tail selection
+## Latest increment: readable run IDs and Tradier diagnostics
+
+New run folders/logs use local YYYYMMDDHHMM plus a uniqueness suffix. Legacy IDs
+remain accepted; existing artifacts are not renamed. Dashboard summaries now show
+Tradier attachment and missing/failure counts. 184 isolated offline tests passed.
+The reviewed Tradier batch summary reports 554 received and 10 failed out of 564;
+attachment to the user's new dashboard remains to be verified by a user-run report.
+
+## Previous increment: interactive CRS tail selection
 
 HTML now offers top/bottom/both X-percentile controls and explicit CRS ordering,
 with field-diagnostic help and Tradier attachment counts. Presentation filters do

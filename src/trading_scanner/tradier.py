@@ -10,7 +10,7 @@ import math
 import re
 import ssl
 from urllib.parse import urlencode
-import uuid
+from .run_ids import new_run_id
 
 from .core import DataError
 from .ota_config import pairs
@@ -270,7 +270,7 @@ def run_probe(root, args):
     from .cli import code_revision
     from .dashboard import atomic_json
     from .token_store import load_token, prompt_api_key, valid_token
-    run_id, revision = uuid.uuid4().hex, code_revision()
+    run_id, revision = new_run_id(), code_revision()
     progress, code, counts = None, None, {'chains_received': 0, 'rows': 0}
     diagnostic = {}
     destination = root / 'artifacts' / 'tradier' / args.profile / run_id if args.profile in HOSTS else None

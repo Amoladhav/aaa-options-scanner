@@ -118,8 +118,8 @@ def run_process(root, args):
     from .dashboard import read_json, atomic_json
     from .progress import RunProgress
     from .cli import code_revision
-    import uuid
-    run_id, progress, code = uuid.uuid4().hex, None, None
+    from .run_ids import new_run_id
+    run_id, progress, code = new_run_id(), None, None
     profile = None
     try:
         progress = RunProgress(root / 'artifacts/logs', run_id, 'ota-process', 'ota', code_revision())

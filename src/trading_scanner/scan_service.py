@@ -7,7 +7,7 @@ import json
 import logging
 from pathlib import Path
 import sys
-import uuid
+from .run_ids import new_run_id, valid_run_id
 
 from .core import calculate, DataError, normalize_universe
 from .demo import make_snapshot
@@ -38,7 +38,7 @@ def review_summary(run_id: str, profile: str, success: bool, ranked: int, exclud
     # This allowlist excludes provider bodies, symbols, holdings, identities,
     # headers and exception text. It is the only artifact agents should inspect
     # after a public run; market-data snapshots/reports are for the user.
-    if profile not in {"synthetic", "public"} or len(run_id) != 32 or any(c not in "0123456789abcdef" for c in run_id):
+    if profile not in {"synthetic", "public"} or not valid_run_id(run_id):
         raise DataError("INVALID_REPORT_METADATA")
     if type(ranked) is not int or type(excluded) is not int or min(ranked, excluded) < 0:
         raise DataError("INVALID_REPORT_COUNTS")
@@ -53,7 +53,7 @@ def review_summary(run_id: str, profile: str, success: bool, ranked: int, exclud
 def run_scan(args, root):
     if args.command not in ("demo", "cached", "refresh"):
         raise DataError("SCAN_FAILED")
-    run_id = uuid.uuid4().hex
+    run_id = new_run_id()
     profile = "public" if args.command != "demo" else "synthetic"
     artifact_root = root / "artifacts"
     review = artifact_root / "agent-review"

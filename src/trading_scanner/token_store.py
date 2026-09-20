@@ -3,7 +3,7 @@ from contextlib import redirect_stderr, redirect_stdout
 import logging
 import re
 import sys
-import uuid
+from .run_ids import new_run_id
 
 from .core import DataError
 from .progress import RunProgress
@@ -73,7 +73,7 @@ def run_store(root, action, *, provider='ota', profile=None):
     try:
         if provider not in ('ota', 'tradier') or (provider == 'tradier' and profile not in ('sandbox', 'production')):
             raise DataError('TOKEN_STORE_UNAVAILABLE')
-        progress = RunProgress(root / 'artifacts' / 'logs', uuid.uuid4().hex, 'ota-token' if provider == 'ota' else 'tradier-token', 'ota' if provider == 'ota' else profile, code_revision())
+        progress = RunProgress(root / 'artifacts' / 'logs', new_run_id(), 'ota-token' if provider == 'ota' else 'tradier-token', 'ota' if provider == 'ota' else profile, code_revision())
         progress.begin()
         progress.start('token_store')
         if action == 'set':

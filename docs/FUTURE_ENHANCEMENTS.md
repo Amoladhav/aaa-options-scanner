@@ -373,3 +373,7 @@ regression coverage. Web endpoints and persistent column preferences remain futu
 HTML percentile-tail controls are presentation-only over saved CRS percentiles.
 Future web controls should use these same peer-group percentiles and keep display
 selection distinct from persisted candidate rules and source-fetch settings.
+
+Shared `run_ids.py` supplies timestamp-prefixed unique operation IDs for current
+CLI workflows and future web jobs. Keep legacy artifact identifiers readable and
+use explicit timestamps/timezones for chronology rather than parsing IDs.

@@ -2,7 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
-import uuid
+from .run_ids import new_run_id
 
 from .core import DataError, calculate, normalize_universe
 from .dashboard import (attach_tradier, combine, read_json, ota_checked, history_previous,
@@ -21,7 +21,7 @@ def newest(paths):
 
 def run_dashboard(root, args):
     from .cli import code_revision
-    run_id, progress = uuid.uuid4().hex, None
+    run_id, progress = new_run_id(), None
     profile, counts, code = 'synthetic' if args.command == 'dashboard-demo' else 'public', {}, None
     try:
         progress = RunProgress(root / 'artifacts' / 'logs', run_id, args.command, profile, code_revision())
@@ -83,6 +83,10 @@ def run_dashboard(root, args):
         print(f'Excel CSV (all master rows): {destination / "master.csv"}')
         print(f'Combined CSV: {destination / "combined.csv"}')
         print(f'Rankings CSV: {destination / "rankings.csv"}')
+        statuses = [row['tradier_status'] for row in result['combined']]
+        print(f'Tradier: input files={len(probes)}; attached={counts["tradier_matched"]}; failed={statuses.count("failed")}; not attempted={statuses.count("not_attempted")}; in progress={statuses.count("in_progress")}; not supplied={statuses.count("not_supplied")}.')
+        if not probes:
+            print('No Tradier file attached. Regenerate with --tradier PATH_TO_BATCH_JSON to include saved quotes.')
         print(f'OTA received: {result["ota_join_counts"]["received"]}; matched to master: {result["ota_join_counts"]["matched"]}; outside master: {result["ota_join_counts"]["outside_master"]}.')
         print(f'{counts["ranked"]} ranked; {counts["matched"]} fresh OTA matches; {counts["candidates"]} tail rows match settings (unverified metrics).')
     except (Exception, KeyboardInterrupt) as exc:

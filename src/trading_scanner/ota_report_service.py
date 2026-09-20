@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 import hashlib
 import json
-import uuid
+from .run_ids import new_run_id
 
 from .core import DataError, normalize_symbol
 from .dashboard import atomic_json
@@ -35,7 +35,7 @@ def demo_snapshot():
 
 def generate_report(root, *, source=None, options=ReportOptions(), demo=False):
     """Reads one saved snapshot; never fetches, joins, filters or changes inputs."""
-    run_id, revision = uuid.uuid4().hex, code_revision()
+    run_id, revision = new_run_id(), code_revision()
     progress, counts, code, destination = None, {}, None, None
     profile = 'synthetic' if demo else 'ota'
     try:
