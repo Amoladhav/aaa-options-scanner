@@ -1,6 +1,6 @@
 # Shared development policy
 
-Policy revision: 3 (2026-09-19). Owner-maintained; collaboration is supported.
+Policy revision: 4 (2026-09-19). Owner-maintained; collaboration is supported.
 This workspace contains independent projects. Do not initialize one umbrella
 repository or move/import project files without reviewing the intended boundary.
 Keep project instructions self-contained when a project is cloned elsewhere.
@@ -173,6 +173,41 @@ correctness from evidence about strategy performance.
   assume arbitrary terminal output is visible or safe; do not redirect raw output
   into a report and call it sanitized. A report is evidence, not permission to rerun.
 
+## Logging and progress requirements
+
+- Use one shared progress/logging component for fetches and other long-running
+  commands. Show the current operation or substep and meaningful completed/total
+  counts. Distinguish progress against a limit from known total work; completion
+  of attempts is not proof that every result is usable. Do not invent an ETA.
+- Refresh the progress display in place when stdout is an interactive terminal.
+  Keep durable stage completions, warnings, errors and summaries on separate lines.
+  Fit the terminal width; use a compact step/count display on narrow terminals.
+  Clear transient output before prompts, ordinary output, errors and shutdown.
+  Redirected output must use readable plain lines without terminal control codes.
+- Default human-facing timestamps to the runtime machine's configured local
+  timezone, with the UTC offset explicit. Retain timezone-aware UTC timestamps
+  in structured logs for correlation; use a monotonic clock for elapsed durations.
+  Never infer location from credentials or hardcode a developer's timezone.
+- Write structured per-run events with a versioned schema: timestamp, severity,
+  run ID, code revision, command/profile, stage/substep, progress, elapsed time,
+  allowlisted counts and safe error codes. Flush events promptly. Preserve previous
+  logs and document any retention policy; do not silently delete them.
+- Maintain a separate structured warning/error log, including recoverable
+  per-item failures. Print full-log and error-log paths at startup and completion,
+  plus the actual output and sanitized review-report paths when written. Handle
+  unavailable log storage with safe errors; never claim an unwritten file exists.
+- End each operation with a concise visible summary: completed, partial, failed
+  or cancelled status, elapsed time and relevant attempted/succeeded/failed counts.
+  Include requests/pages/rows when available. Preserve honest partial progress,
+  clear the display on cancellation and never report success after a failed fetch.
+- Keep secrets, headers, raw provider responses, arbitrary exception text and
+  source identifiers out of standard logs. Use fixed stages and safe error codes.
+  Ordinary logs remain user-facing; agents inspect only the intended sanitized
+  review reports under the existing execution and data-access boundaries.
+- Verify interactive redraw, redirected output, prompt handling, timezone offsets,
+  summaries, partial failures and privacy with synthetic offline tests. Document
+  which actual platforms/terminals were verified separately from mocked tests.
+
 ## Portability, documentation, and sharing
 
 - Target native Windows, Ubuntu/WSL, and macOS. Use pathlib, explicit encodings,
@@ -229,11 +264,13 @@ This is guidance, not an active model configuration or a correctness guarantee.
   Agents may inspect only those reports after public runs, not provider snapshots.
 - All scan commands and future adapters must use the shared RunProgress component
   for stdout stage/progress messages and per-run JSONL logs under artifacts/logs/.
+  Use RunProgress local-time console output, UTC/local structured events, terminal
+  redraw, separate warning/error logs and final summaries as required above.
   Use fixed stage/error codes and allowlisted numeric counts, never raw provider
   messages or exception text. Preserve the agent-review-only public intake boundary.
 - Offline tests run on Python 3.14.4 / Ubuntu. Real provider access, optional
   dependencies, and native Windows/macOS remain unverified. Hooks and CI are absent.
-- Shared policy revision 3 is copied above so standalone clones retain the rules.
+- Shared policy revision 4 is copied above so standalone clones retain the rules.
   Update copies by an explicit reviewed diff; do not weaken execution boundaries.
 
 ## Initial development mandate

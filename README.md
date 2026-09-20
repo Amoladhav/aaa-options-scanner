@@ -157,6 +157,7 @@ warnings, errors and the final summary remain on separate lines. The current ste
 is displayed before work begins. Tradier batches show expiration, underlying-quote
 or chain work while retaining the overall completed-symbol counter. Bars show
 per-stage completion, not a runtime estimate or proof that all data is usable.
+Narrow terminals use a compact step/count/percentage display to avoid wrapping.
 
 Stdout timestamps default to the **runtime machine's local timezone**, including
 its UTC offset. Configure the operating system/WSL timezone to your preference;
@@ -201,8 +202,9 @@ credentials. Provider stdout/stderr remain suppressed where configured. No gener
 HTTP tracing is enabled. If log creation itself fails, files may be unavailable;
 check the safe terminal error and local permissions/disk space.
 
-Future commands must use `RunProgress` and fixed stages/error codes with allowlisted
-numeric counts. Agents still inspect only intended `artifacts/agent-review/`
+These are project requirements in [AGENTS.md](AGENTS.md#logging-and-progress-requirements),
+including for future fetch adapters. Commands must use `RunProgress` and fixed
+stages/error codes with allowlisted numeric counts. Agents still inspect only intended `artifacts/agent-review/`
 reports after user-run fetches; ordinary logs remain user-facing files.
 
 ## Download public data (user-run)
