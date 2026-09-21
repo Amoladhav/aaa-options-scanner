@@ -50,6 +50,11 @@ pins prior sessions and supports `history-list`, `history-show`, `history-compar
 `report-build` and `report-replay`. Development is at C4a; legacy history import and
 standalone daily workflow integration remain C4b. New threads should start with
 [the resume checkpoint](docs/RESUME_PLAN.md) and [current status](docs/STATUS.md).
+Architecture targets **CLI, local web and future cloud deployment** through shared
+application services. Cloud is planned, not operational today. The sequence adds
+secure token onboarding after backup/restore and before saved screeners/fetch
+controls; major releases require recorded cross-platform checks. See the
+[architecture and release contract](docs/FUTURE_ENHANCEMENTS.md#three-target-contract-and-release-gates-2026-09-21).
 Target shared 8–16 GB RAM machines running TradingView/TOS and other tools;
 realistic resource acceptance is still pending. See
 [measurements and limits](docs/LOCAL_WEB.md#resource-use-and-shared-machine-constraint).

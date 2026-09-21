@@ -333,6 +333,14 @@ This is guidance, not an active model configuration or a correctness guarantee.
 
 ## Scanner architecture roadmap
 
+- Required delivery targets are CLI, local web and future cloud deployment, backed
+  by shared domain/application services. Cloud implementation remains C8; do not
+  claim current cloud readiness or infer deployment authorization. Keep README,
+  STATUS, RESUME_PLAN, FUTURE_ENHANCEMENTS and affected setup/feature/decision docs
+  current in every increment. Place secure token onboarding after C5 and before
+  saved screeners/fetch controls. Apply native-platform checks at major releases
+  and earlier for platform-sensitive changes; record untested platforms explicitly.
+
 - Resume from [RESUME_PLAN.md](docs/RESUME_PLAN.md) and its current acceptance
   checkpoint, not the historical initial mandate below. At the 2026-09-20 pause,
   C1/C3 and C3a are implemented, C2 docs prepared, and synthetic report visibility

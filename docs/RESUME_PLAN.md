@@ -1,6 +1,6 @@
 # Resume checkpoint: credentials, history and local web foundations
 
-Updated: 2026-09-20. This is the next-thread entry point. All phases below are
+Updated: 2026-09-21. This is the next-thread entry point. All phases below are
 planned unless explicitly marked complete. Do not install, authenticate, migrate
 real data or start a server merely by reading this plan.
 
@@ -9,6 +9,20 @@ contains checked official sources, code pointers, stack recommendations and open
 questions. Read it before implementing; findings are dated, not live guarantees.
 
 ## Start here next thread
+
+Agreed direction (2026-09-21): one shared implementation must serve CLI, local web
+and future cloud deployment. Cloud is a required target; implementation and
+publishing remain deferred to C8. Keep all affected Markdown documentation current
+in each increment. See [three-target contract and release gates](FUTURE_ENHANCEMENTS.md#three-target-contract-and-release-gates-2026-09-21).
+
+Updated sequence: C4a Windows verification → C4b history integration → C5 recovery
+→ C6a secure token onboarding → C6b saved screeners/preferences → C6c durable fetch
+controls → cross-platform release acceptance → C7 providers → C8 cloud delivery.
+Run relevant native-platform checks during these increments, not only at release.
+Major releases require explicit Windows, Ubuntu/WSL and macOS evidence or a stated
+untested-platform limitation. Cloud adds its own deployment acceptance later.
+Secure onboarding reuses C1/C2; CLI-first versus including a local-web Settings
+page remains an open UX choice, not a blocker to shared backend design.
 
 Current checkpoint: the user accepted the native Windows dashboard and authorized
 continuing. Windows/Python 3.11: 224 core tests passed with one expected symlink

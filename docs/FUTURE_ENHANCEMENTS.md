@@ -1,23 +1,63 @@
 # Future enhancements and architecture plan
 
-Updated: 2026-09-20. Status: planning baseline; proposed phases below are not
+Updated: 2026-09-21. Status: planning baseline; proposed phases below are not
 implemented merely because they appear here. Owner: project user. Implementation
 priority changes with the user's requests; this document is not permission to
 perform credentialed operations, publish, enable hosted CI or deploy.
 
 ## Product direction and current boundary
 
-1. Now: strictly one user's personal local workspace, operated through the CLI
-   and saved HTML/CSV reports. Preserve the working scanner while improving it.
-2. Next: a local browser interface using the same application services and data.
-3. Later, only after an explicit request: hosting and controlled sharing with
-   other people. Multi-user access is a separate product and security milestone.
+The required product targets are CLI, local web and cloud deployment, using one
+shared calculation and application-service implementation. CLI and local web are
+implemented in stages; cloud is a required future delivery target, not a verified
+capability today. Cloud deployment and multi-user sharing are separate decisions:
+a personal cloud workspace still needs remote access controls and secure operation.
+Implementation/deployment of hosting remains C8 and requires explicit direction.
 
 No cloud accounts, paid services, remote telemetry, hosted CI, public server,
 registration system or automatic background market-data collection in the current
 phase. A local web app must start on loopback only. User actions authorize fetches;
 page loads and merely finding a stored credential do not. Agents continue to use
 synthetic/offline verification, never credentialed provider requests.
+
+## Three-target contract and release gates (2026-09-21)
+
+- CLI, local web and planned cloud web/API adapters call shared use-case services.
+  Calculations, validation, report selection, history and provider rules must not
+  be reimplemented per interface. Track deliberate interface gaps explicitly.
+- Pass workspace context, storage, credential resolution, progress and cancellation
+  explicitly. Domain/services must not assume a terminal, interactive prompt,
+  developer path, local OS keychain or one global user's environment.
+- Local composition can use files/SQLite and OS credential stores. Cloud composition
+  must supply deployment-appropriate persistent storage and server-side secret
+  access. Those implementations, migrations and worker coordination remain planned;
+  using SQLite locally is not evidence that cloud operation already works.
+- Remote access requires authentication, authorization, TLS, workspace isolation,
+  safe secret handling, recovery and operational validation before deployment.
+  Do not expose the current loopback app as a cloud-ready server. Multi-user
+  isolation and provider data rights add separate requirements if sharing is chosen.
+- Secure token onboarding is C6a, after C5 recovery and before saved screeners/fetch
+  controls. Reuse C1 and prepared C2 guidance for add/replace/remove, hidden input,
+  format checks, user-run authentication checks and expiry handling. CLI/local-web
+  control scope is still to be selected; backend validation must be shared.
+  Cloud callers must use noninteractive scoped secret resolution; never a global
+  per-user environment mutation or browser-returned stored token. OTA renewal is
+  user-run and cannot be solved by storage alone.
+- Major releases require recorded checks on native Windows PowerShell, Ubuntu/WSL,
+  and macOS: offline suites, startup/shutdown, report/filter/export workflows,
+  history migration/replay/recovery, and credential lifecycle where supported.
+  Run affected platform checks earlier for dependency, storage, startup or
+  credential changes. Record OS/Python/dependencies/revision and any skips.
+  WSL success does not establish native Windows or macOS compatibility. If a
+  platform is unavailable, mark its acceptance pending rather than claim support.
+- When cloud implementation arrives, add deployment-specific parity, persistence,
+  authentication/isolation and restart/job-recovery checks. Local OS checks do not
+  establish cloud readiness. Hosted CI remains disabled pending explicit approval.
+
+Keep README, STATUS, RESUME_PLAN, this planner, relevant setup/feature docs and
+consequential decision notes synchronized in each increment. Separate implemented,
+offline-tested, user-verified and planned behavior; record platform evidence and
+remaining interface gaps as work progresses.
 
 ## Architectural decisions
 
@@ -30,7 +70,8 @@ interface does not require a second scanner implementation.
 ```mermaid
 flowchart TD
     CLI[CLI adapter] --> APP[Application services]
-    WEB[Future local web adapter] --> APP
+    WEB[Local web adapter] --> APP
+    CLOUD[Planned cloud web/API adapter] --> APP
     APP --> DOMAIN[Pure calculations and selection rules]
     APP --> PORTS[Small explicit I/O contracts]
     PORTS --> PROVIDERS[Provider adapters]

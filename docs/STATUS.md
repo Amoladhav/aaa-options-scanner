@@ -1,6 +1,15 @@
 # Project status
 
-Updated: 2026-09-20. Phase: C4a catalog CRS history implemented; C4b remains.
+Updated: 2026-09-21. Phase: C4a catalog CRS history implemented; C4b remains.
+
+Architecture/sequence clarification (2026-09-21, documentation only): CLI,
+local web and cloud are required delivery targets sharing application services.
+Cloud implementation remains C8; remote/multi-user operation is not implemented
+or verified. C6 is sequenced as secure token onboarding, saved screeners, then
+fetch controls, after C5 recovery. Major releases require cross-platform acceptance,
+with relevant checks earlier for platform-sensitive changes. The specific Windows
+failures were fixed; this is not a guarantee against future compatibility failures.
+Keep affected Markdown documentation synchronized with each increment.
 
 The user confirmed native Windows/Python 3.11 core tests (224, one expected
 symlink skip), web tests (19 in 7.076s), successful PowerShell server/browser
