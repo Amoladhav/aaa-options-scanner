@@ -170,7 +170,8 @@ After the synthetic preview, test your saved-data report yourself:
 Native Windows/Python 3.11: user confirmed 224 core tests (one expected symlink
 skip), 19 web tests, PowerShell startup, browser visibility and positive dashboard
 feedback before C4a. Actual saved quotes, Excel/TradingView imports, realistic
-resources and macOS remain unverified. C4a/C4b native Windows rerun is pending.
+resources and macOS remain unverified. C4a/C4b native Windows verification is
+deferred to major-release acceptance; it does not gate C5.
 
 New reports now use canonical prior-session CRS history and retain a link to the
 exact prior report. They flag changed master membership and replayed evaluation

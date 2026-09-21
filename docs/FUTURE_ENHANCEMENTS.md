@@ -46,8 +46,9 @@ synthetic/offline verification, never credentialed provider requests.
 - Major releases require recorded checks on native Windows PowerShell, Ubuntu/WSL,
   and macOS: offline suites, startup/shutdown, report/filter/export workflows,
   history migration/replay/recovery, and credential lifecycle where supported.
-  Run affected platform checks earlier for dependency, storage, startup or
-  credential changes. Record OS/Python/dependencies/revision and any skips.
+  Native Windows verification stays at major releases, including platform-sensitive
+  changes; it is not an intermediate development gate. Continue guarded local
+  offline checks each increment. Record OS/Python/dependencies/revision and skips.
   WSL success does not establish native Windows or macOS compatibility. If a
   platform is unavailable, mark its acceptance pending rather than claim support.
 - When cloud implementation arrives, add deployment-specific parity, persistence,

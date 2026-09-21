@@ -7,7 +7,8 @@ local web and cloud are required delivery targets sharing application services.
 Cloud implementation remains C8; remote/multi-user operation is not implemented
 or verified. C6 is sequenced as secure token onboarding, saved screeners, then
 fetch controls, after C5 recovery. Major releases require cross-platform acceptance,
-with relevant checks earlier for platform-sensitive changes. The specific Windows
+with native Windows verification reserved for those major releases. Local guarded
+offline checks continue each increment. The specific Windows
 failures were fixed; this is not a guarantee against future compatibility failures.
 Keep affected Markdown documentation synchronized with each increment.
 
@@ -29,7 +30,8 @@ show limited legacy provenance. C5 recovery and C6 settings/jobs follow. No real
 migration, provider operation, scheduler activation or dependency install ran.
 For C4a, 238 guarded core and 20 guarded web tests pass on Ubuntu/Python 3.14.4.
 C4b: 249 guarded core and 21 guarded web tests pass on Ubuntu/Python 3.14.4.
-Native Windows/macOS C4 verification and real legacy import acceptance remain pending.
+Native Windows C4 verification is deferred to major-release acceptance and does
+not gate C5. macOS verification and real legacy import acceptance remain pending.
 
 The user reviewed C3a positively and approved proceeding with C3b. The localhost
 dashboard now supports column-versus-value and column-versus-scaled-column rules,
@@ -47,7 +49,7 @@ invalid-apply recovery and export parity. A 600-row synthetic report passes with
 realistic shared-machine resource use remain pending. No live server/browser,
 provider access, credential read or real-data migration ran this increment.
 
-Next: native Windows C4 checks, C5 backup/restore and C6
+Next: C5 backup/restore and C6
 saved screeners/settings/durable jobs. Finviz/IBKR stays after C6 acceptance.
 Scheduling stays disabled. See [RESUME_PLAN.md](RESUME_PLAN.md).
 

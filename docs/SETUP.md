@@ -205,5 +205,6 @@ hardware acceptance remains pending.
 
 C4 legacy history migration is an explicit user-run step after setup; see
 [preview/import/rollback commands](CRS_HISTORY.md#explicit-legacy-import-c4b).
-Opening the dashboard does not import old daily files. Verify the guarded suites
-on the selected native platform before applying this storage upgrade to real data.
+Opening the dashboard does not import old daily files. Guarded local offline
+checks continue during development; native Windows verification is reserved for
+major-release acceptance and does not gate C5 implementation.

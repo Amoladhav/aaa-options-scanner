@@ -338,8 +338,9 @@ This is guidance, not an active model configuration or a correctness guarantee.
   claim current cloud readiness or infer deployment authorization. Keep README,
   STATUS, RESUME_PLAN, FUTURE_ENHANCEMENTS and affected setup/feature/decision docs
   current in every increment. Place secure token onboarding after C5 and before
-  saved screeners/fetch controls. Apply native-platform checks at major releases
-  and earlier for platform-sensitive changes; record untested platforms explicitly.
+  saved screeners/fetch controls. Keep native Windows verification at major
+  releases, not as an intermediate implementation gate. Continue local offline
+  checks each increment and record untested platforms explicitly.
 
 - Resume from [RESUME_PLAN.md](docs/RESUME_PLAN.md) and its current acceptance
   checkpoint, not the historical initial mandate below. At the 2026-09-20 pause,
@@ -348,7 +349,8 @@ This is guidance, not an active model configuration or a correctness guarantee.
   cross-column/AND/OR filters are now implemented; the user accepted native Windows
   startup/tests and gave positive dashboard feedback. C4a catalog CRS history/replay
   is implemented. C4b legacy preview/import/rollback and standalone integration are
-  implemented; resume with native Windows C4 checks, then C5–C6. Specific saved-data/import acceptance
+  implemented; resume at C5 recovery, then C6. Native Windows checks are deferred
+  to major-release acceptance. Specific saved-data/import acceptance
   gaps remain in STATUS.md. Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.
 - Target shared 8–16 GB RAM machines running other trading applications. Preserve
   demand-driven operation and assess resource use before adding background work;

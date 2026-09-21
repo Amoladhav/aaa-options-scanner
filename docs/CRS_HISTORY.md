@@ -101,7 +101,8 @@ Validation: synthetic migration/rollback, atomic publication failure, immutable
 rows, same-session reruns, profile/method/calendar isolation, missing/corrupted
 inputs, changed membership, exclusions, replay parity and CLI review privacy.
 Native Windows core/web tests and dashboard acceptance were confirmed before C4a;
-this increment still needs native Windows verification. macOS remains unverified.
+native Windows verification of C4 is deferred to major-release acceptance, not
+a gate before C5. macOS remains unverified.
 
 ## Explicit legacy import (C4b)
 

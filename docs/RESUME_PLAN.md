@@ -15,10 +15,11 @@ and future cloud deployment. Cloud is a required target; implementation and
 publishing remain deferred to C8. Keep all affected Markdown documentation current
 in each increment. See [three-target contract and release gates](FUTURE_ENHANCEMENTS.md#three-target-contract-and-release-gates-2026-09-21).
 
-Updated sequence: C4a Windows verification → C4b history integration → C5 recovery
+Updated sequence: C4a/C4b history (implemented) → C5 recovery
 → C6a secure token onboarding → C6b saved screeners/preferences → C6c durable fetch
 controls → cross-platform release acceptance → C7 providers → C8 cloud delivery.
-Run relevant native-platform checks during these increments, not only at release.
+Native Windows verification is reserved for major releases, not intermediate
+checkpoints. Continue guarded local offline checks during each increment.
 Major releases require explicit Windows, Ubuntu/WSL and macOS evidence or a stated
 untested-platform limitation. Cloud adds its own deployment acceptance later.
 Secure onboarding reuses C1/C2; CLI-first versus including a local-web Settings
@@ -32,8 +33,9 @@ reports, history inspection and exact-code replay. See [CRS_HISTORY.md](CRS_HIST
 C4b is implemented: explicit legacy preview/import/rollback and standalone daily
 workflow integration through shared services. 249 core and 21 web tests pass on
 Ubuntu/Python 3.14.4. Native Windows/macOS and actual legacy imports remain pending.
-Next is C5 backup/restore after the C4 native check; do not auto-start C6/providers.
-C4a native Windows verification is pending. Positive synthetic dashboard feedback
+Next is C5 backup/restore; native Windows verification does not gate this work.
+Do not auto-start C6/providers.
+C4 native Windows verification is deferred to major-release acceptance. Positive synthetic dashboard feedback
 does not establish real saved quote coverage, Excel/TradingView imports or realistic
 resource acceptance. No real database/source migration was executed by agents.
 Current C4a offline evidence: 238 core and 20 web tests pass on Ubuntu/Python 3.14.4.
@@ -54,7 +56,7 @@ Current C4a offline evidence: 238 core and 20 web tests pass on Ubuntu/Python 3.
    resource measurements and full-report-loading limits. No provider operations,
    scheduling activation or real-data migration ran. C2 Infisical/Tradier
    acceptance and remaining browser/native OS checks are pending.
-4. Verify C4 on native Windows, then continue C5 backup/restore
+4. Continue C5 backup/restore
    and C6 settings/durable fetch lifecycle. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
    User performs pushes and every credentialed operation. C7 remains after C6
@@ -64,7 +66,8 @@ Suggested next-thread prompt:
 
 > Read AGENTS.md, docs/RESUME_PLAN.md, docs/STATUS.md and docs/CRS_HISTORY.md.
 > C4a/C4b catalog history, legacy import/rollback and standalone integration are
-> implemented. Check native Windows acceptance, then resume C5 backup/restore. Keep raw inputs
+> implemented. Resume C5 backup/restore; defer native Windows verification to
+> major releases. Keep raw inputs
 > immutable, provider operations user-run, scheduling/hosted CI disabled, and
 > native OS verification distinct from guarded synthetic checks. C5 follows C4.
 
