@@ -2,6 +2,7 @@
 
 No site initialization, sockets, subprocesses, real environment or user DB access.
 Allow only reviewed pinned package subtrees, never the full site-packages folder.
+Click's native Windows console adapter is replaced; real console I/O is not tested.
 """
 from pathlib import Path
 import os
@@ -74,6 +75,15 @@ if hasattr(os,'environb'):
 sys.dont_write_bytecode=True
 sys.path[:0]=[str(ROOT/'src'),str(DEPS)]
 sys.addaudithook(guard)
+# Click 8.5.0's _compat imports this one function on Windows. Route tests do
+# not exercise native console I/O: use its ordinary-stream fallback instead of
+# loading kernel32/shell32 via ctypes. Install on every OS so the substitute is
+# regression-tested on Linux too. Never preload native APIs or relax the guard.
+console=types.ModuleType('click._winconsole')
+def synthetic_console_stream(stream, encoding, errors):
+    return None
+console._get_windows_console_stream=synthetic_console_stream
+sys.modules['click._winconsole']=console
 boundary=types.ModuleType('offline_boundary');boundary.temp=Path(TEMP.name);boundary.guard=guard
 sys.modules['offline_boundary']=boundary
 suite=unittest.defaultTestLoader.discover(str(ROOT/'web_tests'),pattern='test_*.py')

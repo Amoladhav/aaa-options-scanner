@@ -17,6 +17,15 @@ All four HTML/JSON reads in that test module now explicitly use UTF-8. Existing
 Unicode column-label and CSV assertions are retained. All 224 core tests pass on
 Ubuntu/Python 3.14.4; native Windows confirmation is still pending.
 
+The user then confirmed native Windows/Python 3.11 core results: 224 tests in
+4.345s, OK (skipped=1). The web suite failed at import because Click's Windows
+console adapter loads ctypes DLLs, denied by the offline guard. Reviewed Click
+8.5.0 `_compat` and `_winconsole`: in-process tests now substitute the adapter's
+ordinary-stream fallback without importing ctypes or granting native API access.
+Boundary tests cover the substitute and continued DLL-load/symbol-lookup denial.
+18 web tests pass on Ubuntu/Python 3.14.4; actual native console behavior is outside
+this test's coverage and Windows web rerun is pending. No application change.
+
 ## Initial validation
 
 Environment: Ubuntu / Python 3.14.4. No optional packages installed, no incoming

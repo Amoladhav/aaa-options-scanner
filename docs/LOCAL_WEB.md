@@ -182,6 +182,10 @@ settings and durable user-initiated fetch lifecycle before its acceptance gate.
 
 ## Offline checks and recovery limits
 
+The offline web test runner substitutes Click's native console adapter with its
+ordinary-stream fallback; DLL access remains blocked. These in-process tests do
+not verify Windows console I/O. Verify that separately with the demo above.
+
 Core suite:
 
 ```bash

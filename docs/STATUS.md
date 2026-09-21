@@ -10,7 +10,12 @@ guarded core tests pass on Ubuntu/Python 3.14.4, including the real-link check.
 Native Windows rerun is pending; no administrator session is required for testing.
 The next reported failure exposed a locale-default HTML read in the combined raw
 report test. Its HTML/JSON reads now explicitly use UTF-8, matching the writers;
-224 core tests pass on Ubuntu. The Windows rerun remains pending.
+224 core tests pass on Ubuntu. The user then confirmed 224 core tests in 4.345s
+on native Windows/Python 3.11: OK, with one expected symlink-privilege skip.
+The Windows web suite failed during Click's native console import because ctypes
+is blocked. Its runner now substitutes Click's plain-stream fallback while keeping
+the native API guard intact. 18 web tests pass on Ubuntu; Windows web rerun and
+actual console/browser operation remain pending. This is a test-runner change.
 
 The user reviewed C3a positively and approved proceeding with C3b. The localhost
 dashboard now supports column-versus-value and column-versus-scaled-column rules,

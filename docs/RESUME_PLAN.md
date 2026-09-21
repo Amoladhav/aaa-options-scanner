@@ -17,6 +17,12 @@ isolating the real-symlink check and skipping only unavailable creation privileg
 The combined raw report test also now reads HTML/JSON explicitly as UTF-8 after
 a Windows assertion failed on the middle-dot column label. Copy this corrected
 test into the Windows test checkout before rerunning; application output is unchanged.
+The user has now confirmed 224 core tests pass on Windows in 4.345s (one expected
+symlink skip). Next, copy the corrected `tools/test_web.py` and
+`web_tests/test_boundary.py` into the Windows checkout and rerun the web suite.
+The runner substitutes Click's native console adapter for in-process tests;
+ctypes access remains denied. 18 web tests pass on Ubuntu. Native Windows web
+tests and the actual demo console/browser check are still pending; keep C4 on hold.
 
 1. Read project AGENTS.md, this file, STATUS.md and the relevant section of
    FUTURE_ENHANCEMENTS.md. Check Git status and preserve unrelated changes.
