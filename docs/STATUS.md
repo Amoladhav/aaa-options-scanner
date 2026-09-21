@@ -8,6 +8,9 @@ WinError 1314. The real-link check is now separate and skips only that privilege
 error; other catalog checks and a simulated link-policy check still run. All 224
 guarded core tests pass on Ubuntu/Python 3.14.4, including the real-link check.
 Native Windows rerun is pending; no administrator session is required for testing.
+The next reported failure exposed a locale-default HTML read in the combined raw
+report test. Its HTML/JSON reads now explicitly use UTF-8, matching the writers;
+224 core tests pass on Ubuntu. The Windows rerun remains pending.
 
 The user reviewed C3a positively and approved proceeding with C3b. The localhost
 dashboard now supports column-versus-value and column-versus-scaled-column rules,

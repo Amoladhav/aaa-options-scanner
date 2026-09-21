@@ -14,6 +14,9 @@ Current hold: user is testing natively in Windows PowerShell/Python 3.11 before
 further development. A reported WinError 1314 in the catalog test is addressed by
 isolating the real-symlink check and skipping only unavailable creation privileges.
 224 core tests pass on Ubuntu; Windows rerun is pending. Resume testing first.
+The combined raw report test also now reads HTML/JSON explicitly as UTF-8 after
+a Windows assertion failed on the middle-dot column label. Copy this corrected
+test into the Windows test checkout before rerunning; application output is unchanged.
 
 1. Read project AGENTS.md, this file, STATUS.md and the relevant section of
    FUTURE_ENHANCEMENTS.md. Check Git status and preserve unrelated changes.

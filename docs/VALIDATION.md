@@ -11,6 +11,12 @@ including actual symlink rejection. Native Windows rerun remains pending (expect
 one explicitly reported skip when link creation is unavailable). Application code
 and offline guards are unchanged; no dependency or provider operations ran.
 
+Windows follow-up: the combined raw report test failed to find a Unicode HTML
+column label. The writer already uses UTF-8; the test used locale-default decoding.
+All four HTML/JSON reads in that test module now explicitly use UTF-8. Existing
+Unicode column-label and CSV assertions are retained. All 224 core tests pass on
+Ubuntu/Python 3.14.4; native Windows confirmation is still pending.
+
 ## Initial validation
 
 Environment: Ubuntu / Python 3.14.4. No optional packages installed, no incoming
