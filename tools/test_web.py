@@ -37,6 +37,11 @@ class SyntheticEnvironment(dict):
             return '0'
         if key == 'PYREPL_TRACE':
             return None
+        # Python 3.11 platform.system() also probes machine architecture on
+        # Windows. Report it as unknown: Waitress only needs the OS name.
+        # Never consult the real environment or invent an x86/ARM architecture.
+        if key in ('PROCESSOR_ARCHITEW6432', 'PROCESSOR_ARCHITECTURE'):
+            return ''
         raise PermissionError('OFFLINE_ENVIRONMENT_DENIED')
     def __getitem__(self,key):
         raise PermissionError('OFFLINE_ENVIRONMENT_DENIED')

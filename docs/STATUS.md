@@ -16,6 +16,11 @@ The Windows web suite failed during Click's native console import because ctypes
 is blocked. Its runner now substitutes Click's plain-stream fallback while keeping
 the native API guard intact. 18 web tests pass on Ubuntu; Windows web rerun and
 actual console/browser operation remain pending. This is a test-runner change.
+The subsequent Windows traceback identified Python 3.11 architecture environment
+probes during Waitress import. The runner now supplies empty synthetic values for
+the two exact architecture keys, without accessing the real environment. Regression
+coverage checks the fallback and rejects other environment reads. 19 web tests
+pass on Ubuntu; Windows confirmation remains pending.
 
 The user reviewed C3a positively and approved proceeding with C3b. The localhost
 dashboard now supports column-versus-value and column-versus-scaled-column rules,

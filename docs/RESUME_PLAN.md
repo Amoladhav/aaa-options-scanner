@@ -23,6 +23,9 @@ symlink skip). Next, copy the corrected `tools/test_web.py` and
 The runner substitutes Click's native console adapter for in-process tests;
 ctypes access remains denied. 18 web tests pass on Ubuntu. Native Windows web
 tests and the actual demo console/browser check are still pending; keep C4 on hold.
+Latest fix: Python 3.11's Windows architecture probes receive two empty synthetic
+environment values. No real environment access is allowed. Copy the updated runner
+and boundary test again; expected web suite count is now 19. Windows rerun pending.
 
 1. Read project AGENTS.md, this file, STATUS.md and the relevant section of
    FUTURE_ENHANCEMENTS.md. Check Git status and preserve unrelated changes.

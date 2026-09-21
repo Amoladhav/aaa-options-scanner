@@ -26,6 +26,14 @@ Boundary tests cover the substitute and continued DLL-load/symbol-lookup denial.
 18 web tests pass on Ubuntu/Python 3.14.4; actual native console behavior is outside
 this test's coverage and Windows web rerun is pending. No application change.
 
+The next complete Windows traceback identified Python 3.11 `platform.system()`
+probing `PROCESSOR_ARCHITEW6432` and `PROCESSOR_ARCHITECTURE` during Waitress import.
+The synthetic environment now returns empty strings for these exact keys, reporting
+unknown architecture without consulting real values. A regression checks the
+stdlib fallback (with WMI unavailable), rejection of other keys and Windows OS
+identification on native Windows. Ubuntu/Python 3.14.4: 19 web and 224 core tests
+pass. Native Windows rerun remains pending; no application or dependency change.
+
 ## Initial validation
 
 Environment: Ubuntu / Python 3.14.4. No optional packages installed, no incoming
