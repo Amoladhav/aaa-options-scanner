@@ -349,7 +349,9 @@ This is guidance, not an active model configuration or a correctness guarantee.
   cross-column/AND/OR filters are now implemented; the user accepted native Windows
   startup/tests and gave positive dashboard feedback. C4a catalog CRS history/replay
   is implemented. C4b legacy preview/import/rollback and standalone integration are
-  implemented; resume at C5 recovery, then C6. Native Windows checks are deferred
+  implemented. C5 catalog backup/verify/restore is also implemented; see
+  docs/RECOVERY.md for catalog-only scope. Resume at C6a secure token onboarding.
+  Native Windows checks are deferred
   to major-release acceptance. Specific saved-data/import acceptance
   gaps remain in STATUS.md. Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.
 - Target shared 8–16 GB RAM machines running other trading applications. Preserve

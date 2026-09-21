@@ -177,8 +177,9 @@ New reports now use canonical prior-session CRS history and retain a link to the
 exact prior report. They flag changed master membership and replayed evaluation
 time. Older reports remain readable. See [CRS history](CRS_HISTORY.md) for migration,
 CLI parity and replay limits. C4b now shares this history with standalone daily
-reports and labels imported legacy provenance; import controls are CLI-only. C5
-supplies backup/restore and C6 supplies saved preferences and durable fetch jobs.
+reports and labels imported legacy provenance; import controls are CLI-only.
+[C5 catalog recovery](RECOVERY.md) now provides CLI backup/verify/restore; web
+recovery controls remain unimplemented. C6 adds saved preferences and durable jobs.
 
 ## Offline checks and recovery limits
 
@@ -212,7 +213,8 @@ argument is `--deps artifacts/web-test-deps`; it is not a packaged dependency co
 
 Missing/changed registered files fail closed. Stop and run the user-run
 `catalog-reconcile`; do not edit catalog JSON/SQL to suppress the mismatch.
-C5 restore is still pending. Keep originals and catalog private; do not delete
+[C5 catalog recovery](RECOVERY.md) is available through CLI. Keep originals and
+catalog private; do not delete
 inputs or adopt orphan files automatically. No filesystem browser, raw capture
 route, entire-artifact static mount, credential entry form or provider endpoint is
 available. Loopback, strict Host/Origin, CSRF, escaping and response headers are

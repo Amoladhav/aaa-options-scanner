@@ -515,3 +515,18 @@ Schema 3 retains import evidence and report pins after batch deactivation.
 No automatic backfill, real database migration, scheduler or new
 provider is authorized by this implementation. C5 recovery follows completed C4;
 C6 saved selection revisions/settings/jobs and C7 providers remain later phases.
+
+
+## Adopted increment: catalog recovery (C5)
+
+The shared `RecoveryService` and explicit CLI backup/verify/restore commands now
+snapshot SQLite and its registered immutable file set, publish a versioned hash
+manifest last, and restore/migrate into a fresh workspace. Recovery excludes
+credentials, unindexed captures, logs, personal files and the separate scheduler;
+future settings/job increments must define their own recovery inclusion contract.
+No automatic backup, deletion, in-place overwrite, hosting or provider call is
+introduced. CLI controls are implemented; web controls remain an interface gap.
+See [recovery](RECOVERY.md) and [decision 0005](decisions/0005-catalog-recovery.md).
+264 guarded core and 21 web tests pass on Ubuntu/Python 3.14.4. Real-data drills and
+native-platform acceptance remain pending, with Windows checks at major releases.
+Next is C6a secure token onboarding, then C6b screeners/preferences and C6c jobs.

@@ -15,7 +15,7 @@ and future cloud deployment. Cloud is a required target; implementation and
 publishing remain deferred to C8. Keep all affected Markdown documentation current
 in each increment. See [three-target contract and release gates](FUTURE_ENHANCEMENTS.md#three-target-contract-and-release-gates-2026-09-21).
 
-Updated sequence: C4a/C4b history (implemented) → C5 recovery
+Updated sequence: C4a/C4b history and C5 catalog recovery (implemented)
 → C6a secure token onboarding → C6b saved screeners/preferences → C6c durable fetch
 controls → cross-platform release acceptance → C7 providers → C8 cloud delivery.
 Native Windows verification is reserved for major releases, not intermediate
@@ -33,8 +33,10 @@ reports, history inspection and exact-code replay. See [CRS_HISTORY.md](CRS_HIST
 C4b is implemented: explicit legacy preview/import/rollback and standalone daily
 workflow integration through shared services. 249 core and 21 web tests pass on
 Ubuntu/Python 3.14.4. Native Windows/macOS and actual legacy imports remain pending.
-Next is C5 backup/restore; native Windows verification does not gate this work.
-Do not auto-start C6/providers.
+C5 catalog backup/verify/restore is implemented through shared services and CLI.
+264 core and 21 web tests pass on Ubuntu/Python 3.14.4. See [recovery](RECOVERY.md)
+for its catalog-only scope and excluded state. Next is C6a secure token onboarding;
+native Windows verification remains at major releases. Do not auto-start providers.
 C4 native Windows verification is deferred to major-release acceptance. Positive synthetic dashboard feedback
 does not establish real saved quote coverage, Excel/TradingView imports or realistic
 resource acceptance. No real database/source migration was executed by agents.
@@ -56,8 +58,8 @@ Current C4a offline evidence: 238 core and 20 web tests pass on Ubuntu/Python 3.
    resource measurements and full-report-loading limits. No provider operations,
    scheduling activation or real-data migration ran. C2 Infisical/Tradier
    acceptance and remaining browser/native OS checks are pending.
-4. Continue C5 backup/restore
-   and C6 settings/durable fetch lifecycle. C3 is not a fetch-job implementation.
+4. Continue C6a secure token onboarding, then saved screeners/preferences and
+   durable fetch lifecycle. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
    User performs pushes and every credentialed operation. C7 remains after C6
    user acceptance; no hosting or hosted CI activation is implied.
@@ -66,8 +68,8 @@ Suggested next-thread prompt:
 
 > Read AGENTS.md, docs/RESUME_PLAN.md, docs/STATUS.md and docs/CRS_HISTORY.md.
 > C4a/C4b catalog history, legacy import/rollback and standalone integration are
-> implemented. Resume C5 backup/restore; defer native Windows verification to
-> major releases. Keep raw inputs
+> implemented, as is C5 catalog recovery. Read docs/RECOVERY.md and resume C6a
+> secure token onboarding; native Windows verification stays at major releases. Keep raw inputs
 > immutable, provider operations user-run, scheduling/hosted CI disabled, and
 > native OS verification distinct from guarded synthetic checks. C5 follows C4.
 
@@ -289,7 +291,7 @@ Gate: same-session reruns retained, canonical selection deterministic, gaps and
 master changes visible, source replay parity, no lookahead in prior-session joins,
 legacy import rerun safe. Test with synthetic fixture databases only.
 
-### C5 — Backup, restore and Git hygiene
+### C5 — Backup, restore and Git hygiene (catalog recovery implemented)
 
 - Version backup manifests with DB schema/version, artifact hashes and referenced
   file list. Use SQLite backup API or a coordinated quiescent backup; copying only
@@ -303,6 +305,13 @@ legacy import rerun safe. Test with synthetic fixture databases only.
 Gate: restore drill, corrupted/missing artifact detection, migration-after-restore,
 no secret inclusion, reviewed staged scan. OS/disk encryption and backup destination
 remain user configuration; SQLite itself is not automatically encrypted.
+
+C5 implementation: `catalog-backup`, `catalog-backup-verify` and `catalog-restore`
+use shared services with a versioned manifest, SQLite snapshot and streaming hashes.
+Restore requires a new workspace and migrates only the copied catalog. This covers
+registered catalog state; scheduler/personal files/unindexed captures and credentials
+are excluded, not silently considered protected. No background backup or deletion.
+Real-data drills and native-platform release acceptance remain pending.
 
 ### C6 — Complete and validate the personal localhost workflow
 

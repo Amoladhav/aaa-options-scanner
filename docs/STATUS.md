@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-09-21. Phase: C4a/C4b history implemented; C5 recovery next.
+Updated: 2026-09-21. Phase: C5 catalog recovery implemented; C6a secure token onboarding next.
 
 Architecture/sequence clarification (2026-09-21, documentation only): CLI,
 local web and cloud are required delivery targets sharing application services.
@@ -49,8 +49,16 @@ invalid-apply recovery and export parity. A 600-row synthetic report passes with
 realistic shared-machine resource use remain pending. No live server/browser,
 provider access, credential read or real-data migration ran this increment.
 
-Next: C5 backup/restore and C6
-saved screeners/settings/durable jobs. Finviz/IBKR stays after C6 acceptance.
+C5 now supplies user-run catalog backup, verification and restore through shared
+services. SQLite snapshots plus immutable file manifests preserve registered
+history/reports; restore validates and migrates only a fresh copied workspace.
+Credentials, unindexed captures and scheduler state are excluded. 264 guarded core
+and 21 guarded web tests pass on Ubuntu/Python 3.14.4, including WAL, concurrent
+publication, corruption, interrupted recovery, migration and replay drills. See
+[recovery scope and commands](RECOVERY.md). Native-platform and real-data recovery
+acceptance remain pending; no real backup or restore was run by agents.
+
+Next: C6a secure token onboarding, then saved screeners/preferences/durable jobs. Finviz/IBKR stays after C6 acceptance.
 Scheduling stays disabled. See [RESUME_PLAN.md](RESUME_PLAN.md).
 
 OTA live checkpoint: the user's short-page run returned 77 rows after one page

@@ -48,8 +48,9 @@ and macOS remain pending. No provider fetch or scheduler starts with the web app
 [CRS report history](docs/CRS_HISTORY.md) now records new catalog report revisions,
 pins prior sessions and supports `history-list`, `history-show`, `history-compare`,
 `report-build` and `report-replay`. C4b now adds explicit legacy preview/import/rollback
-and shared catalog history for standalone dashboards/daily runs. C5 recovery is
-next. New threads should start with
+and shared catalog history for standalone dashboards/daily runs. C5 now supplies
+[catalog backup, verification and restore](docs/RECOVERY.md). C6a secure token
+onboarding is next. New threads should start with
 [the resume checkpoint](docs/RESUME_PLAN.md) and [current status](docs/STATUS.md).
 Architecture targets **CLI, local web and future cloud deployment** through shared
 application services. Cloud is planned, not operational today. The sequence adds

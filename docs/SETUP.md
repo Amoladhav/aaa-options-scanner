@@ -208,3 +208,7 @@ C4 legacy history migration is an explicit user-run step after setup; see
 Opening the dashboard does not import old daily files. Guarded local offline
 checks continue during development; native Windows verification is reserved for
 major-release acceptance and does not gate C5 implementation.
+
+After producing saved reports, see [catalog recovery](RECOVERY.md) for user-run
+backup/verify/restore commands and excluded data. Demo use needs no credentials;
+real-data recovery remains user-run. Recovery never activates scheduling.

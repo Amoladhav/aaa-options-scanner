@@ -87,8 +87,8 @@ A failure after file publication can leave an orphan file, reported by
 `catalog-reconcile`; no successful history entry is published in that case.
 
 Old software refuses a newer schema. There is no downgrade command: keep an intact
-pre-upgrade copy if testing migration on an existing workspace. Managed backup and
-restore tooling is C5. Do not delete schema tables to run old software. Agents only
+pre-upgrade copy if testing migration on an existing workspace. Managed catalog backup and
+restore tooling is now available in [C5 recovery](RECOVERY.md). Do not delete schema tables to run old software. Agents only
 migrated temporary synthetic databases in tests.
 
 The service is demand-driven with no new threads, cache, polling or background
@@ -162,8 +162,8 @@ Standalone report source copies serialize already decoded inputs and do not clai
 original transport-byte fidelity. Existing HTML/CSV/output paths remain available;
 the command also prints its catalog report ID. All explicitly supplied Tradier
 files are pinned for replay. Extra immutable copies and SQL rows consume disk space;
-there is no automatic retention/deletion or background scanning. Backup/restore is
-next in C5. A failure writing standalone exports can leave a valid catalog report;
+there is no automatic retention/deletion or background scanning. Catalog backup/restore is
+implemented in [C5 recovery](RECOVERY.md). A failure writing standalone exports can leave a valid catalog report;
 the command still reports failure and does not claim those exports succeeded.
 
 C4b validation: 249 guarded core tests and 21 guarded web tests on Ubuntu/Python

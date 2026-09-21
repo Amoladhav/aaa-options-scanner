@@ -40,7 +40,7 @@ SQL migrations are versioned/checksummed in `src/trading_scanner/migrations/`.
 The initial schema includes runs/artifacts/input lineage, master membership and
 settings revisions. Immutable report/settings inputs are supported; editing
 preferences remain a later checkpoint. Schema 2 adds [CRS history](CRS_HISTORY.md)
-for new catalog reports; legacy import remains pending. No ORM or WAL is
+for new catalog reports; schema 3 adds explicit legacy import/rollback. No ORM or WAL is
 needed for the initial one-writer catalog. Connections are per operation with
 foreign keys, a bounded busy timeout and explicit rollback on failure. See
 [Python sqlite3](https://docs.python.org/3/library/sqlite3.html).
@@ -51,5 +51,6 @@ File publication and database registration cannot be one atomic transaction.
 `catalog-reconcile` reports available/missing/changed/orphan/pending counts and
 returns failure when review is needed. It never deletes or adopts unregistered
 files. Stop indexing, keep both originals and catalog, and investigate locally;
-backup/restore and automated reconciliation repairs are C5, not implemented here.
+[C5 backup/verify/restore](RECOVERY.md) now protects the registered catalog.
+Automated reconciliation repairs remain unimplemented.
 Log/error-log and allowlisted aggregate review paths use the shared progress sink.
