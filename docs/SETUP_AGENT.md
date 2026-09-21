@@ -164,3 +164,8 @@ C6a provides a credential-free localhost **Setup** guide and user-run
 `credential-manage guide/status/add/replace/remove` commands. See
 [credential lifecycle](SECRETS.md#credential-lifecycle-c6a). Agents never execute
 credential mutations/checks against real stores; provider validation stays user-run.
+
+C6b now persists applied screeners and display preferences through shared CLI/web
+services. See [workspace settings](WORKSPACE_SETTINGS.md) for create/update,
+historical revisions, export parity, stale-edit recovery and setup-agent mapping.
+Credentials and scheduler activation remain outside these controls.

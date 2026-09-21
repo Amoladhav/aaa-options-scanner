@@ -1,13 +1,14 @@
 """Same-origin localhost adapter. No provider/credential/scheduling routes."""
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import replace
 import hmac
+import json
 import secrets
 import threading
 from pathlib import Path
 from urllib.parse import urlencode
 
-from flask import Flask, Response, abort, redirect, render_template, request, session, url_for
+from flask import Flask, Response, abort, redirect, render_template, request, session, url_for, g
 from werkzeug.exceptions import HTTPException
 
 from ..core import DataError
@@ -28,13 +29,15 @@ def create_app(catalog, *, port=8765, service=None):
     validate_port(port)
     app=Flask(__name__,static_folder=None,template_folder='templates')
     app.config.update(SECRET_KEY=secrets.token_hex(32),DEBUG=False,TESTING=False,
-                      TRUSTED_HOSTS=['127.0.0.1'],MAX_CONTENT_LENGTH=4096,
-                      MAX_FORM_MEMORY_SIZE=4096,MAX_FORM_PARTS=12,
+                      TRUSTED_HOSTS=['127.0.0.1'],MAX_CONTENT_LENGTH=262144,
+                      MAX_FORM_MEMORY_SIZE=262144,MAX_FORM_PARTS=12,
                       SESSION_COOKIE_NAME='scanner_local_session',SESSION_COOKIE_HTTPONLY=True,
                       SESSION_COOKIE_SAMESITE='Strict',SESSION_COOKIE_PATH='/')
     origin=f'http://127.0.0.1:{port}'
     service=service or ReportService(catalog)
     mutation_lock=threading.Lock()
+    from ..workspace_settings import WorkspaceSettings,selection_payload
+    workspace_settings=WorkspaceSettings(catalog)
     app.add_template_filter(cell_text, 'cell_text')
 
     @app.template_filter('local_time')
@@ -43,7 +46,8 @@ def create_app(catalog, *, port=8765, service=None):
             return value
         try:
             stamp=datetime.fromisoformat(value)
-            return stamp.astimezone().isoformat(timespec='seconds') if stamp.tzinfo else value
+            zone=timezone.utc if g.preferences['display_timezone']=='utc' else None
+            return stamp.astimezone(zone).isoformat(timespec='seconds') if stamp.tzinfo else value
         except ValueError:
             return value
 
@@ -66,6 +70,7 @@ def create_app(catalog, *, port=8765, service=None):
                 abort(403)
         if request.endpoint not in ('health','static') and 'csrf' not in session:
             session['csrf']=secrets.token_hex(32)
+        g.preference_revision,g.preferences=workspace_settings.preference_state()
 
     @app.after_request
     def headers(response):
@@ -76,7 +81,7 @@ def create_app(catalog, *, port=8765, service=None):
 
     @app.errorhandler(Exception)
     def safe_error(exc):
-        status=exc.code if isinstance(exc,HTTPException) else 400 if isinstance(exc,(DataError,ValueError,KeyError,TypeError)) else 500
+        status=409 if isinstance(exc,DataError) and exc.args==('SETTINGS_CONFLICT',) else exc.code if isinstance(exc,HTTPException) else 400 if isinstance(exc,(DataError,ValueError,KeyError,TypeError)) else 500
         # Do not echo paths, headers, source values or arbitrary exceptions.
         return render_template('error.html',status=status),status
 
@@ -113,7 +118,7 @@ def create_app(catalog, *, port=8765, service=None):
             raise DataError('REPORT_SELECTION_INVALID')
         if len(request.query_string)>131072 or any(len(request.args.getlist(key))!=1 for key in request.args if key not in ('field','op','value','column')):
             raise DataError('REPORT_SELECTION_INVALID')
-        values=request.args.to_dict()
+        values={'page_size':g.preferences['page_size'],**request.args.to_dict()}
         values.pop('scope',None)
         for key in editor_keys:
             values.pop(key,None)
@@ -130,7 +135,11 @@ def create_app(catalog, *, port=8765, service=None):
     @app.get('/reports/<artifact_id>')
     def report(artifact_id):
         result=service.load(artifact_id)
-        selected=selection()
+        if 'screener' in request.args:
+            if set(request.args)!={'screener'} or len(request.args.getlist('screener'))!=1:abort(400)
+            selected=workspace_settings.apply(request.args['screener'],result)
+        else:
+            selected=selection()
         columns=report_columns(result)
         active=expression_for_selection(selected)
         if selected.filters:
@@ -170,6 +179,7 @@ def create_app(catalog, *, port=8765, service=None):
                                draft=draft,editor_tree=decode_document(draft)['root'],editor_error=editor_error,
                                editor_params=params,
                                active_summary=expression_summary(active),draft_pending=draft!=active,
+                               screeners=workspace_settings.list(),saved_payload=json.dumps(selection_payload(selected)),
                                units=UNITS,max_depth=MAX_DEPTH),400 if editor_error else 200
 
     @app.get('/reports/<artifact_id>/export')
@@ -191,8 +201,43 @@ def create_app(catalog, *, port=8765, service=None):
     @app.get('/settings')
     def settings():
         from ..credential_setup import guidance
-        return render_template('settings.html',providers=[guidance('ota','ota'),
+        return render_template('settings.html',preferences=g.preferences,preference_revision=g.preference_revision,providers=[guidance('ota','ota'),
                                guidance('tradier','sandbox'),guidance('tradier','production')])
+
+    def strict_form(keys):
+        if set(request.form)!=set(keys) or any(len(request.form.getlist(key))!=1 for key in request.form):abort(400)
+
+    @app.post('/preferences')
+    def save_preferences():
+        strict_form(('csrf','expected','page_size','display_timezone'))
+        workspace_settings.save('preferences','workspace',{'page_size':int(request.form['page_size']),
+                                'display_timezone':request.form['display_timezone']},expected=request.form['expected'] or None)
+        return redirect(url_for('settings'),code=303)
+
+    @app.get('/screeners')
+    def screeners():
+        return render_template('screeners.html',screeners=workspace_settings.list(),revision=None)
+
+    @app.get('/screeners/<revision_id>')
+    def screener_revision(revision_id):
+        row=workspace_settings.get(revision_id)
+        if row['kind']!='screener':abort(400)
+        return render_template('screeners.html',screeners=workspace_settings.list(),revision=row,
+                               history=workspace_settings.history('screener',row['name']))
+
+    @app.post('/screeners')
+    def save_screener():
+        strict_form(('csrf','expected','name','report','selection'))
+        expected=request.form['expected'] or None
+        name=request.form['name']
+        if expected and not name:
+            previous=workspace_settings.get(expected)
+            if previous['kind']!='screener':abort(400)
+            name=previous['name']
+        from ..ota_config import pairs
+        payload=json.loads(request.form['selection'],object_pairs_hook=pairs)
+        revision=workspace_settings.save('screener',name,payload,expected=expected,source=request.form['report'])
+        return redirect(url_for('screener_revision',revision_id=revision),code=303)
 
     @app.get('/runs')
     def runs():

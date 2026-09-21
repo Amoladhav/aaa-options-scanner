@@ -39,7 +39,7 @@ observation time. Legacy and timestamp-prefixed run IDs are accepted.
 SQL migrations are versioned/checksummed in `src/trading_scanner/migrations/`.
 The initial schema includes runs/artifacts/input lineage, master membership and
 settings revisions. Immutable report/settings inputs are supported; editing
-preferences remain a later checkpoint. Schema 2 adds [CRS history](CRS_HISTORY.md)
+C6b named screeners/display preferences now have their own schema-4 revision tables. Schema 2 adds [CRS history](CRS_HISTORY.md)
 for new catalog reports; schema 3 adds explicit legacy import/rollback. No ORM or WAL is
 needed for the initial one-writer catalog. Connections are per operation with
 foreign keys, a bounded busy timeout and explicit rollback on failure. See

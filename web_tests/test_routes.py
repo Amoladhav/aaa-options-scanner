@@ -76,6 +76,42 @@ class WebRoutesTests(unittest.TestCase):
         self.assertEqual(response.status_code,405)
         self.assertNotIn('synthetic-private-marker',response.text)
 
+    def test_saved_screener_flow_conflict_and_historical_apply(self):
+        from trading_scanner.workspace_settings import WorkspaceSettings,selection_payload
+        path=self.report();aid=path.rsplit('/',1)[-1]
+        def save(expected='',name='My screener',tail='top'):
+            return self.client.post('/screeners',base_url=BASE,headers={'Origin':BASE},data={
+                'csrf':self.csrf(),'report':aid,'expected':expected,'name':name,
+                'selection':json.dumps(selection_payload(Selection(tail=tail)))})
+        response=save();self.assertEqual(response.status_code,303)
+        first=response.headers['Location'].rsplit('/',1)[-1]
+        self.assertIn('My screener',self.get('/screeners').text)
+        self.assertEqual(save().status_code,409)
+        self.assertEqual(save(first,name='',tail='bottom').status_code,303)
+        self.assertEqual(save(first).status_code,409)
+        response=self.get(path+'?screener='+first)
+        self.assertEqual(response.status_code,200)
+        self.assertIn('Saved screeners',response.text)
+        self.assertEqual(WorkspaceSettings(self.catalog).apply(first,self.service.load(aid)).tail,'top')
+        self.assertEqual(self.get(path+'?screener='+first+'&search=oops').status_code,400)
+        self.assertEqual(self.client.post('/screeners',base_url=BASE,data={}).status_code,403)
+
+    def test_preferences_persist_and_explicit_view_overrides_default(self):
+        from trading_scanner.workspace_settings import WorkspaceSettings
+        response=self.client.post('/preferences',base_url=BASE,headers={'Origin':BASE},data={
+            'csrf':self.csrf(),'expected':'','page_size':'50','display_timezone':'utc'})
+        self.assertEqual(response.status_code,303)
+        path=self.report()
+        self.assertEqual(self.get(path).text.count('Fields & diagnostics'),50)
+        self.assertEqual(WorkspaceSettings(self.catalog).preference_state()[1]['page_size'],50)
+        response=self.get(path+'?page_size=25')
+        self.assertEqual(response.status_code,200)
+        self.assertIn('Next',response.text)
+        self.assertEqual(response.text.count('Fields & diagnostics'),25)
+        self.assertEqual(self.client.post('/preferences',base_url=BASE,headers={'Origin':BASE},data={
+            'csrf':self.csrf(),'expected':'','page_size':'100','display_timezone':'local'}).status_code,409)
+        self.assertIn('Display preferences',self.get('/settings').text)
+
     def test_health_navigation_and_no_side_effects(self):
         before=len(self.catalog.runs())
         with patch('trading_scanner.credentials.resolve',side_effect=AssertionError('credentials denied')),patch('trading_scanner.ota_fetch.run_fetch',side_effect=AssertionError('providers denied')):

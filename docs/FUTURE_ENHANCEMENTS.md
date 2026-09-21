@@ -542,3 +542,15 @@ stays external. This avoids adding browser credential transport to the current
 saved-data app. Older set/delete commands remain compatible. Local format checks
 are not authentication; live acceptance remains user-run. See [SECRETS](SECRETS.md).
 Next is C6b screeners/preferences; scheduling and hosted CI remain disabled.
+
+
+## Adopted increment: saved views and preferences (C6b)
+
+Schema 4 adds append-only workspace revisions/current pointers, shared by CLI and
+local web. Named screeners pin normalized applied selection and source reports;
+display preferences select page size and machine-local/UTC timestamps. Optimistic
+revision checks reject stale overwrites. C5 recovery includes this new catalog
+state; standalone scheduler preferences stay separate. No credentials or jobs are
+activated. See [workspace settings](WORKSPACE_SETTINGS.md) for interface mapping,
+limits and verification. 276 core/24 web guarded tests pass; actual browser and
+native-platform acceptance remain separate. Next is C6c durable jobs.

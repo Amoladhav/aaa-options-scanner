@@ -7,7 +7,8 @@ web recovery controls and cloud recovery are not implemented.
 
 This is **catalog recovery**, not a complete machine/workspace backup. It preserves
 indexed price/OTA/Tradier inputs, saved reports, CRS history, canonical selections,
-master versions, catalog settings revisions and legacy import evidence/state.
+master versions, catalog settings revisions, C6b named screeners/display preferences
+and legacy import evidence/state.
 It excludes credentials, OS secret stores, environment files, INBOX, unindexed
 provider captures, legacy daily originals, standalone exports, logs, scheduler
 settings/jobs, throttle feedback, source code and personal files outside the
@@ -79,7 +80,7 @@ attacker who can replace the complete backup; use only your own trusted backups.
 Restore reserves a fresh directory, copies into `.restore-pending`, rechecks copied
 bytes, applies supported migrations to that copy, then publishes the catalog and
 `restore-complete.json`. The backup and source workspace remain unchanged. Schema
-1–3 backups are supported; newer/unknown schemas fail. Old clients still reject a
+1–4 backups are supported; newer/unknown schemas fail. Old clients still reject a
 newer restored schema. Restore never starts providers, a server or a scheduler.
 
 Failures/cancellation return failure and retain partial directories. A backup

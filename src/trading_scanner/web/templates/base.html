@@ -1,4 +1,4 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Local research workspace{% endblock %}</title><link rel="stylesheet" href="{{ url_for('style') }}"></head>
-<body><header><a class="brand" href="{{ url_for('sources') }}">AAA <span>Research workspace</span></a><nav><a href="{{ url_for('sources') }}">Sources & reports</a><a href="{{ url_for('runs') }}">Run history</a><a href="{{ url_for('settings') }}">Setup</a></nav><span class="badge">LOCAL ONLY</span></header>
+<body><header><a class="brand" href="{{ url_for('sources') }}">AAA <span>Research workspace</span></a><nav><a href="{{ url_for('sources') }}">Sources & reports</a><a href="{{ url_for('runs') }}">Run history</a><a href="{{ url_for('screeners') }}">Screeners</a><a href="{{ url_for('settings') }}">Setup</a></nav><span class="badge">LOCAL ONLY</span></header>
 <main>{% block content %}{% endblock %}</main><footer>Saved-data preview · Provider operations stay in your terminal · Scheduling disabled in this app</footer></body></html>

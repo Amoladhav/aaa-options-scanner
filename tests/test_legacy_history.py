@@ -51,7 +51,7 @@ class LegacyHistoryTests(unittest.TestCase):
         self.assertEqual(self.catalog.path.read_bytes(), before)
         self.apply()
         with self.catalog.connection() as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], len(MIGRATIONS))
         self.assertEqual(self.path.read_bytes(), self.original)
 
     def test_duplicate_rollback_reimport_preserves_pinned_replay(self):

@@ -32,7 +32,7 @@ def run_web(root,args):
             logger.handlers=[logging.NullHandler()];logger.propagate=False
         server=create_server(app,host='127.0.0.1',port=args.port,threads=4,
                              expose_tracebacks=False,log_socket_errors=False,
-                             max_request_body_size=4096,max_request_header_size=16384,
+                             max_request_body_size=262144,max_request_header_size=16384,
                              channel_timeout=30,clear_untrusted_proxy_headers=False)
         progress.finish();progress.pause()
         print(f'Local preview: http://127.0.0.1:{args.port}',flush=True)

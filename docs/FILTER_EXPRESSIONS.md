@@ -126,3 +126,8 @@ Excel/TradingView imports, quote coverage, macOS and realistic shared-machine
 resource acceptance remain unverified. No provider call, secret read or real
 artifact inspection was performed by agents. C4a history/replay is implemented;
 C4b legacy history integration, C5 recovery and C6 settings/jobs remain later work.
+
+C6b now persists applied screeners and display preferences through shared CLI/web
+services. See [workspace settings](WORKSPACE_SETTINGS.md) for create/update,
+historical revisions, export parity, stale-edit recovery and setup-agent mapping.
+Credentials and scheduler activation remain outside these controls.

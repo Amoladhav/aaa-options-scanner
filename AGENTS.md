@@ -351,7 +351,8 @@ This is guidance, not an active model configuration or a correctness guarantee.
   is implemented. C4b legacy preview/import/rollback and standalone integration are
   implemented. C5 catalog backup/verify/restore is also implemented; see
   docs/RECOVERY.md for catalog-only scope. C6a CLI credential lifecycle and credential-free web Setup guide are implemented.
-  Resume at C6b saved screeners/preferences, then durable jobs.
+  C6b screeners/preferences are implemented with shared CLI/web services and
+  catalog recovery coverage. Resume at C6c durable jobs.
   Native Windows checks are deferred
   to major-release acceptance. Specific saved-data/import acceptance
   gaps remain in STATUS.md. Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.

@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-09-21. Phase: C6a credential lifecycle implemented; C6b saved screeners/preferences next.
+Updated: 2026-09-21. Phase: C6b screeners/preferences implemented; C6c durable jobs next.
 
 Architecture/sequence clarification (2026-09-21, documentation only): CLI,
 local web and cloud are required delivery targets sharing application services.
@@ -63,7 +63,13 @@ credential-free localhost Setup page. 269 core/22 web guarded tests pass; actual
 OS-store/Infisical/provider validation remains pending. No real credentials were
 read or changed. See [credential lifecycle](SECRETS.md#credential-lifecycle-c6a).
 
-Next: C6b saved screeners/preferences, then durable jobs. Finviz/IBKR stays after C6 acceptance.
+C6b adds immutable named screener revisions and page-size/local-or-UTC display
+preferences via shared CLI/web services. Schema 4 and C5 recovery retain revision
+history and source pins; stale edits fail instead of overwriting. 276 core and
+24 web guarded tests pass on Ubuntu/Python 3.14.4. Browser/real-data acceptance
+remains pending. See [workspace settings](WORKSPACE_SETTINGS.md).
+
+Next: C6c durable jobs. Finviz/IBKR stays after C6 acceptance.
 Scheduling stays disabled. See [RESUME_PLAN.md](RESUME_PLAN.md).
 
 OTA live checkpoint: the user's short-page run returned 77 rows after one page

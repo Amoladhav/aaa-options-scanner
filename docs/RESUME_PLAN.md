@@ -36,7 +36,8 @@ Ubuntu/Python 3.14.4. Native Windows/macOS and actual legacy imports remain pend
 C5 catalog backup/verify/restore is implemented through shared services and CLI.
 264 core and 21 web tests pass on Ubuntu/Python 3.14.4. See [recovery](RECOVERY.md)
 for its catalog-only scope and excluded state. C6a credential lifecycle is now
-implemented (269 core/22 web tests); next is C6b saved screeners/preferences;
+implemented. C6b saved screeners/preferences is also implemented (276 core/24
+web tests); next is C6c durable jobs;
 native Windows verification remains at major releases. Do not auto-start providers.
 C4 native Windows verification is deferred to major-release acceptance. Positive synthetic dashboard feedback
 does not establish real saved quote coverage, Excel/TradingView imports or realistic
@@ -59,8 +60,8 @@ Current C4a offline evidence: 238 core and 20 web tests pass on Ubuntu/Python 3.
    resource measurements and full-report-loading limits. No provider operations,
    scheduling activation or real-data migration ran. C2 Infisical/Tradier
    acceptance and remaining browser/native OS checks are pending.
-4. Continue C6b saved screeners/preferences, then
-   durable fetch lifecycle. C3 is not a fetch-job implementation.
+4. Continue C6c durable fetch lifecycle. C6b screeners/preferences are implemented;
+   see WORKSPACE_SETTINGS.md. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
    User performs pushes and every credentialed operation. C7 remains after C6
    user acceptance; no hosting or hosted CI activation is implied.
@@ -69,8 +70,8 @@ Suggested next-thread prompt:
 
 > Read AGENTS.md, docs/RESUME_PLAN.md, docs/STATUS.md and docs/CRS_HISTORY.md.
 > C4a/C4b catalog history, legacy import/rollback and standalone integration are
-> implemented, as are C5 recovery and C6a credential lifecycle. Resume C6b
-> saved screeners/preferences; native Windows verification stays at major releases. Keep raw inputs
+> implemented, as are C5 recovery, C6a credentials and C6b screeners/preferences.
+> Resume C6c durable jobs; native Windows verification stays at major releases. Keep raw inputs
 > immutable, provider operations user-run, scheduling/hosted CI disabled, and
 > native OS verification distinct from guarded synthetic checks. C5 follows C4.
 

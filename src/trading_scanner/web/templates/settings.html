@@ -1,7 +1,14 @@
 {% extends 'base.html' %}
 {% block title %}Setup · Local research workspace{% endblock %}
 {% block content %}
-<h1>Credential setup</h1>
+<h1>Workspace setup</h1>
+<h2>Display preferences</h2>
+<form method="post" action="{{ url_for('save_preferences') }}" class="toolbar">
+<input type="hidden" name="csrf" value="{{ session.csrf }}"><input type="hidden" name="expected" value="{{ preference_revision or '' }}">
+<label>Default rows per page<select name="page_size">{% for n in [25,50,100,250] %}<option {% if preferences.page_size==n %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+<label>Display timestamps<select name="display_timezone"><option value="local" {% if preferences.display_timezone=='local' %}selected{% endif %}>Machine local time</option><option value="utc" {% if preferences.display_timezone=='utc' %}selected{% endif %}>UTC</option></select></label><button>Save preferences</button></form>
+<p>Local time follows the runtime machine's timezone and DST rules. UTC has no DST. Structured timestamps remain UTC; scheduling stays disabled. A report's explicit page-size selection takes precedence.</p>
+<h2>Credential setup</h2>
 <p>Saved reports and the demo need no credentials. This page does not inspect your environment or credential store.</p>
 <p>Enter secrets only in your terminal's hidden prompt or your chosen secret manager. Never paste them into chat, command arguments or report filters.</p>
 {% for provider in providers %}

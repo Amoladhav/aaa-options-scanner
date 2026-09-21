@@ -50,7 +50,8 @@ pins prior sessions and supports `history-list`, `history-show`, `history-compar
 `report-build` and `report-replay`. C4b now adds explicit legacy preview/import/rollback
 and shared catalog history for standalone dashboards/daily runs. C5 now supplies
 [catalog backup, verification and restore](docs/RECOVERY.md). C6a [credential lifecycle](docs/SECRETS.md#credential-lifecycle-c6a) and a credential-free
-web Setup guide are implemented. C6b saved screeners/preferences is next. New threads should start with
+web Setup guide are implemented. C6b [saved screeners/preferences](docs/WORKSPACE_SETTINGS.md)
+are implemented; C6c durable jobs is next. New threads should start with
 [the resume checkpoint](docs/RESUME_PLAN.md) and [current status](docs/STATUS.md).
 Architecture targets **CLI, local web and future cloud deployment** through shared
 application services. Cloud is planned, not operational today. The sequence adds

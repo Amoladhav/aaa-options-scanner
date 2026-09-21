@@ -11,7 +11,7 @@ import re
 import sqlite3
 import uuid
 
-from .catalog import confined, digest, encoded, identifier
+from .catalog import MIGRATIONS, confined, digest, encoded, identifier
 from .core import DataError, calculation_method, normalize_symbol
 from .crs_history import method_key
 from .ota_config import pairs
@@ -57,7 +57,7 @@ class LegacyHistory:
     def state(self, db, profile):
         try:
             version = db.execute('PRAGMA user_version').fetchone()[0]
-            if version not in (1, 2, 3):
+            if not 1 <= version <= len(MIGRATIONS):
                 raise DataError('HISTORY_UPGRADE_REQUIRED')
             active = [dict(row) for row in db.execute('SELECT l.artifact_id,l.price_session,a.sha256 FROM legacy_history l JOIN artifacts a ON a.id=l.artifact_id WHERE l.profile=? AND EXISTS (SELECT 1 FROM legacy_import_items i JOIN legacy_imports b ON b.id=i.batch_id WHERE i.artifact_id=l.artifact_id AND b.state=\'active\') ORDER BY l.price_session,l.artifact_id',(profile,))] if version >= 3 else []
             canonical = [dict(row) for row in db.execute('SELECT price_session,artifact_id FROM canonical_sessions WHERE profile=? AND method_key=? ORDER BY price_session',(profile,method_key()))] if version >= 2 else []

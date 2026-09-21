@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Saved screeners</h1><p>Save an applied view from a report. Screeners are private workspace data and do not change calculations or fetch providers.</p>
+<ul>{% for item in screeners %}<li><a href="{{ url_for('screener_revision',revision_id=item.revision_id) }}">{{ item.name }}</a> · {{ item.created_at | local_time }}</li>{% else %}<li>No screeners saved yet.</li>{% endfor %}</ul>
+{% if revision %}<h2>{{ revision.name }}</h2><p>Revision {{ revision.id }} · {{ revision.created_at | local_time }}</p>
+<a href="{{ url_for('report',artifact_id=revision.source_artifact_id,screener=revision.id) }}">Apply this revision to its source report</a>
+<details><summary>Saved view definition</summary><pre>{{ revision.payload | tojson(indent=2) }}</pre></details>
+<h3>Revision history</h3><ul>{% for item in history %}<li><a href="{{ url_for('screener_revision',revision_id=item.id) }}">{{ item.created_at | local_time }} · {{ item.id }}</a></li>{% endfor %}</ul>{% endif %}
+{% endblock %}

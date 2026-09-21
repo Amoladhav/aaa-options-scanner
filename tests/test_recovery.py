@@ -43,7 +43,7 @@ class RecoveryTests(unittest.TestCase):
         restored = Catalog(self.target)
         self.assertEqual(restored.read(aid),b'{}')
         with restored.connection() as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],3)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],len(MIGRATIONS))
         self.assertEqual((self.backup/'artifacts/catalog/catalog.sqlite3').read_bytes(),before)
         with old.connection() as db:
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],1)
