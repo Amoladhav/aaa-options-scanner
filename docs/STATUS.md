@@ -2,6 +2,13 @@
 
 Updated: 2026-09-20. Phase: C3b grouped expressions implemented; browser acceptance pending.
 
+Native Windows testing is in progress; further phases are paused for user testing.
+The user reported Python 3.11 failing the catalog test at symlink creation with
+WinError 1314. The real-link check is now separate and skips only that privilege
+error; other catalog checks and a simulated link-policy check still run. All 224
+guarded core tests pass on Ubuntu/Python 3.14.4, including the real-link check.
+Native Windows rerun is pending; no administrator session is required for testing.
+
 The user reviewed C3a positively and approved proceeding with C3b. The localhost
 dashboard now supports column-versus-value and column-versus-scaled-column rules,
 nested ALL (AND)/ANY (OR), explicit parentheses and a draft/apply editor. Applied

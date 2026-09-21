@@ -1,5 +1,6 @@
 """Temporary-only catalog migration, durable publication and boundary tests."""
 import sqlite3
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 from offline_boundary import temp
@@ -73,12 +74,30 @@ class CatalogTests(unittest.TestCase):
         for bad in ('../outside', '/etc/passwd', 'C:/outside', 'artifacts/../config', 'artifacts\\outside'):
             with self.assertRaises(DataError):
                 confined(self.root,bad)
-        target = self.root/'target';target.mkdir()
-        (self.root/'link').symlink_to(target, target_is_directory=True)
-        with self.assertRaises(DataError):
-            confined(self.root,'link/file')
         with self.assertRaises(DataError):
             self.catalog.read('../../secret')
+
+    def test_symlink_component_is_rejected(self):
+        # Exercise the policy even when this machine cannot create real links.
+        link = self.root / 'link'
+        with patch.object(Path, 'is_symlink', autospec=True,
+                          side_effect=lambda path: path == link):
+            with self.assertRaisesRegex(DataError, 'CATALOG_PATH_INVALID'):
+                confined(self.root, 'link/file')
+
+    def test_real_symlink_component_is_rejected(self):
+        target = self.root / 'target'
+        target.mkdir()
+        try:
+            (self.root / 'link').symlink_to(target, target_is_directory=True)
+        except OSError as exc:
+            # Ordinary Windows sessions may lack link-creation privileges.
+            # Skip only that capability check; unrelated filesystem errors fail.
+            if getattr(exc, 'winerror', None) == 1314:
+                self.skipTest('Windows symlink creation privilege unavailable (1314)')
+            raise
+        with self.assertRaisesRegex(DataError, 'CATALOG_PATH_INVALID'):
+            confined(self.root, 'link/file')
 
     def test_metadata_cannot_redirect_to_other_workspace_files(self):
         aid = self.catalog.publish(b'{}',kind='prices',profile='synthetic')

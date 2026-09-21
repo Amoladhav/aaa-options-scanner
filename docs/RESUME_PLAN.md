@@ -10,6 +10,11 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 
 ## Start here next thread
 
+Current hold: user is testing natively in Windows PowerShell/Python 3.11 before
+further development. A reported WinError 1314 in the catalog test is addressed by
+isolating the real-symlink check and skipping only unavailable creation privileges.
+224 core tests pass on Ubuntu; Windows rerun is pending. Resume testing first.
+
 1. Read project AGENTS.md, this file, STATUS.md and the relevant section of
    FUTURE_ENHANCEMENTS.md. Check Git status and preserve unrelated changes.
 2. Implemented checkpoints: C1 `c86eddf`, C2 docs `c7d800d`, C3 `c18ae0b`;

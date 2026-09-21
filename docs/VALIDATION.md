@@ -1,5 +1,18 @@
 # Validation record — 2026-09-13
 
+## Native Windows catalog test follow-up — 2026-09-20
+
+The user reported WinError 1314 while creating a synthetic directory symlink on
+native Windows/Python 3.11. Split the capability-dependent check from missing,
+changed and traversal checks; skip only link creation error 1314. A simulated
+symlink component independently verifies rejection without OS privileges.
+`python3 -I -S tools/test_offline.py`: 224 tests passed on Ubuntu/Python 3.14.4,
+including actual symlink rejection. Native Windows rerun remains pending (expected
+one explicitly reported skip when link creation is unavailable). Application code
+and offline guards are unchanged; no dependency or provider operations ran.
+
+## Initial validation
+
 Environment: Ubuntu / Python 3.14.4. No optional packages installed, no incoming
 application code or provider requests executed by the agent.
 
