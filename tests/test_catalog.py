@@ -29,7 +29,7 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaises(sqlite3.Error):
             self.catalog.initialize((*MIGRATIONS,migration))
         with self.catalog.connection() as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 1)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], len(MIGRATIONS))
             self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='example'").fetchone())
         migration.write_text('CREATE TABLE example (id INTEGER);\n')
         self.catalog.initialize((*MIGRATIONS,migration))

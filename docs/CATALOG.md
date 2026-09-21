@@ -39,7 +39,8 @@ observation time. Legacy and timestamp-prefixed run IDs are accepted.
 SQL migrations are versioned/checksummed in `src/trading_scanner/migrations/`.
 The initial schema includes runs/artifacts/input lineage, master membership and
 settings revisions. Immutable report/settings inputs are supported; editing
-preferences and advanced CRS history are later checkpoints. No ORM or WAL is
+preferences remain a later checkpoint. Schema 2 adds [CRS history](CRS_HISTORY.md)
+for new catalog reports; legacy import remains pending. No ORM or WAL is
 needed for the initial one-writer catalog. Connections are per operation with
 foreign keys, a bounded busy timeout and explicit rollback on failure. See
 [Python sqlite3](https://docs.python.org/3/library/sqlite3.html).

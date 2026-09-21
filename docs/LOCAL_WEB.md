@@ -167,18 +167,16 @@ After the synthetic preview, test your saved-data report yourself:
 - Find startup/report log paths and sanitized `Agent review:` paths in the terminal.
   Logs/errors are retained. No automatic retention/deletion is configured.
 
-Record OS, shell, browser, steps passed and safe failure descriptions. The user confirmed synthetic report visibility in Windows Chrome on 2026-09-20.
-Filtering, real saved quotes and Excel acceptance remain pending; automated route
-tests are not visual/Excel verification.
-Native Windows Python and macOS operation remain separately pending.
+Native Windows/Python 3.11: user confirmed 224 core tests (one expected symlink
+skip), 19 web tests, PowerShell startup, browser visibility and positive dashboard
+feedback before C4a. Actual saved quotes, Excel/TradingView imports, realistic
+resources and macOS remain unverified. C4a native Windows rerun is pending.
 
-Known C3a scope: web reports share calculation/master/provider joins and full CSV
-with CLI for identical inputs/settings. This preview uses the reviewed candidate
-defaults, displayed and pinned in each report; it does not yet load/edit personal
-CLI candidate settings. They currently use no prior-session history input, so rank-change/history
-columns do not claim parity with CLI reports that attach daily history. C4 supplies
-append-only/canonical history and replay; C5 supplies backup/restore; C6 supplies
-settings and durable user-initiated fetch lifecycle before its acceptance gate.
+New reports now use canonical prior-session CRS history and retain a link to the
+exact prior report. They flag changed master membership and replayed evaluation
+time. Older reports remain readable. See [CRS history](CRS_HISTORY.md) for migration,
+CLI parity and replay limits. Standalone daily-file integration remains C4b; C5
+supplies backup/restore and C6 supplies saved preferences and durable fetch jobs.
 
 ## Offline checks and recovery limits
 

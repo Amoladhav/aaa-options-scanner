@@ -11,6 +11,8 @@ from .ota_config import pairs
 from .report import FIELDS, csv_cell
 from .report_selection import Selection, select_rows, watchlist_export, report_columns
 
+_AUTO_PRIOR = object()
+
 
 def compose_report(snapshot, ota, *, probes=(), filters=None, now=None, previous=None):
     """One calculation/join implementation; no filesystem, providers or printing."""
@@ -61,7 +63,8 @@ class ReportService:
         source=self.catalog.publish(encoded(ota),kind='ota',profile='synthetic',observed_at=ota['retrieved_at'])
         return prices,source
 
-    def generate(self,prices_id,ota_id=None,tradier_id=None,*,now=None):
+    def generate(self,prices_id,ota_id=None,tradier_id=None,*,now=None,filters=None,
+                 prior_id=_AUTO_PRIOR,replay_of=None):
         from .progress import RunProgress
         from .run_ids import new_run_id
         from .scan_service import code_revision
@@ -74,11 +77,27 @@ class ReportService:
         probes=[json.loads(self.catalog.read(tradier_id,'tradier'),object_pairs_hook=pairs)] if tradier_id else []
         if snapshot.get('profile') not in ('synthetic','public'):
             raise DataError('REPORT_SOURCE_INVALID')
+        from .crs_history import CRSHistory
+        from .core import CALCULATION_VERSION
+        history=CRSHistory(self.catalog)
+        if prior_id is _AUTO_PRIOR:
+            prior_id=history.prior(snapshot)
+        previous=history.previous(prior_id,snapshot)
+        ids.extend(aid for aid in (prior_id,replay_of) if aid and aid not in ids)
+        evaluation_time=now or datetime.now(timezone.utc)
         progress=RunProgress(self.catalog.root/'artifacts/logs',new_run_id(),'web-report',snapshot['profile'],code_revision())
         code, counts='REPORT_FAILED',{}
         try:
             progress.begin();progress.start('dashboard')
-            result=compose_report(snapshot,ota,probes=probes,now=now)
+            result=compose_report(snapshot,ota,probes=probes,now=evaluation_time,
+                                  filters=filters,previous=previous)
+            result['history_provenance']={'schema_version':1,'calculation_version':CALCULATION_VERSION,
+                                          'prior_artifact_id':prior_id,'replay_of':replay_of}
+            if prior_id:
+                prior_master=history.show(prior_id)['run']['master_id']
+                result['history_provenance']['master_changed']=prior_master != result['master_id']
+            else:
+                result['history_provenance']['master_changed']=False
             result['source_artifact_ids']={'prices':prices_id,'ota':ota_id,'tradier':tradier_id}
             result['source_metadata']={'price_session':snapshot['as_of'],
                                        'membership_observed_at':snapshot.get('membership_observed_at'),
@@ -90,7 +109,7 @@ class ReportService:
             aid=self.catalog.publish(encoded(result),kind='report',profile=result['profile'],
                                      input_ids=ids,run_id=progress.run_id,master=snapshot['universe'],
                                      observed_at=snapshot.get('membership_observed_at'),settings=result['filters'],
-                                     state='partial' if counts['symbols_failed'] else 'succeeded')
+                                     state='partial' if counts['symbols_failed'] else 'succeeded',history=result)
             progress.finish();code=None
             print(f'Saved report: {self.catalog.root / self.catalog.record(aid)["relative_path"]}')
             return aid
@@ -105,3 +124,21 @@ class ReportService:
 
     def load(self,artifact_id):
         return json.loads(self.catalog.read(artifact_id,'report'),object_pairs_hook=pairs)
+
+    def replay(self,artifact_id):
+        """Pin inputs, evaluation clock, candidate settings and prior history.
+
+        Different software must be an explicit reprocessing operation, not a
+        claim of exact replay. Browser presentation filters are not persisted.
+        """
+        from .crs_history import CRSHistory
+        from .scan_service import code_revision
+        recorded=CRSHistory(self.catalog).show(artifact_id)['run']
+        if recorded['code_revision'] != code_revision():
+            raise DataError('HISTORY_REPLAY_VERSION_MISMATCH')
+        original=self.load(artifact_id)
+        ids=original['source_artifact_ids']
+        return self.generate(ids['prices'],ids['ota'],ids['tradier'],
+                             now=datetime.fromisoformat(original['generated_at']),
+                             filters=original['filters'],prior_id=recorded['prior_artifact_id'],
+                             replay_of=artifact_id)

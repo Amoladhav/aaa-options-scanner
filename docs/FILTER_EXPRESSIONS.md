@@ -120,8 +120,9 @@ apply recovery, and table/CSV/watchlist membership. Web tests submit the actual
 rendered form controls in-process. A 600-row synthetic report works at the full
 32-rule budget; this is functional evidence, not a real-workload resource benchmark.
 
-Actual browser ergonomics, native Windows/macOS, real-data Excel/TradingView import,
-quote coverage and realistic shared-machine resource measurements remain user-run.
-No live HTTP/browser check, provider call, secret read or real artifact inspection
-was performed for this increment. Next is builder feedback, then C4 append-only
-history; C5 recovery and C6 saved settings/durable jobs remain subsequent phases.
+Subsequently, the user confirmed native Windows/Python 3.11 core/web tests,
+PowerShell startup and positive browser feedback, then authorized C4. Real-data
+Excel/TradingView imports, quote coverage, macOS and realistic shared-machine
+resource acceptance remain unverified. No provider call, secret read or real
+artifact inspection was performed by agents. C4a history/replay is implemented;
+C4b legacy history integration, C5 recovery and C6 settings/jobs remain later work.

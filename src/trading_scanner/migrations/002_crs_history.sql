@@ -1,0 +1,8 @@
+CREATE TABLE crs_runs (sequence INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL UNIQUE REFERENCES runs(id), artifact_id TEXT NOT NULL UNIQUE REFERENCES artifacts(id), profile TEXT NOT NULL CHECK(profile IN ('synthetic','public')), price_session TEXT NOT NULL, calculation_version TEXT NOT NULL, method_key TEXT NOT NULL, evaluated_at TEXT NOT NULL, prior_artifact_id TEXT REFERENCES crs_runs(artifact_id), replay_of TEXT REFERENCES crs_runs(artifact_id), coverage_json TEXT NOT NULL);
+CREATE TABLE crs_results (run_id TEXT NOT NULL REFERENCES crs_runs(run_id), symbol TEXT NOT NULL, peer_group TEXT NOT NULL CHECK(peer_group IN ('stock','etf')), status TEXT NOT NULL CHECK(status IN ('ranked','excluded')), exclusion_reason TEXT, rank INTEGER, score REAL, percentile REAL, r21 REAL, r63 REAL, r126 REAL, bias TEXT NOT NULL, PRIMARY KEY(run_id,symbol));
+CREATE TABLE canonical_sessions (profile TEXT NOT NULL, price_session TEXT NOT NULL, method_key TEXT NOT NULL, artifact_id TEXT NOT NULL REFERENCES crs_runs(artifact_id), PRIMARY KEY(profile,price_session,method_key));
+CREATE INDEX crs_sessions ON crs_runs(profile,price_session,sequence);
+CREATE TRIGGER crs_runs_no_update BEFORE UPDATE ON crs_runs BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;
+CREATE TRIGGER crs_runs_no_delete BEFORE DELETE ON crs_runs BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;
+CREATE TRIGGER crs_results_no_update BEFORE UPDATE ON crs_results BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;
+CREATE TRIGGER crs_results_no_delete BEFORE DELETE ON crs_results BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;

@@ -1,26 +1,23 @@
 # Project status
 
-Updated: 2026-09-20. Phase: C3b grouped expressions implemented; browser acceptance pending.
+Updated: 2026-09-20. Phase: C4a catalog CRS history implemented; C4b remains.
 
-Native Windows testing is in progress; further phases are paused for user testing.
-The user reported Python 3.11 failing the catalog test at symlink creation with
-WinError 1314. The real-link check is now separate and skips only that privilege
-error; other catalog checks and a simulated link-policy check still run. All 224
-guarded core tests pass on Ubuntu/Python 3.14.4, including the real-link check.
-Native Windows rerun is pending; no administrator session is required for testing.
-The next reported failure exposed a locale-default HTML read in the combined raw
-report test. Its HTML/JSON reads now explicitly use UTF-8, matching the writers;
-224 core tests pass on Ubuntu. The user then confirmed 224 core tests in 4.345s
-on native Windows/Python 3.11: OK, with one expected symlink-privilege skip.
-The Windows web suite failed during Click's native console import because ctypes
-is blocked. Its runner now substitutes Click's plain-stream fallback while keeping
-the native API guard intact. 18 web tests pass on Ubuntu; Windows web rerun and
-actual console/browser operation remain pending. This is a test-runner change.
-The subsequent Windows traceback identified Python 3.11 architecture environment
-probes during Waitress import. The runner now supplies empty synthetic values for
-the two exact architecture keys, without accessing the real environment. Regression
-coverage checks the fallback and rejects other environment reads. 19 web tests
-pass on Ubuntu; Windows confirmation remains pending.
+The user confirmed native Windows/Python 3.11 core tests (224, one expected
+symlink skip), web tests (19 in 7.076s), successful PowerShell server/browser
+startup and positive dashboard feedback, then authorized continuing. Real-data
+quote coverage, actual Excel/TradingView imports, resource acceptance and macOS
+remain unverified. The Windows test fixes are in commits through `5ddee40`.
+
+C4a adds atomic append-only CRS projections for new catalog reports, one canonical
+revision per profile/session/method, pinned prior-report links and exact-code
+replay with the original evaluation clock. CLI history list/show/compare and
+report build/replay share application services with the web builder. Schema 2
+migrates metadata only; prior artifacts remain readable. See [CRS history](CRS_HISTORY.md).
+C4b legacy preview/import/rollback and standalone daily workflow integration are
+still pending, followed by C5 recovery and C6 settings/jobs. No real database
+migration, provider operation, scheduler activation or dependency install ran.
+For C4a, 238 guarded core and 20 guarded web tests pass on Ubuntu/Python 3.14.4.
+Native Windows verification of this new increment remains pending.
 
 The user reviewed C3a positively and approved proceeding with C3b. The localhost
 dashboard now supports column-versus-value and column-versus-scaled-column rules,
@@ -38,7 +35,7 @@ invalid-apply recovery and export parity. A 600-row synthetic report passes with
 realistic shared-machine resource use remain pending. No live server/browser,
 provider access, credential read or real-data migration ran this increment.
 
-Next: C3b builder feedback, then C4 append-only history, C5 backup/restore and C6
+Next: C4b legacy history integration, C5 backup/restore and C6
 saved screeners/settings/durable jobs. Finviz/IBKR stays after C6 acceptance.
 Scheduling stays disabled. See [RESUME_PLAN.md](RESUME_PLAN.md).
 

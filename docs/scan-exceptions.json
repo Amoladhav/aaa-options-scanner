@@ -1,6 +1,6 @@
 {
   "scanner_version": "1",
-  "reviewed_at": "2026-09-19",
+  "reviewed_at": "2026-09-20",
   "exceptions": [
     {
       "path": "tools/test_intake_scan.py",
@@ -37,6 +37,17 @@
           "line": 47,
           "rule": "credential-assignment",
           "reason": "Authorization header concatenates its scheme with the user-supplied runtime credential variable; no literal credential."
+        }
+      ]
+    },
+    {
+      "path": "src/trading_scanner/cli.py",
+      "sha256": "c5a9bc239c63f81c7d5ad15a1105a4a3288258c0a05dad45588f173b4ea450d8",
+      "findings": [
+        {
+          "line": 147,
+          "rule": "credential-unquoted",
+          "reason": "AST review: run_fetch keyword arguments reference parsed argparse attributes only; use_stored_token and credential_source are runtime options, not literal credentials."
         }
       ]
     }

@@ -13,6 +13,14 @@ import statistics
 
 HORIZONS = (21, 63, 126)
 WEIGHTS = (0.50, 0.25, 0.25)
+CALCULATION_VERSION = 'crs-v1'
+
+
+def calculation_method():
+    return {"horizons_sessions": HORIZONS, "weights": WEIGHTS,
+            "winsorize_sigma": 3, "tail_fraction": .1, "minimum_peers": 20}
+
+
 SYMBOL = re.compile(r"[A-Z][A-Z0-9.-]{0,14}\Z")
 
 
@@ -153,5 +161,4 @@ def calculate(snapshot: dict) -> dict:
             "membership_observed_at": snapshot["membership_observed_at"],
             "price_source": snapshot["price_source"], "calendar_source": snapshot["calendar_source"],
             "ranked": ranked, "excluded": excluded, "universe_size": len(universe),
-            "method": {"horizons_sessions": HORIZONS, "weights": WEIGHTS,
-                       "winsorize_sigma": 3, "tail_fraction": .1, "minimum_peers": 20}}
+            "method": calculation_method()}

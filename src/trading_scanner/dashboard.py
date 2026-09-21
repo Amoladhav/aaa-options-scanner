@@ -208,10 +208,11 @@ def combine(snapshot, ota, filters=None, *, now=None, previous=None):
     price_status = 'future' if price_age < 0 else 'stale' if price_age > filters['max_price_age_days'] else 'within_age_limit'
     lookup = {r['symbol']: r for r in ota['rows']}
     previous_rows = {}
-    history_ok = previous is not None and previous.get('profile') == result['profile'] and previous.get('as_of') in snapshot['sessions'][:-1] and previous.get('method') == json.loads(json.dumps(result['method']))
+    prior_sessions = [session for session in snapshot['sessions'] if session < result['as_of']]
+    history_ok = previous is not None and previous.get('profile') == result['profile'] and previous.get('as_of') in prior_sessions and previous.get('method') == json.loads(json.dumps(result['method']))
     if history_ok:
         previous_rows = {(r['group'], r['symbol']): r for r in previous['rows']}
-    consecutive = history_ok and previous['as_of'] == snapshot['sessions'][-2]
+    consecutive = history_ok and previous['as_of'] == prior_sessions[-1]
     combined = []
     master = normalize_universe(snapshot['universe'])
     ranks = {row['symbol']: row for row in result['ranked']}

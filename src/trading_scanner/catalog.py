@@ -19,7 +19,8 @@ from .run_ids import new_run_id, valid_run_id
 KINDS = ('prices', 'ota', 'tradier', 'report')
 PROFILES = ('synthetic', 'public', 'ota', 'sandbox', 'production')
 MAX_BYTES = 220_000_000
-MIGRATIONS = (Path(__file__).with_name('migrations') / '001_catalog.sql',)
+MIGRATIONS = tuple(Path(__file__).with_name('migrations') / name
+                   for name in ('001_catalog.sql', '002_crs_history.sql'))
 
 
 def encoded(value):
@@ -145,7 +146,7 @@ class Catalog:
         return data
 
     def publish(self, data, *, kind, profile, input_ids=(), run_id=None,
-                master=None, observed_at=None, settings=None, state='succeeded'):
+                master=None, observed_at=None, settings=None, state='succeeded', history=None):
         """Publish an immutable copy, then register it. Orphans remain recoverable.
 
         Inputs are already validated by application services. Exact bytes are
@@ -162,6 +163,11 @@ class Catalog:
         for aid in input_ids:
             self.read(aid)
         content_hash = digest(data)
+        if history is not None:
+            from .crs_history import validate_history
+            if kind != 'report':
+                raise DataError('HISTORY_INVALID')
+            validate_history(history, data, profile)
         if kind != 'report':
             with self.connection() as db:
                 existing = db.execute('SELECT a.id FROM artifacts a JOIN runs r ON r.id=a.run_id WHERE a.kind=? AND a.sha256=? AND r.profile=?', (kind, content_hash, profile)).fetchone()
@@ -214,6 +220,9 @@ class Catalog:
                        (aid, run_id, kind, relative, 1, content_hash, len(data), 'available'))
             for ordinal, source in enumerate(input_ids):
                 db.execute('INSERT INTO run_inputs VALUES (?,?,?)', (run_id, source, ordinal))
+            if history is not None:
+                from .crs_history import register_history
+                register_history(db, run_id, aid, history)
             db.commit()
         return aid
 

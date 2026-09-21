@@ -10,22 +10,17 @@ questions. Read it before implementing; findings are dated, not live guarantees.
 
 ## Start here next thread
 
-Current hold: user is testing natively in Windows PowerShell/Python 3.11 before
-further development. A reported WinError 1314 in the catalog test is addressed by
-isolating the real-symlink check and skipping only unavailable creation privileges.
-224 core tests pass on Ubuntu; Windows rerun is pending. Resume testing first.
-The combined raw report test also now reads HTML/JSON explicitly as UTF-8 after
-a Windows assertion failed on the middle-dot column label. Copy this corrected
-test into the Windows test checkout before rerunning; application output is unchanged.
-The user has now confirmed 224 core tests pass on Windows in 4.345s (one expected
-symlink skip). Next, copy the corrected `tools/test_web.py` and
-`web_tests/test_boundary.py` into the Windows checkout and rerun the web suite.
-The runner substitutes Click's native console adapter for in-process tests;
-ctypes access remains denied. 18 web tests pass on Ubuntu. Native Windows web
-tests and the actual demo console/browser check are still pending; keep C4 on hold.
-Latest fix: Python 3.11's Windows architecture probes receive two empty synthetic
-environment values. No real environment access is allowed. Copy the updated runner
-and boundary test again; expected web suite count is now 19. Windows rerun pending.
+Current checkpoint: the user accepted the native Windows dashboard and authorized
+continuing. Windows/Python 3.11: 224 core tests passed with one expected symlink
+skip; 19 web tests passed in 7.076s; native PowerShell startup/browser use confirmed.
+C4a is now implemented: catalog CRS revisions, canonical sessions, pinned prior
+reports, history inspection and exact-code replay. See [CRS_HISTORY.md](CRS_HISTORY.md).
+Next is C4b: explicit legacy preview/import/rollback and standalone daily workflow
+integration. C5 backup/restore follows; do not auto-start C5/C6 or providers.
+C4a native Windows verification is pending. Positive synthetic dashboard feedback
+does not establish real saved quote coverage, Excel/TradingView imports or realistic
+resource acceptance. No real database/source migration was executed by agents.
+Current C4a offline evidence: 238 core and 20 web tests pass on Ubuntu/Python 3.14.4.
 
 1. Read project AGENTS.md, this file, STATUS.md and the relevant section of
    FUTURE_ENHANCEMENTS.md. Check Git status and preserve unrelated changes.
@@ -43,7 +38,7 @@ and boundary test again; expected web suite count is now 19. Windows rerun pendi
    resource measurements and full-report-loading limits. No provider operations,
    scheduling activation or real-data migration ran. C2 Infisical/Tradier
    acceptance and remaining browser/native OS checks are pending.
-4. After C3b builder feedback, continue C4 append-only history, C5 backup/restore
+4. Continue remaining C4b legacy history work, then C5 backup/restore
    and C6 settings/durable fetch lifecycle. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
    User performs pushes and every credentialed operation. C7 remains after C6
@@ -51,13 +46,12 @@ and boundary test again; expected web suite count is now 19. Windows rerun pendi
 
 Suggested next-thread prompt:
 
-> Read AGENTS.md, docs/RESUME_PLAN.md, docs/STATUS.md and
-> docs/IMPLEMENTATION_RESEARCH.md. Resume at remaining C3a acceptance; the synthetic
-> report is already visible in Windows Chrome after WSL startup guidance. Check
-> filters, saved-source quote coverage, Excel exports and realistic resource use
-> and the C3b grouped-expression editor before continuing C4–C6. Target shared 8–16 GB machines alongside TradingView/TOS.
-> Keep provider operations user-run and scheduling disabled. Finviz/IBKR follows
-> C6 acceptance. Preserve shared CLI/web services and existing environments.
+> Read AGENTS.md, docs/RESUME_PLAN.md, docs/STATUS.md and docs/CRS_HISTORY.md.
+> C4a catalog history/replay is implemented. Resume C4b legacy history preview,
+> import/rollback and standalone daily workflow compatibility. Keep raw inputs
+> immutable, provider operations user-run, scheduling/hosted CI disabled, and
+> native OS verification distinct from guarded synthetic checks. C5 follows C4.
+
 
 Resumed on 2026-09-20 for C3a all-column filters/sorting and grouped watchlist
 exports. The user then approved proceeding with C3b; typed column comparisons
@@ -248,7 +242,13 @@ numeric comparisons, unit mismatch, missing data, malformed/oversized expression
 old-rule compatibility and export parity. User accepts the builder before adding
 persisted screener controls. No scoring or candidate-policy change is implied.
 
-### C4 — Append-only history and reproducible reports
+### C4 — Append-only history and reproducible reports (C4a implemented; C4b pending)
+
+C4a implements new catalog report history, canonical sessions, pinned prior inputs,
+CLI inspection/comparison and exact-code replay. [CRS_HISTORY.md](CRS_HISTORY.md)
+records contracts and limitations. C4b must still supply explicit legacy import
+preview, idempotency/rollback and standalone CLI daily-history integration; existing
+legacy daily files remain unchanged. No real-source import ran.
 
 - Add crs_results keyed by run ID and symbol with score, percentile, returns,
   eligibility reason, peer group, price session and calculation-version reference.

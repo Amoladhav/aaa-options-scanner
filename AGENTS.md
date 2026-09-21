@@ -337,8 +337,9 @@ This is guidance, not an active model configuration or a correctness guarantee.
   checkpoint, not the historical initial mandate below. At the 2026-09-20 pause,
   C1/C3 and C3a are implemented, C2 docs prepared, and synthetic report visibility
   in Windows Chrome is user-confirmed. C3a column/watchlist controls and C3b typed
-  cross-column/AND/OR filters are now implemented and offline verified. Resume at
-  C3b builder feedback; then C4–C6. Specific saved-data/browser/import acceptance
+  cross-column/AND/OR filters are now implemented; the user accepted native Windows
+  startup/tests and gave positive dashboard feedback. C4a catalog CRS history/replay
+  is implemented. Resume at C4b legacy history integration; then C5–C6. Specific saved-data/import acceptance
   gaps remain in STATUS.md. Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.
 - Target shared 8–16 GB RAM machines running other trading applications. Preserve
   demand-driven operation and assess resource use before adding background work;

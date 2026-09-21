@@ -456,3 +456,17 @@ Legacy AND rules migrate without changing membership. Limits are 32 rules/four
 group levels; text is never executed. See [the decision](decisions/0003-report-expressions.md).
 No new dependency, automatic fetch, worker or scheduling activation is introduced.
 Actual browser/import/resource acceptance remains separate from offline verification.
+
+## Adopted increment: catalog CRS revisions (C4a)
+
+Following native Windows tests/startup and positive dashboard feedback, C4a now
+records CRS projections atomically with new catalog reports. Canonical session
+pointers are separate from immutable revisions; pinned prior artifacts and exact
+code/evaluation clocks support replay. Shared CLI inspection/comparison/build/replay
+services preserve web parity. See [CRS history](CRS_HISTORY.md) and
+[decision 0004](decisions/0004-crs-history.md).
+
+C4b remains explicit legacy preview/import/rollback and standalone daily-workflow
+integration. No automatic backfill, real database migration, scheduler or new
+provider is authorized by this implementation. C5 recovery follows completed C4;
+C6 saved selection revisions/settings/jobs and C7 providers remain later phases.

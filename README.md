@@ -40,16 +40,16 @@ CRS tails, all-column filters/sorting, visible-column controls, pagination,
 source/quote coverage, full/filtered CSV and IV-section TradingView text exports.
 [Grouped filters](docs/FILTER_EXPRESSIONS.md) add nested AND/OR and unit-checked
 column comparisons such as `meanIvPcnt > 1.5 * ivLow1YrPcnt`.
-Core checks: 222 passed; optional guarded web checks: 17 passed. The earlier
-synthetic HTTP start/report/CSV/stop check passed on Ubuntu. The user confirmed synthetic report
-visibility in Windows Chrome after WSL startup guidance. Filter/Excel, saved-source
-quote coverage and native Windows Python/macOS acceptance remain pending.
-No provider fetch or scheduler is started by the web app.
+Native Windows/Python 3.11 acceptance before C4a: 224 core tests (one expected
+symlink skip), 19 web tests, PowerShell server startup and positive browser feedback.
+Real saved quote coverage, Excel/TradingView imports, realistic resource acceptance
+and macOS remain pending. No provider fetch or scheduler starts with the web app.
 
-Development is at C3b grouped-filter browser acceptance. New threads should start with
-[the resume checkpoint and milestone tracker](docs/RESUME_PLAN.md) and
-[current status](docs/STATUS.md). C3b is implemented and offline verified;
-builder feedback precedes C4–C6 and then Finviz/IBKR.
+[CRS report history](docs/CRS_HISTORY.md) now records new catalog report revisions,
+pins prior sessions and supports `history-list`, `history-show`, `history-compare`,
+`report-build` and `report-replay`. Development is at C4a; legacy history import and
+standalone daily workflow integration remain C4b. New threads should start with
+[the resume checkpoint](docs/RESUME_PLAN.md) and [current status](docs/STATUS.md).
 Target shared 8–16 GB RAM machines running TradingView/TOS and other tools;
 realistic resource acceptance is still pending. See
 [measurements and limits](docs/LOCAL_WEB.md#resource-use-and-shared-machine-constraint).

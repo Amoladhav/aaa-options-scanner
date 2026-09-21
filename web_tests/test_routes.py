@@ -149,6 +149,29 @@ class WebRoutesTests(unittest.TestCase):
             self.assertEqual(run_web(temp/'web-bad-port',Namespace(demo=True,port=80)),1)
         create.assert_not_called()
 
+    def test_report_history_links_pin_prior_and_survive_same_session_rerun(self):
+        snapshot=make_snapshot()
+        snapshot['sessions']=snapshot['sessions'][:-1]
+        snapshot['as_of']=snapshot['sessions'][-1]
+        snapshot['universe']=[r for r in snapshot['universe'] if r['symbol']!='S00']
+        price=self.catalog.publish(encoded(snapshot),kind='prices',profile='synthetic',master=snapshot['universe'])
+        with redirect_stdout(io.StringIO()):
+            prior=self.service.generate(price)
+            current=self.service.generate(self.prices,self.ota)
+            newer=self.service.generate(price)
+        page=self.get('/reports/'+current)
+        self.assertEqual(page.status_code,200)
+        self.assertIn('/reports/'+prior,page.text)
+        self.assertNotIn('/reports/'+newer,page.text)
+        self.assertIn('Master membership changed',page.text)
+        self.assertEqual(self.service.load(current)['previous_session'],snapshot['as_of'])
+        with redirect_stdout(io.StringIO()):
+            replay=self.service.replay(current)
+        page=self.get('/reports/'+replay)
+        self.assertEqual(page.status_code,200)
+        self.assertIn('Replayed with the original evaluation time',page.text)
+        self.assertIn('/reports/'+current,page.text)
+
     def test_slow_report_keeps_health_responsive_and_rejects_duplicate_work(self):
         import threading
         started,release=threading.Event(),threading.Event()

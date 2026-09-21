@@ -269,7 +269,7 @@ response, supports structured expiration records and reports only fixed endpoint
 HTTP status and allowlisted field-type diagnostics. Synthetic tests verify that
 unknown provider keys/values cannot enter this diagnostic. User-reported schema
 failure has not yet been reproduced with real data; live retest remains user-run.
-OTA fetch and daily default to 100 rows; regression covers 237 rows across three
+OTA fetch and daily default to 100 rows; regression covers 238 rows across three
 pages, retaining the 600 maximum override and existing duplicate/page-limit checks.
 
 ## OTA negative annual IV low
@@ -286,7 +286,7 @@ user's modified screener config was excluded from the commit.
 User report f7b7e774e9f8425eb493489b14f4b9ec parsed 18 pages/1,800 symbols
 before meanIvPcnt/negative on request 19. Generalized unknown-with-reason handling
 to the three IV level fields. 119 guarded offline tests passed, including
-0/77/100/237/1837-row synthetic screeners and required-IV filter rejection.
+0/77/100/238/1837-row synthetic screeners and required-IV filter rejection.
 Live narrow/medium/broad screener comparison remains user-run; browser counts
 and sanitized reports are requested. Existing user criteria remain uncommitted.
 
@@ -343,3 +343,32 @@ invalid-apply recovery and matching table/CSV/watchlist membership across pages.
 No live HTTP/browser check, real provider artifact inspection or credentialed
 operation ran. Actual browser ergonomics, quote coverage, Excel/TradingView import,
 native Windows/macOS and realistic resource acceptance remain user-run and pending.
+
+## C4a catalog CRS history — 2026-09-20
+
+Before this increment, the user confirmed native Windows/Python 3.11 core tests
+(224, one symlink-privilege skip), web tests (19 in 7.076s), PowerShell demo startup,
+browser visibility and positive dashboard feedback, then authorized continuing.
+That evidence does not establish real-source quotes, actual Excel/TradingView
+imports, resource acceptance or Windows validation of the new C4a changes.
+
+On Ubuntu/Python 3.14.4:
+
+- `python3 -I -S tools/test_offline.py`: 238 tests passed.
+- `python3 -I -S tools/test_web.py --deps artifacts/web-test-deps`: 20 tests passed.
+- History coverage: schema-1 upgrade/failure rollback; same-session append-only
+  revisions and canonical pointers; immutable SQL records; transactional failure
+  without partial history; pinned replay despite later canonical replacement;
+  no-prior replay; code-change rejection; profile/method/calendar isolation;
+  gaps, changed membership, excluded rows and corrupt/missing sources; legacy
+  readability; CLI inspection/build/replay, demo workspace separation and sanitized
+  diagnostics. In-process web checks verify pinned links and replay labels.
+- Fixed a shared prior-session labeling edge case when the supplied calendar
+  includes sessions after the price cutoff; regression covers that case.
+
+No provider request, credential read, real artifact/database migration, dependency
+installation or new live HTTP/browser smoke was run. Guards were reviewed and
+remain in place. Native Windows C4a verification, legacy import/rollback and
+standalone daily workflow integration remain pending; full C4 is not complete.
+The implementation adds demand-driven SQL writes, with no background work/cache;
+these small synthetic checks are not a resource or Windows durability benchmark.

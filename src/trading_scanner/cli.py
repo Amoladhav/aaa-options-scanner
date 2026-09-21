@@ -97,12 +97,17 @@ def main(argv=None, root: Path | None = None) -> int:
     index.add_argument('--input', type=Path, required=True)
     from .schedule_cli import add_commands, run_schedule
     add_commands(subs)
+    from .history_cli import add_commands as add_history_commands
+    add_history_commands(subs)
     args = parser.parse_args(argv)
     if getattr(args, 'credential_source', None) and (getattr(args, 'use_stored_token', False) or getattr(args, 'prompt_token', False)):
         parser.error('Choose --credential-source or the legacy credential flag, not both.')
     if args.command == 'web':
         from .web_cli import run_web
         return run_web(root, args)
+    if args.command.startswith('history-') or args.command in ('report-build','report-replay'):
+        from .history_cli import run_history
+        return run_history(root,args)
     if args.command.startswith('catalog-'):
         from .catalog_service import run_catalog
         return run_catalog(root, args)
