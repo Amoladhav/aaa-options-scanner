@@ -170,12 +170,13 @@ After the synthetic preview, test your saved-data report yourself:
 Native Windows/Python 3.11: user confirmed 224 core tests (one expected symlink
 skip), 19 web tests, PowerShell startup, browser visibility and positive dashboard
 feedback before C4a. Actual saved quotes, Excel/TradingView imports, realistic
-resources and macOS remain unverified. C4a native Windows rerun is pending.
+resources and macOS remain unverified. C4a/C4b native Windows rerun is pending.
 
 New reports now use canonical prior-session CRS history and retain a link to the
 exact prior report. They flag changed master membership and replayed evaluation
 time. Older reports remain readable. See [CRS history](CRS_HISTORY.md) for migration,
-CLI parity and replay limits. Standalone daily-file integration remains C4b; C5
+CLI parity and replay limits. C4b now shares this history with standalone daily
+reports and labels imported legacy provenance; import controls are CLI-only. C5
 supplies backup/restore and C6 supplies saved preferences and durable fetch jobs.
 
 ## Offline checks and recovery limits

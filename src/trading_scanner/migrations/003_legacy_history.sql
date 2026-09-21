@@ -1,0 +1,11 @@
+CREATE TABLE legacy_history (artifact_id TEXT PRIMARY KEY REFERENCES artifacts(id), profile TEXT NOT NULL CHECK(profile IN ('synthetic','public')), price_session TEXT NOT NULL, method_key TEXT NOT NULL, source_name TEXT NOT NULL);
+CREATE TABLE legacy_imports (id TEXT PRIMARY KEY, profile TEXT NOT NULL, preview_hash TEXT NOT NULL, state TEXT NOT NULL CHECK(state IN ('active','rolled_back')), created_at TEXT NOT NULL, rolled_back_at TEXT);
+CREATE TABLE legacy_import_items (batch_id TEXT NOT NULL REFERENCES legacy_imports(id), artifact_id TEXT NOT NULL REFERENCES legacy_history(artifact_id), PRIMARY KEY(batch_id,artifact_id));
+CREATE TABLE report_legacy_inputs (run_id TEXT PRIMARY KEY REFERENCES crs_runs(run_id), artifact_id TEXT NOT NULL REFERENCES legacy_history(artifact_id));
+CREATE INDEX legacy_history_sessions ON legacy_history(profile,price_session);
+CREATE TRIGGER legacy_history_no_update BEFORE UPDATE ON legacy_history BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;
+CREATE TRIGGER legacy_history_no_delete BEFORE DELETE ON legacy_history BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;
+CREATE TRIGGER legacy_items_no_update BEFORE UPDATE ON legacy_import_items BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;
+CREATE TRIGGER legacy_items_no_delete BEFORE DELETE ON legacy_import_items BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;
+CREATE TRIGGER legacy_inputs_no_update BEFORE UPDATE ON report_legacy_inputs BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;
+CREATE TRIGGER legacy_inputs_no_delete BEFORE DELETE ON report_legacy_inputs BEGIN SELECT RAISE(ABORT,'HISTORY_IMMUTABLE'); END;

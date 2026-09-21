@@ -4,9 +4,8 @@ from datetime import datetime, timezone
 import json
 from .run_ids import new_run_id
 
-from .core import DataError, calculate, normalize_universe
-from .dashboard import (attach_tradier, combine, read_json, ota_checked, history_previous,
-                        save_history, write_dashboard, synthetic_ota, atomic_json, FILTER_DEFAULTS)
+from .core import DataError, normalize_universe
+from .dashboard import (read_json, write_dashboard, synthetic_ota, atomic_json, FILTER_DEFAULTS)
 from .demo import make_snapshot
 from .progress import RunProgress, SAFE_ERRORS
 from .report import write_csv
@@ -50,17 +49,23 @@ def run_dashboard(root, args):
         if getattr(args, 'filters', None) and not config_path.exists():
             raise DataError('CANDIDATE_CONFIG_INVALID')
         filters = read_json(config_path) if config_path.exists() else FILTER_DEFAULTS
-        history_dir = root / 'artifacts' / 'history' / profile
-        previous = history_previous(history_dir, snapshot)
-        if demo and previous is None:
+        from .catalog import Catalog
+        from .crs_history import CRSHistory
+        from .report_service import ReportService
+        catalog = Catalog(root)
+        catalog.initialize()
+        service = ReportService(catalog)
+        if demo and CRSHistory(catalog).prior(snapshot) is None:
             old = deepcopy(snapshot)
             old['sessions'] = old['sessions'][:-1]
             old['as_of'] = old['sessions'][-1]
-            save_history(history_dir, calculate(old))
-            previous = history_previous(history_dir, snapshot)
-        from .report_service import compose_report
+            old['membership_observed_at'] = old['as_of']
+            progress.pause()
+            service.generate_from_payloads(old,None,now=now)
         probes = [read_json(path) for path in getattr(args, 'tradier', [])]
-        result = compose_report(snapshot, ota, filters=filters, now=now, previous=previous, probes=probes)
+        progress.pause()
+        artifact_id = service.generate_from_payloads(snapshot,ota,filters=filters,now=now,probes=probes)
+        result = service.load(artifact_id)
         if not result['combined']:
             raise DataError('NO_VALID_PEER_GROUP')
         counts = {'ota_received': result['ota_join_counts']['received'], 'ota_outside_master':result['ota_join_counts']['outside_master'],
@@ -77,8 +82,8 @@ def run_dashboard(root, args):
         write_csv(destination / 'universe.csv', normalize_universe(snapshot['universe']), ('symbol','group','company','sector','sector_etf'))
         atomic_json(destination / 'tradier-inputs.json', probes)
         write_dashboard(result, destination)
-        save_history(history_dir, result)
         progress.finish()
+        print(f'Catalog report ID: {artifact_id}')
         print(f'Dashboard: {destination / "dashboard.html"}')
         print(f'Excel CSV (all master rows): {destination / "master.csv"}')
         print(f'Combined CSV: {destination / "combined.csv"}')

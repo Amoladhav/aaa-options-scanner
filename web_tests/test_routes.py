@@ -45,6 +45,26 @@ class WebRoutesTests(unittest.TestCase):
         self.assertEqual(response.status_code,303,response.text)
         return response.headers['Location']
 
+    def test_imported_history_label_and_export_survive_rollback(self):
+        from trading_scanner.core import calculate
+        from trading_scanner.dashboard import save_history
+        from trading_scanner.legacy_history import LegacyHistory
+        snapshot = make_snapshot()
+        old = deepcopy(snapshot)
+        old['sessions'] = old['sessions'][:-1]
+        old['as_of'] = old['membership_observed_at'] = old['sessions'][-1]
+        save_history(self.catalog.root/'artifacts/history/synthetic', calculate(old))
+        legacy = LegacyHistory(self.catalog)
+        batch = legacy.apply('synthetic', legacy.preview('synthetic')['preview_id'])
+        path = self.report()
+        self.assertIn('Prior ranks use imported legacy history', self.get(path).text)
+        exported = self.get(path+'/export?scope=full')
+        self.assertEqual(exported.status_code, 200)
+        legacy.rollback(batch['batch_id'])
+        self.assertEqual(self.get(path+'/export?scope=full').data, exported.data)
+        self.assertEqual(self.get(path).status_code, 200)
+        self.assertIn('Prior ranks use imported legacy history', self.get(path).text)
+
     def test_health_navigation_and_no_side_effects(self):
         before=len(self.catalog.runs())
         with patch('trading_scanner.credentials.resolve',side_effect=AssertionError('credentials denied')),patch('trading_scanner.ota_fetch.run_fetch',side_effect=AssertionError('providers denied')):

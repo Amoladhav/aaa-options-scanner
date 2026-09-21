@@ -32,6 +32,10 @@ def validate_history(result, data, profile):
         for key in ('prior_artifact_id', 'replay_of'):
             if meta[key] is not None:
                 identifier(meta[key])
+        if meta.get('legacy_prior_artifact_id'):
+            identifier(meta['legacy_prior_artifact_id'])
+            if meta['prior_artifact_id'] is not None:
+                raise ValueError
         rows = result['combined']
         if not 1 <= len(rows) <= 60000 or len(rows) != result['universe_size']:
             raise ValueError
@@ -78,6 +82,13 @@ def register_history(db, run_id, artifact_id, result):
     db.execute('INSERT INTO crs_runs (run_id,artifact_id,profile,price_session,calculation_version,method_key,evaluated_at,prior_artifact_id,replay_of,coverage_json) VALUES (?,?,?,?,?,?,?,?,?,?)',
                (run_id, artifact_id, result['profile'], result['as_of'], CALCULATION_VERSION,
                 key, result['generated_at'], prior, meta['replay_of'], encoded(coverage(result)).decode('utf-8')))
+    legacy = meta.get('legacy_prior_artifact_id')
+    if legacy:
+        row = db.execute('SELECT * FROM legacy_history WHERE artifact_id=?',(legacy,)).fetchone()
+        if (row is None or row['profile'] != result['profile'] or row['method_key'] != key
+                or row['price_session'] >= result['as_of'] or row['price_session'] != result['previous_session']):
+            raise DataError('HISTORY_INVALID')
+        db.execute('INSERT INTO report_legacy_inputs VALUES (?,?)',(run_id,legacy))
     for row in result['combined']:
         ranked = row['crs_status'] == 'ranked'
         db.execute('INSERT INTO crs_results VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
@@ -115,14 +126,24 @@ class CRSHistory:
         # This avoids same-day reruns, future sessions and calendar-day guesses.
         sessions = {d for d in snapshot['sessions'] if d < snapshot['as_of']}
         with self.catalog.connection() as db:
-            rows = db.execute('SELECT price_session,artifact_id FROM canonical_sessions WHERE profile=? AND method_key=? AND price_session<? ORDER BY price_session DESC',
-                              (snapshot['profile'], method_key(), snapshot['as_of']))
+            rows = db.execute('''SELECT price_session,artifact_id,1 AS priority FROM canonical_sessions
+                                 WHERE profile=? AND method_key=? AND price_session<?
+                                 UNION ALL
+                                 SELECT l.price_session,l.artifact_id,0 AS priority FROM legacy_history l
+                                 WHERE l.profile=? AND l.method_key=? AND l.price_session<? AND EXISTS
+                                 (SELECT 1 FROM legacy_import_items i JOIN legacy_imports b ON b.id=i.batch_id
+                                  WHERE i.artifact_id=l.artifact_id AND b.state='active')
+                                 ORDER BY price_session DESC,priority DESC,artifact_id''',
+                              (snapshot['profile'], method_key(), snapshot['as_of'])*2)
             selected = next((r['artifact_id'] for r in rows if r['price_session'] in sessions), None)
         return selected
 
     def previous(self, artifact_id, snapshot):
         if artifact_id is None:
             return None
+        if self.catalog.record(artifact_id)['kind']=='legacy_history':
+            from .legacy_history import LegacyHistory
+            return LegacyHistory(self.catalog).previous(artifact_id,snapshot)
         recorded = self.show(artifact_id)['run']
         if (recorded['profile'] != snapshot['profile'] or recorded['method_key'] != method_key()
                 or recorded['price_session'] >= snapshot['as_of']

@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-09-21. Phase: C4a catalog CRS history implemented; C4b remains.
+Updated: 2026-09-21. Phase: C4a/C4b history implemented; C5 recovery next.
 
 Architecture/sequence clarification (2026-09-21, documentation only): CLI,
 local web and cloud are required delivery targets sharing application services.
@@ -23,10 +23,13 @@ replay with the original evaluation clock. CLI history list/show/compare and
 report build/replay share application services with the web builder. Schema 2
 migrates metadata only; prior artifacts remain readable. See [CRS history](CRS_HISTORY.md).
 C4b legacy preview/import/rollback and standalone daily workflow integration are
-still pending, followed by C5 recovery and C6 settings/jobs. No real database
+implemented through shared services. Schema 3 preserves immutable legacy evidence
+and pinned report replay after rollback. Import controls are CLI-only; web reports
+show limited legacy provenance. C5 recovery and C6 settings/jobs follow. No real database
 migration, provider operation, scheduler activation or dependency install ran.
 For C4a, 238 guarded core and 20 guarded web tests pass on Ubuntu/Python 3.14.4.
-Native Windows verification of this new increment remains pending.
+C4b: 249 guarded core and 21 guarded web tests pass on Ubuntu/Python 3.14.4.
+Native Windows/macOS C4 verification and real legacy import acceptance remain pending.
 
 The user reviewed C3a positively and approved proceeding with C3b. The localhost
 dashboard now supports column-versus-value and column-versus-scaled-column rules,
@@ -44,7 +47,7 @@ invalid-apply recovery and export parity. A 600-row synthetic report passes with
 realistic shared-machine resource use remain pending. No live server/browser,
 provider access, credential read or real-data migration ran this increment.
 
-Next: C4b legacy history integration, C5 backup/restore and C6
+Next: native Windows C4 checks, C5 backup/restore and C6
 saved screeners/settings/durable jobs. Finviz/IBKR stays after C6 acceptance.
 Scheduling stays disabled. See [RESUME_PLAN.md](RESUME_PLAN.md).
 

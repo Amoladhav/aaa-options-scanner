@@ -47,8 +47,9 @@ and macOS remain pending. No provider fetch or scheduler starts with the web app
 
 [CRS report history](docs/CRS_HISTORY.md) now records new catalog report revisions,
 pins prior sessions and supports `history-list`, `history-show`, `history-compare`,
-`report-build` and `report-replay`. Development is at C4a; legacy history import and
-standalone daily workflow integration remain C4b. New threads should start with
+`report-build` and `report-replay`. C4b now adds explicit legacy preview/import/rollback
+and shared catalog history for standalone dashboards/daily runs. C5 recovery is
+next. New threads should start with
 [the resume checkpoint](docs/RESUME_PLAN.md) and [current status](docs/STATUS.md).
 Architecture targets **CLI, local web and future cloud deployment** through shared
 application services. Cloud is planned, not operational today. The sequence adds
@@ -103,8 +104,9 @@ network requests. Missing metrics remain unavailable even for an attached row.
 `dashboard` selects the newest saved files by modification time. Use
 `--snapshot PATH --ota PATH` to select exact inputs. Synthetic/public profiles
 cannot mix. Output includes copies of inputs and settings for reproduction.
-Each profile stores one history record per price session; repeated runs replace
-that session, never add streak days. Rank change is against the prior recorded
+Each profile retains catalog report revisions; one canonical result is selected per
+price session. Legacy daily files are preserved and require explicit import.
+Repeated runs never add streak days. Rank change is against the prior recorded
 session, with gaps and newly ranked symbols labeled. First real run has no prior
 history. Universe changes can also change ranks.
 

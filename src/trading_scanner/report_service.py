@@ -64,17 +64,18 @@ class ReportService:
         return prices,source
 
     def generate(self,prices_id,ota_id=None,tradier_id=None,*,now=None,filters=None,
-                 prior_id=_AUTO_PRIOR,replay_of=None):
+                 prior_id=_AUTO_PRIOR,replay_of=None,tradier_extra=()):
         from .progress import RunProgress
         from .run_ids import new_run_id
         from .scan_service import code_revision
         from .dashboard import atomic_json
-        ids=[aid for aid in (prices_id,ota_id,tradier_id) if aid]
+        tradier_ids=[aid for aid in (tradier_id,*tradier_extra) if aid]
+        ids=[aid for aid in (prices_id,ota_id,*tradier_ids) if aid]
         if len(set(ids))!=len(ids):
             raise DataError('REPORT_SOURCE_INVALID')
         snapshot=json.loads(self.catalog.read(prices_id,'prices'),object_pairs_hook=pairs)
         ota=json.loads(self.catalog.read(ota_id,'ota'),object_pairs_hook=pairs) if ota_id else None
-        probes=[json.loads(self.catalog.read(tradier_id,'tradier'),object_pairs_hook=pairs)] if tradier_id else []
+        probes=[json.loads(self.catalog.read(aid,'tradier'),object_pairs_hook=pairs) for aid in tradier_ids]
         if snapshot.get('profile') not in ('synthetic','public'):
             raise DataError('REPORT_SOURCE_INVALID')
         from .crs_history import CRSHistory
@@ -83,6 +84,7 @@ class ReportService:
         if prior_id is _AUTO_PRIOR:
             prior_id=history.prior(snapshot)
         previous=history.previous(prior_id,snapshot)
+        legacy_prior=prior_id if prior_id and self.catalog.record(prior_id)['kind']=='legacy_history' else None
         ids.extend(aid for aid in (prior_id,replay_of) if aid and aid not in ids)
         evaluation_time=now or datetime.now(timezone.utc)
         progress=RunProgress(self.catalog.root/'artifacts/logs',new_run_id(),'web-report',snapshot['profile'],code_revision())
@@ -92,13 +94,19 @@ class ReportService:
             result=compose_report(snapshot,ota,probes=probes,now=evaluation_time,
                                   filters=filters,previous=previous)
             result['history_provenance']={'schema_version':1,'calculation_version':CALCULATION_VERSION,
-                                          'prior_artifact_id':prior_id,'replay_of':replay_of}
-            if prior_id:
+                                          'prior_artifact_id':None if legacy_prior else prior_id,'replay_of':replay_of}
+            if legacy_prior:
+                result['history_provenance'].update(legacy_prior_artifact_id=legacy_prior,
+                                                    legacy_limitations='Full master, inputs and code version unavailable',
+                                                    master_changed=None)
+            elif prior_id:
                 prior_master=history.show(prior_id)['run']['master_id']
                 result['history_provenance']['master_changed']=prior_master != result['master_id']
             else:
                 result['history_provenance']['master_changed']=False
             result['source_artifact_ids']={'prices':prices_id,'ota':ota_id,'tradier':tradier_id}
+            if tradier_extra:
+                result['source_artifact_ids']['tradier_extra']=list(tradier_extra)
             result['source_metadata']={'price_session':snapshot['as_of'],
                                        'membership_observed_at':snapshot.get('membership_observed_at'),
                                        'ota_retrieved_at':ota.get('retrieved_at') if ota else None,
@@ -140,5 +148,22 @@ class ReportService:
         ids=original['source_artifact_ids']
         return self.generate(ids['prices'],ids['ota'],ids['tradier'],
                              now=datetime.fromisoformat(original['generated_at']),
-                             filters=original['filters'],prior_id=recorded['prior_artifact_id'],
-                             replay_of=artifact_id)
+                             filters=original['filters'],prior_id=recorded['prior_artifact_id'] or original['history_provenance'].get('legacy_prior_artifact_id'),
+                             replay_of=artifact_id,tradier_extra=ids.get('tradier_extra',()))
+
+    def generate_from_payloads(self,snapshot,ota,*,probes=(),filters=None,now=None):
+        """CLI saved-file adapter: capture validated inputs, then use the same builder.
+
+        Decoded inputs are serialized, not claimed as original transport bytes.
+        Original CLI input/output files remain outside this immutable catalog copy.
+        """
+        # Validate all joins before registering source artifacts.
+        compose_report(snapshot,ota,probes=probes,filters=filters,now=now)
+        prices=self.catalog.publish(encoded(snapshot),kind='prices',profile=snapshot['profile'],
+                                    master=snapshot['universe'],observed_at=snapshot['membership_observed_at'])
+        source=self.catalog.publish(encoded(ota),kind='ota',profile='synthetic' if snapshot['profile']=='synthetic' else 'ota',
+                                    observed_at=ota['retrieved_at']) if ota is not None else None
+        quotes=[self.catalog.publish(encoded(probe),kind='tradier',profile=probe['profile'],
+                                     observed_at=probe.get('started_at',probe.get('retrieved_at'))) for probe in probes]
+        return self.generate(prices,source,quotes[0] if quotes else None,
+                             tradier_extra=quotes[1:],filters=filters,now=now)

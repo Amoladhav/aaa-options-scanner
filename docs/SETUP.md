@@ -202,3 +202,8 @@ remain to be checked. Keep the server terminal open while using the app; Ctrl+C
 in that terminal stops it. No automatic refresh, provider fetch or scheduler runs
 in the preview. Target shared 8–16 GB machines with other trading tools open;
 hardware acceptance remains pending.
+
+C4 legacy history migration is an explicit user-run step after setup; see
+[preview/import/rollback commands](CRS_HISTORY.md#explicit-legacy-import-c4b).
+Opening the dashboard does not import old daily files. Verify the guarded suites
+on the selected native platform before applying this storage upgrade to real data.

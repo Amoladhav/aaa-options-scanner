@@ -25,3 +25,14 @@ or new dependency is needed. Schema 2 is forward-only; old clients fail closed.
 
 Acceptance is documented in [CRS history](../CRS_HISTORY.md). C4 is not complete
 until legacy import/recovery and CLI daily-history integration are verified.
+
+
+C4b update (2026-09-21): adopted schema 3 with explicit preview hashes, atomic
+batch activation and non-destructive batch rollback. Catalog reports take
+precedence over legacy sources on the same session; prior selection still requires
+an earlier session in the input calendar. Rollback changes future selection only,
+so existing report pins and replay evidence survive. Standalone report adapters
+now call the shared catalog builder. Legacy import controls remain CLI-only.
+Rejected automatic backfill and inferred full membership from rank-only history;
+both would claim evidence the overwritten daily files cannot provide. Native OS
+and real-import acceptance remain separate from guarded synthetic verification.

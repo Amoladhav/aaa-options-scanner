@@ -16,11 +16,11 @@ import uuid
 from .core import DataError, normalize_universe
 from .run_ids import new_run_id, valid_run_id
 
-KINDS = ('prices', 'ota', 'tradier', 'report')
+KINDS = ('prices', 'ota', 'tradier', 'report', 'legacy_history')
 PROFILES = ('synthetic', 'public', 'ota', 'sandbox', 'production')
 MAX_BYTES = 220_000_000
 MIGRATIONS = tuple(Path(__file__).with_name('migrations') / name
-                   for name in ('001_catalog.sql', '002_crs_history.sql'))
+                   for name in ('001_catalog.sql', '002_crs_history.sql', '003_legacy_history.sql'))
 
 
 def encoded(value):
@@ -212,7 +212,7 @@ class Catalog:
                     db.execute('INSERT OR IGNORE INTO master_members VALUES (?,?,?)', (master_key, member['symbol'], encoded(member).decode()))
             if settings_key:
                 db.execute('INSERT OR IGNORE INTO settings_revisions VALUES (?,?,?,NULL)', (settings_key, encoded(settings).decode(), settings_key))
-            provider = {'prices':'public', 'ota':'ota', 'tradier':'tradier', 'report':'derived'}[kind]
+            provider = {'prices':'public', 'ota':'ota', 'tradier':'tradier', 'report':'derived', 'legacy_history':'legacy'}[kind]
             db.execute('INSERT INTO runs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
                        (run_id, 'local', profile, provider, 'report' if kind=='report' else 'index', state,
                         now, now, str(datetime.now().astimezone().tzinfo), observed_at, code_revision(), settings_key, master_key))

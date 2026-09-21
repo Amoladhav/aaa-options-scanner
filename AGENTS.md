@@ -347,7 +347,8 @@ This is guidance, not an active model configuration or a correctness guarantee.
   in Windows Chrome is user-confirmed. C3a column/watchlist controls and C3b typed
   cross-column/AND/OR filters are now implemented; the user accepted native Windows
   startup/tests and gave positive dashboard feedback. C4a catalog CRS history/replay
-  is implemented. Resume at C4b legacy history integration; then C5–C6. Specific saved-data/import acceptance
+  is implemented. C4b legacy preview/import/rollback and standalone integration are
+  implemented; resume with native Windows C4 checks, then C5–C6. Specific saved-data/import acceptance
   gaps remain in STATUS.md. Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.
 - Target shared 8–16 GB RAM machines running other trading applications. Preserve
   demand-driven operation and assess resource use before adding background work;

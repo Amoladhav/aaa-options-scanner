@@ -3,6 +3,7 @@
 {% if result.history_provenance %}<p class="muted">Prior recorded session: {{ result.previous_session or 'None' }}.
 {% if result.history_provenance.prior_artifact_id %}<a href="{{ url_for('report',artifact_id=result.history_provenance.prior_artifact_id) }}">View pinned prior report</a>{% endif %}
 {% if result.history_provenance.master_changed %}Master membership changed; ranks use different peer universes.{% endif %}
+{% if result.history_provenance.legacy_prior_artifact_id %}Prior ranks use imported legacy history. Full prior membership, source inputs and code version are unavailable.{% endif %}
 {% if result.history_provenance.replay_of %}Replayed with the original evaluation time. <a href="{{ url_for('report',artifact_id=result.history_provenance.replay_of) }}">Original report</a>{% endif %}</p>{% endif %}
 <p class="muted">Price session {{ result.as_of }} · {{ result.price_status }} · Built {{ result.generated_at | local_time }}<br>Stocks and ETFs are ranked separately. CRS is a relative momentum score, not a probability or trading instruction.</p>
 <div class="cards"><article><b>{{ counts.master_symbols }}</b>Master members</article><article><b>{{ counts.ranked }}</b>Ranked · {{ counts.excluded }} excluded</article><article><b>{{ counts.matched }}</b>OTA matches</article><article><b>{{ counts.tradier_matched }}</b>ATM attached · {{ counts.symbols_failed }} failed</article></div>

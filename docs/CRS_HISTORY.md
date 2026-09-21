@@ -1,4 +1,4 @@
-# CRS report history (C4a)
+# CRS report history (C4a/C4b)
 
 New catalog reports now preserve each CRS calculation revision, its source artifact
 IDs, candidate settings, master version, calculation method/version, evaluation
@@ -8,10 +8,10 @@ lineage. SQL stores CRS rows and metadata rather than duplicating provider paylo
 Returns are fractions; percentiles are 0–1 within stock/ETF peer groups. Excluded
 members remain in history with their reason and null rank/score/return projection.
 
-This increment applies to the localhost report builder and `report-build` shared
-service. Existing standalone `dashboard`, `daily`, and `dashboard-demo` commands
-still use legacy daily files. Automatic import, rollback of imports and switching
-those commands to catalog history remain C4b. Older catalog reports remain readable
+The localhost report builder, `report-build`, standalone `dashboard`, `daily`
+report stage and `dashboard-demo` now share catalog history. Legacy daily files
+are preserved but are only used after explicit preview/import. New reports no
+longer overwrite or create those daily files. Older catalog reports remain readable
 but do not gain invented historical rows. A newly built report records history;
 opening an old report does not backfill it.
 
@@ -31,8 +31,10 @@ backtest. A weekend rerun retains its underlying price session.
 The selected prior artifact is pinned into each report and its catalog input
 lineage. Later revisions never change an existing report. Missing/corrupted prior
 files stop generation rather than silently falling back to another revision.
-Canonical revision selection is automatic in this increment; manual selection and
-legacy import are later work. The canonical view adds no streak strategy.
+Canonical revision selection is automatic; manual canonical selection remains
+future work. Imported legacy ranks are a fallback when no catalog revision exists
+for that session. The latest eligible prior session wins; catalog reports take
+precedence over imports on the same session. The canonical view adds no streak strategy.
 
 `report-replay` creates another immutable report using the original source IDs,
 candidate settings, evaluation time and pinned prior (including no prior). It
@@ -76,7 +78,7 @@ No credential, worker or scheduler initialization is introduced.
 
 ## Upgrade and recovery
 
-Catalog schema 2 adds `crs_runs`, `crs_results`, and `canonical_sessions`.
+Catalog schema 2 added `crs_runs`, `crs_results`, and `canonical_sessions`.
 Initialization applies the checksummed SQL migration transactionally. Existing
 files and schema-1 metadata remain unchanged; no raw sources or legacy daily files
 are scanned. CRS run/row updates and deletes are rejected by SQL triggers.
@@ -100,3 +102,72 @@ rows, same-session reruns, profile/method/calendar isolation, missing/corrupted
 inputs, changed membership, exclusions, replay parity and CLI review privacy.
 Native Windows core/web tests and dashboard acceptance were confirmed before C4a;
 this increment still needs native Windows verification. macOS remains unverified.
+
+## Explicit legacy import (C4b)
+
+`history-preview` reads only `artifacts/history/PROFILE/*.json` in the selected
+workspace. It does not initialize/upgrade the catalog or modify history files;
+CLI logs and a sanitized review report are still written. Supported input is the
+existing daily format: session, profile, exact calculation method and rank rows.
+Unknown formats/methods, malformed files and conflicting active imports block the
+batch. No fields are silently repaired. Optional `--session YYYY-MM-DD` restricts
+both preview and import to one file. Limits: 5,000 files, 8 MB per file, 64 MB total.
+
+PowerShell, user-run against the regular workspace:
+
+```powershell
+.\.venv\Scripts\python.exe -I -S run.py history-preview --profile public
+.\.venv\Scripts\python.exe -I -S run.py history-import --profile public --preview-id PREVIEW_ID
+.\.venv\Scripts\python.exe -I -S run.py history-imports --profile public
+.\.venv\Scripts\python.exe -I -S run.py history-rollback --batch BATCH_ID
+```
+
+Ubuntu/WSL/macOS Bash:
+
+```bash
+.venv/bin/python -I -S run.py history-preview --profile public
+.venv/bin/python -I -S run.py history-import --profile public --preview-id PREVIEW_ID
+.venv/bin/python -I -S run.py history-imports --profile public
+.venv/bin/python -I -S run.py history-rollback --batch BATCH_ID
+```
+
+Use the preview ID printed by the first command and batch ID printed by import.
+These are non-secret identifiers, not credentials. Review aggregate counts before
+import. If files or relevant catalog selections change, preview again. Repeating
+an import with a fresh preview skips identical active files. No legacy files are
+imported automatically at startup or during report building. `--demo` selects the
+separate web demo workspace; standalone `dashboard-demo` uses the regular workspace
+with the synthetic profile.
+
+Schema 3 adds immutable legacy-source metadata, import batch membership/state and
+report-to-legacy lineage. Import upgrades metadata transactionally, preserves exact
+legacy bytes in the catalog, and activates the entire batch in one transaction.
+Failed activation can leave inactive catalog copies; it never activates a partial
+batch. Rollback deactivates the batch for future prior-session selection, retaining
+its evidence and all existing report pins. It does not downgrade SQLite or rewrite
+reports. Reimport after rollback is supported. A report already pinned to a rolled
+back source can still replay under the original software revision.
+
+Legacy provenance is explicitly limited: overwritten same-session revisions,
+original inputs, full membership, returns and original code version cannot be
+recovered. Prior master-change status is unknown, not falsely unchanged. The web
+report labels this limitation. Imports are not full replayable calculation runs
+and appear in `history-imports`, not `history-list`; new derived reports appear in
+both the existing report UI and CRS history. The services are shared, but import
+preview/apply/rollback controls are CLI-only; web controls remain unimplemented.
+Setup assistants can guide these same user-run commands. Cloud adaptation is C8.
+
+Standalone report source copies serialize already decoded inputs and do not claim
+original transport-byte fidelity. Existing HTML/CSV/output paths remain available;
+the command also prints its catalog report ID. All explicitly supplied Tradier
+files are pinned for replay. Extra immutable copies and SQL rows consume disk space;
+there is no automatic retention/deletion or background scanning. Backup/restore is
+next in C5. A failure writing standalone exports can leave a valid catalog report;
+the command still reports failure and does not claim those exports succeeded.
+
+C4b validation: 249 guarded core tests and 21 guarded web tests on Ubuntu/Python
+3.14.4. Coverage includes read-only preview of schema 2, stale previews, duplicates,
+conflicts, malformed input, limits/path checks, atomic failure, rollback/reimport,
+prior-session precedence, CLI privacy, standalone integration and replay after
+rollback. Actual legacy imports and native Windows/macOS C4 verification remain
+pending. Agents used temporary synthetic workspaces only.

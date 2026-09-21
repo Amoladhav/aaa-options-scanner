@@ -9,6 +9,7 @@ from .progress import RunProgress
 from .report_service import ReportService
 from .run_ids import new_run_id
 from .scan_service import code_revision
+from .legacy_history import LegacyHistory
 
 
 def add_commands(subs):
@@ -26,7 +27,17 @@ def add_commands(subs):
     build.add_argument('--prices', required=True)
     build.add_argument('--ota')
     build.add_argument('--tradier')
-    for command in (listing, show, compare, replay, build):
+    preview = subs.add_parser('history-preview', help='USER-RUN: preview legacy daily history without importing')
+    apply = subs.add_parser('history-import', help='USER-RUN: import a reviewed legacy preview')
+    apply.add_argument('--preview-id', required=True)
+    batches = subs.add_parser('history-imports', help='USER-RUN: list legacy import batches')
+    rollback = subs.add_parser('history-rollback', help='USER-RUN: deactivate one legacy import batch, retaining evidence')
+    rollback.add_argument('--batch',required=True)
+    for command in (preview,apply,batches):
+        command.add_argument('--profile',choices=('synthetic','public'),required=True)
+    for command in (preview,apply):
+        command.add_argument('--session',help='Optional single YYYY-MM-DD legacy file')
+    for command in (listing, show, compare, replay, build, preview, apply, batches, rollback):
         command.add_argument('--demo', action='store_true', help='Use the separate web demo workspace')
 
 
@@ -39,9 +50,23 @@ def run_history(root, args):
         progress = RunProgress(root/'artifacts/logs', new_run_id(), args.command, 'unknown', code_revision())
         progress.begin(); progress.start('catalog')
         catalog = Catalog(root)
-        catalog.initialize()
+        if args.command not in ('history-preview','history-import'):
+            catalog.initialize()
         history = CRSHistory(catalog)
-        if args.command == 'history-list':
+        legacy = LegacyHistory(catalog)
+        if args.command == 'history-preview':
+            output=legacy.preview(args.profile,args.session)
+            counts={'rows':len(output['entries'])}
+        elif args.command == 'history-import':
+            output=legacy.apply(args.profile,args.preview_id,args.session)
+            counts={'indexed':output['imported']}
+        elif args.command == 'history-imports':
+            output=legacy.batches(args.profile)
+            counts={'rows':len(output)}
+        elif args.command == 'history-rollback':
+            output=legacy.rollback(args.batch)
+            counts={'changed':output['deactivated']}
+        elif args.command == 'history-list':
             output = history.list(args.profile, limit=args.limit)
             counts = {'rows': len(output)}
         elif args.command == 'history-show':
@@ -61,7 +86,8 @@ def run_history(root, args):
         print(json.dumps(output, indent=2, ensure_ascii=True, allow_nan=False))
     except (Exception, KeyboardInterrupt) as exc:
         safe = {'HISTORY_NOT_RECORDED','HISTORY_REPLAY_VERSION_MISMATCH',
-                'HISTORY_COMPARISON_INCOMPATIBLE','HISTORY_INVALID'}
+                'HISTORY_COMPARISON_INCOMPATIBLE','HISTORY_INVALID','HISTORY_PREVIEW_STALE',
+                'HISTORY_IMPORT_BLOCKED','HISTORY_IMPORT_LIMIT','HISTORY_UPGRADE_REQUIRED','HISTORY_IMPORT_NOT_FOUND'}
         code = ('RUN_CANCELLED' if isinstance(exc, KeyboardInterrupt) else
                 exc.args[0] if isinstance(exc, DataError) and len(exc.args)==1 and exc.args[0] in safe else 'HISTORY_FAILED')
         print(f'{code}: check selected report IDs, software revision and catalog availability.')

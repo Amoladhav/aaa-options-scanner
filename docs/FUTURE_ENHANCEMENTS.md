@@ -507,7 +507,10 @@ code/evaluation clocks support replay. Shared CLI inspection/comparison/build/re
 services preserve web parity. See [CRS history](CRS_HISTORY.md) and
 [decision 0004](decisions/0004-crs-history.md).
 
-C4b remains explicit legacy preview/import/rollback and standalone daily-workflow
-integration. No automatic backfill, real database migration, scheduler or new
+C4b now implements explicit legacy preview/import/rollback and standalone daily-workflow
+integration through shared services. Import controls are CLI-only; web reports
+consume the same prior-selection service and label limited legacy provenance.
+Schema 3 retains import evidence and report pins after batch deactivation.
+No automatic backfill, real database migration, scheduler or new
 provider is authorized by this implementation. C5 recovery follows completed C4;
 C6 saved selection revisions/settings/jobs and C7 providers remain later phases.

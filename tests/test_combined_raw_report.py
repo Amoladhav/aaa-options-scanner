@@ -134,7 +134,8 @@ class CombinedRawReportTests(unittest.TestCase):
         self.assertIn('Excel CSV (all master rows):',output.getvalue())
         self.assertIn('Tradier: input files=0; attached=0;',output.getvalue())
         self.assertIn('No Tradier file attached.',output.getvalue())
-        review=json.loads(next(self.root.glob('artifacts/agent-review/*.json')).read_text(encoding='utf-8'))
+        reviews=[json.loads(p.read_text(encoding='utf-8')) for p in self.root.glob('artifacts/agent-review/*.json')]
+        review=next(r for r in reviews if r['checks'][0]['name']=='combined_dashboard')
         self.assertEqual(review['counts']['ota_received'],48)
         self.assertNotIn('customExample',json.dumps(review))
         self.assertNotIn('S01',json.dumps(review))
