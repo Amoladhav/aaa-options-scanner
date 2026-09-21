@@ -3,7 +3,7 @@
 A runnable personal web preview now shares the existing Python CRS/master/OTA/
 Tradier composition and CSV protection. No Node build, cloud service, credential
 manager or provider request is needed for its synthetic demo. This is C3a;
-advanced history, editable settings and durable fetch/cancel jobs are C4–C6.
+history, editable settings and durable fetch/cancel jobs are now implemented.
 Scheduling is unavailable in this app. Starting it does not start or change any
 existing scheduler. Finviz/IBKR implementation stays after C6 user acceptance.
 
@@ -179,7 +179,7 @@ time. Older reports remain readable. See [CRS history](CRS_HISTORY.md) for migra
 CLI parity and replay limits. C4b now shares this history with standalone daily
 reports and labels imported legacy provenance; import controls are CLI-only.
 [C5 catalog recovery](RECOVERY.md) now provides CLI backup/verify/restore; web
-recovery controls remain unimplemented. C6 adds saved preferences and durable jobs.
+recovery controls remain unimplemented. C6 now provides saved preferences and durable jobs.
 
 ## Offline checks and recovery limits
 
@@ -276,3 +276,9 @@ C6b now persists applied screeners and display preferences through shared CLI/we
 services. See [workspace settings](WORKSPACE_SETTINGS.md) for create/update,
 historical revisions, export parity, stale-edit recovery and setup-agent mapping.
 Credentials and scheduler activation remain outside these controls.
+
+C6c adds **Jobs** submission/status/cancellation through shared services. Only an
+explicit user-run foreground terminal command executes a queued job; the browser
+never starts workers or reads credentials. Demo mode cannot queue provider fetches.
+See [JOBS.md](JOBS.md). C6 user acceptance precedes C7; native Windows verification
+remains at major releases. Scheduling stays disabled.

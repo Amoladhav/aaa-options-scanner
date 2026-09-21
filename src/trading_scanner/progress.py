@@ -23,11 +23,14 @@ HISTORY_ERRORS = {'HISTORY_FAILED','HISTORY_NOT_RECORDED','HISTORY_REPLAY_VERSIO
 RECOVERY_ERRORS = {'RECOVERY_INVALID','RECOVERY_CHANGED','RECOVERY_LIMIT',
                    'RECOVERY_DESTINATION_EXISTS','RECOVERY_FAILED','RECOVERY_BUSY'}
 
+JOB_ERRORS = {'JOB_INVALID','JOB_NOT_FOUND','JOB_CONFLICT','JOB_BUSY','JOB_STATE_INVALID',
+              'JOB_CONFIRM_STOPPED','JOB_INTERRUPTED','JOB_VERSION_MISMATCH','JOB_LEASE_LOST','JOB_FAILED'}
+
 WORKSPACE_ERRORS = {'SETTINGS_INVALID','SETTINGS_NOT_FOUND','SETTINGS_CONFLICT'}
 
 SETUP_ERRORS = {'CREDENTIAL_EXISTS','CREDENTIAL_NOT_FOUND','CREDENTIAL_ACTION_INVALID'}
 
-SAFE_ERRORS = WORKSPACE_ERRORS | SETUP_ERRORS | RECOVERY_ERRORS | CREDENTIAL_ERRORS | {"REPORT_FAILED", "WEB_FAILED","CATALOG_FAILED", "CATALOG_RECONCILIATION_REQUIRED","OTA_REPORT_INPUT_INVALID", "OTA_REPORT_INPUT_MISSING", "OTA_REPORT_FAILED", "SCHEDULE_TASK_FAILED", "THROTTLE_BUSY", "THROTTLE_STATE_INVALID", "THROTTLE_COOLDOWN_ACTIVE", "THROTTLE_CIRCUIT_OPEN", "PUBLIC_NETWORK_ERROR", "PUBLIC_ACCESS_REJECTED", "PUBLIC_RATE_LIMITED", "PUBLIC_HTTP_ERROR","TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
+SAFE_ERRORS = JOB_ERRORS | WORKSPACE_ERRORS | SETUP_ERRORS | RECOVERY_ERRORS | CREDENTIAL_ERRORS | {"REPORT_FAILED", "WEB_FAILED","CATALOG_FAILED", "CATALOG_RECONCILIATION_REQUIRED","OTA_REPORT_INPUT_INVALID", "OTA_REPORT_INPUT_MISSING", "OTA_REPORT_FAILED", "SCHEDULE_TASK_FAILED", "THROTTLE_BUSY", "THROTTLE_STATE_INVALID", "THROTTLE_COOLDOWN_ACTIVE", "THROTTLE_CIRCUIT_OPEN", "PUBLIC_NETWORK_ERROR", "PUBLIC_ACCESS_REJECTED", "PUBLIC_RATE_LIMITED", "PUBLIC_HTTP_ERROR","TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
                "CONSTITUENTS_COUNT_INVALID", "CONSTITUENTS_RESPONSE_TOO_LARGE",
                "NO_VALID_PEER_GROUP", "INVALID_SNAPSHOT", "INSUFFICIENT_CALENDAR",
                "MISSING_SNAPSHOT", "INVALID_SESSION_ORDER", "WEEKEND_SESSION",
@@ -47,6 +50,7 @@ SAFE_ERRORS = WORKSPACE_ERRORS | SETUP_ERRORS | RECOVERY_ERRORS | CREDENTIAL_ERR
                "TRADIER_MONTHLY_UNVERIFIED", "TRADIER_NO_ATM_PAIR", "TRADIER_FETCH_FAILED"}
 SAFE_ERRORS |= HISTORY_ERRORS
 STAGES = {
+    "job_run": "Processing a durable local job",
     "workspace_settings": "Saving or reading workspace preferences",
     "recovery_database": "Snapshotting or validating catalog database",
     "recovery_files": "Verifying or copying registered catalog files",
@@ -89,11 +93,12 @@ class RunProgress:
     for correlation and durations. Redirected output never contains control codes.
     """
     def __init__(self, log_directory: Path, run_id: str, command: str, profile: str,
-                 revision: str, stream=None):
+                 revision: str, stream=None, observer=None):
         if not valid_run_id(run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
             raise ValueError("INVALID_LOG_METADATA")
-        if command not in {"screener-export", "screener-list", "screener-show", "screener-save", "preferences-show", "preferences-set", "credential-manage", "catalog-backup", "catalog-backup-verify", "catalog-restore", "history-preview", "history-import", "history-imports", "history-rollback", "history-list", "history-show", "history-compare", "report-replay", "report-build", "web", "web-report","catalog-init", "catalog-index", "catalog-reconcile","ota-report", "ota-report-demo", "schedule-run", "demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe", "tradier-fetch"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
+        if command not in {"job-submit-report", "job-submit-ota", "job-submit-tradier", "job-list", "job-show", "job-cancel", "job-recover", "job-run", "screener-export", "screener-list", "screener-show", "screener-save", "preferences-show", "preferences-set", "credential-manage", "catalog-backup", "catalog-backup-verify", "catalog-restore", "history-preview", "history-import", "history-imports", "history-rollback", "history-list", "history-show", "history-compare", "report-replay", "report-build", "web", "web-report","catalog-init", "catalog-index", "catalog-reconcile","ota-report", "ota-report-demo", "schedule-run", "demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe", "tradier-fetch"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
             raise ValueError("INVALID_LOG_METADATA")
+        self.observer = observer
         self.run_id, self.command, self.profile, self.revision = run_id, command, profile, revision
         self.stream = sys.stdout if stream is None else stream
         self.started = self.stage_started = monotonic()
@@ -157,6 +162,8 @@ class RunProgress:
                   "counts": counts, "error_code": error_code, "estimate": self.forecast}
         self.log.write(json.dumps(record, allow_nan=False) + "\n")
         self.log.flush()
+        if self.observer is not None:
+            self.observer(record)
         if level in ("WARNING", "ERROR"):
             self.error_log.write(json.dumps(record, allow_nan=False) + "\n")
             self.error_log.flush()

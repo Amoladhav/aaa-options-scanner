@@ -1,0 +1,7 @@
+CREATE TABLE durable_jobs (id TEXT PRIMARY KEY, action_key TEXT NOT NULL UNIQUE, kind TEXT NOT NULL, profile TEXT NOT NULL, request_json TEXT NOT NULL, request_hash TEXT NOT NULL, code_revision TEXT NOT NULL, run_id TEXT NOT NULL UNIQUE, state TEXT NOT NULL CHECK(state IN ('queued','running','cancel_requested','succeeded','partial','failed','cancelled','interrupted')), worker_id TEXT, created_at TEXT NOT NULL, started_at TEXT, finished_at TEXT, error_code TEXT, output_artifact_id TEXT REFERENCES artifacts(id));
+CREATE TABLE job_inputs (job_id TEXT NOT NULL REFERENCES durable_jobs(id), artifact_id TEXT NOT NULL REFERENCES artifacts(id), PRIMARY KEY(job_id,artifact_id));
+CREATE TABLE job_events (sequence INTEGER PRIMARY KEY AUTOINCREMENT, job_id TEXT NOT NULL REFERENCES durable_jobs(id), created_at TEXT NOT NULL, state TEXT NOT NULL, stage TEXT NOT NULL, completed INTEGER NOT NULL, total INTEGER, counts_json TEXT NOT NULL, error_code TEXT);
+CREATE UNIQUE INDEX one_active_worker ON durable_jobs((1)) WHERE state IN ('running','cancel_requested');
+CREATE TRIGGER job_request_immutable BEFORE UPDATE OF action_key,kind,profile,request_json,request_hash,code_revision,run_id,created_at ON durable_jobs BEGIN SELECT RAISE(ABORT,'JOB_IMMUTABLE'); END;
+CREATE TRIGGER job_events_no_update BEFORE UPDATE ON job_events BEGIN SELECT RAISE(ABORT,'JOB_IMMUTABLE'); END;
+CREATE TRIGGER job_events_no_delete BEFORE DELETE ON job_events BEGIN SELECT RAISE(ABORT,'JOB_IMMUTABLE'); END;

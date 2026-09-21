@@ -352,7 +352,8 @@ This is guidance, not an active model configuration or a correctness guarantee.
   implemented. C5 catalog backup/verify/restore is also implemented; see
   docs/RECOVERY.md for catalog-only scope. C6a CLI credential lifecycle and credential-free web Setup guide are implemented.
   C6b screeners/preferences are implemented with shared CLI/web services and
-  catalog recovery coverage. Resume at C6c durable jobs.
+  catalog recovery coverage. C6c durable jobs are implemented; resume at C6 user
+  acceptance (docs/JOBS.md) before C7. Native Windows checks remain at major releases.
   Native Windows checks are deferred
   to major-release acceptance. Specific saved-data/import acceptance
   gaps remain in STATUS.md. Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.

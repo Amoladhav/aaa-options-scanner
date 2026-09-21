@@ -169,3 +169,9 @@ C6b now persists applied screeners and display preferences through shared CLI/we
 services. See [workspace settings](WORKSPACE_SETTINGS.md) for create/update,
 historical revisions, export parity, stale-edit recovery and setup-agent mapping.
 Credentials and scheduler activation remain outside these controls.
+
+C6c adds **Jobs** submission/status/cancellation through shared services. Only an
+explicit user-run foreground terminal command executes a queued job; the browser
+never starts workers or reads credentials. Demo mode cannot queue provider fetches.
+See [JOBS.md](JOBS.md). C6 user acceptance precedes C7; native Windows verification
+remains at major releases. Scheduling stays disabled.

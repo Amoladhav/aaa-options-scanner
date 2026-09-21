@@ -38,9 +38,10 @@ def retry_deadline(value, now):
 
 
 class Governor:
-    def __init__(self, directory, provider, *, progress=None, clock=None, wall=None, sleep=None):
+    def __init__(self, directory, provider, *, progress=None, clock=None, wall=None, sleep=None, cancel_check=None):
         if provider not in DEFAULTS:
             raise DataError('THROTTLE_STATE_INVALID')
+        self.cancel_check = cancel_check
         self.directory, self.provider, self.progress = directory, provider, progress
         self.clock, self.wall, self.sleep = clock or time.monotonic, wall or time.time, sleep or time.sleep
         self.path = directory / (provider + '.json')
@@ -169,12 +170,14 @@ class Governor:
         if not self.held:
             raise DataError('THROTTLE_STATE_INVALID')
         for attempt in range(retries + 1):
+            if self.cancel_check: self.cancel_check()
             delay = max(self.state['interval_seconds'], self.state['cooldown_until'] - self.wall())
             if delay > 900:
                 self.blocked = 'THROTTLE_COOLDOWN_ACTIVE'
                 raise DataError(self.blocked)
             detail = self.progress.detail if self.progress else None
             while delay > 0:
+                if self.cancel_check: self.cancel_check()
                 chunk = min(delay, 10.0)
                 if self.progress:
                     self.progress.advance(self.progress.completed, detail='throttle_wait', counts=self.progress_counts())
@@ -184,6 +187,7 @@ class Governor:
                 delay -= chunk
             if self.progress:
                 self.progress.advance(self.progress.completed, detail=detail, counts=self.progress_counts())
+            if self.cancel_check: self.cancel_check()
             started = self.clock()
             self.requests += 1
             self.last_status = None

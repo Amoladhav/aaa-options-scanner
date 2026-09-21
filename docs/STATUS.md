@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-09-21. Phase: C6b screeners/preferences implemented; C6c durable jobs next.
+Updated: 2026-09-21. Phase: C6a–C6c implemented; C6 user acceptance before C7.
 
 Architecture/sequence clarification (2026-09-21, documentation only): CLI,
 local web and cloud are required delivery targets sharing application services.
@@ -450,3 +450,15 @@ the full WSL VM and real-provider payloads. No runtime settings or global resour
 limits changed. Full-report decode on every view and in-memory CSV are known
 scaling limits; retain on-demand behavior and assess richer inputs before C6.
 See [resource evidence and limits](LOCAL_WEB.md#resource-use-and-shared-machine-constraint).
+
+## C6c durable jobs (2026-09-21)
+
+Implemented shared job submission/status/cancel/recovery with CLI and localhost
+controls. One explicit foreground worker handles a pinned report, OTA fetch or
+Tradier fetch. No automatic execution, scheduling or browser credential access.
+Schema 5 backs up immutable requests, input references and progress events with
+the catalog. Interrupted work requires confirmed stopped-worker recovery.
+See [JOBS.md](JOBS.md) for limits, commands and acceptance.
+289 core and 26 web tests pass on Ubuntu/Python 3.14.4 using synthetic data and
+transports. Offline checks passed; live checks pending. Native Windows checks
+remain at major releases; C6 user acceptance gates C7 provider implementation.

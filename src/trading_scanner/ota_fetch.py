@@ -117,7 +117,7 @@ def fetch_page(criteria, token, *, page=1, page_size=DEFAULT_PAGE_SIZE, capture=
 
 
 def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
-              progress=None, counts=None, capture=None, governor=None):
+              progress=None, counts=None, capture=None, governor=None, cancel_check=None):
     request_path(1, page_size)
     if type(max_pages) is not int or not 1 <= max_pages <= 100:
         raise DataError('OTA_PAGINATION_INVALID')
@@ -125,6 +125,7 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
     counts.update(pages_requested=0, pages_received=0, symbols_received=0)
     rows, seen = [], set()
     for page in range(1, max_pages + 1):
+        if cancel_check: cancel_check()
         counts['pages_requested'] += 1
         batch = fetch_page(criteria, token, page=page, page_size=page_size, **({'capture': capture} if capture is not None else {}), **({'governor': governor} if governor is not None else {}))
         counts['pages_received'] += 1
@@ -147,9 +148,10 @@ def fetch_all(criteria, token, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT
     raise DataError('OTA_PAGE_LIMIT')
 
 
-def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES, use_stored_token=False, credential_source=None):
+def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES, use_stored_token=False, credential_source=None,
+              config_override=None, cancel_check=None, run_id=None, observer=None):
     from .cli import code_revision
-    run_id = new_run_id()
+    run_id = run_id or new_run_id()
     revision = code_revision()
     progress, count, code = None, 0, None
     schema_diagnostic = None
@@ -160,15 +162,18 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
     destination = root / 'artifacts' / 'ota' / run_id
     pagination_counts = {'pages_requested': 0, 'pages_received': 0, 'symbols_received': 0}
     try:
-        progress = RunProgress(root / 'artifacts' / 'logs', run_id, 'ota-fetch', 'ota', revision)
+        progress = RunProgress(root / 'artifacts' / 'logs', run_id, 'ota-fetch', 'ota', revision, observer=observer)
         progress.begin()
         progress.start('config_parse')
         try:
-            with (root / 'config' / 'ota-screener.json').open(encoding='utf-8') as stream:
-                raw = stream.read(MAX_INPUT + 1)
-            if len(raw) > MAX_INPUT:
-                raise ValueError()
-            config = json.loads(raw, object_pairs_hook=pairs)
+            if config_override is None:
+                with (root / 'config' / 'ota-screener.json').open(encoding='utf-8') as stream:
+                    raw = stream.read(MAX_INPUT + 1)
+                if len(raw) > MAX_INPUT:
+                    raise ValueError()
+                config = json.loads(raw, object_pairs_hook=pairs)
+            else:
+                config = config_override
             checked = parse_config(json.dumps(config['criteria'], allow_nan=False))
             if config != checked:
                 raise ValueError()
@@ -177,12 +182,13 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         from .ota_config import config_identity
         request_config = {**config_identity(checked), 'page_size': page_size, 'max_pages': max_pages}
         progress.finish()
-        print(f"Using config: {(root / 'config/ota-screener.json').resolve()}")
+        print('Using pinned job configuration.' if config_override is not None else f"Using config: {(root / 'config/ota-screener.json').resolve()}")
         print(f"Criteria SHA256: {request_config['criteria_sha256']} | criteria={request_config['criteria_count']} enabled={request_config['enabled_count']} | page_size={page_size} max_pages={max_pages}")
+        if cancel_check: cancel_check()
         progress.start('ota_auth')
         from .credentials import resolve
         token = resolve('ota', 'ota', source=credential_source or ('store' if use_stored_token else 'prompt'),
-                        allow_prompt=True, prompt=prompt_token)
+                        allow_prompt=cancel_check is None, prompt=prompt_token)
         progress.finish()
         destination.mkdir(parents=True, exist_ok=False)
         snapshot = {'schema_version': 2, 'source': 'ota', 'representation': 'ota_raw',
@@ -208,10 +214,10 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         progress.start('ota_fetch', total=max_pages)
         try:
             from .throttling import Governor
-            with Governor(root / 'artifacts/throttling', 'ota', progress=progress) as governor:
+            with Governor(root / 'artifacts/throttling', 'ota', progress=progress, **({'cancel_check':cancel_check} if cancel_check else {})) as governor:
                 governor.plan(max_pages)
                 rows = fetch_all(checked['criteria'], token, page_size=page_size,
-                                 max_pages=max_pages, progress=progress, counts=pagination_counts, capture=capture, governor=governor)
+                                 max_pages=max_pages, progress=progress, counts=pagination_counts, capture=capture, governor=governor, **({'cancel_check':cancel_check} if cancel_check else {}))
         finally:
             # No persistence; Python cannot promise secure erasure from memory.
             token = None
@@ -219,6 +225,7 @@ def run_fetch(root, *, page_size=DEFAULT_PAGE_SIZE, max_pages=DEFAULT_MAX_PAGES,
         # Once exhaustion is observed, the actual number of pages is known.
         progress.total = pagination_counts['pages_received']
         progress.finish(counts=pagination_counts)
+        if cancel_check: cancel_check()
         progress.start('ota_profile')
         snapshot.update(rows=rows, acquisition_status='completed_short_page', coverage='short_page_observed',
                         retrieved_at=datetime.now(timezone.utc).isoformat(), pages_received=pagination_counts['pages_received'])

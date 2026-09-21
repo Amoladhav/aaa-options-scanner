@@ -24,7 +24,7 @@ def run_web(root,args):
             prices,ota=service.demo_sources()
             if not catalog.list_artifacts('report'):
                 service.generate(prices,ota)
-        app=create_app(catalog,port=args.port,service=service)
+        app=create_app(catalog,port=args.port,service=service,provider_submission=not args.demo,demo=args.demo)
         # WSGI exceptions are handled with fixed responses. Do not let server
         # diagnostics emit request data or arbitrary application exception text.
         for name in ('waitress','waitress.queue'):
@@ -36,7 +36,7 @@ def run_web(root,args):
                              channel_timeout=30,clear_untrusted_proxy_headers=False)
         progress.finish();progress.pause()
         print(f'Local preview: http://127.0.0.1:{args.port}',flush=True)
-        print('Saved data only. Provider controls unavailable; scheduling disabled in this app. Stop with Ctrl+C.',flush=True)
+        print('Jobs can be queued here; workers run only from your terminal. Scheduling disabled. Stop with Ctrl+C.',flush=True)
         server.run()
     except KeyboardInterrupt:
         code='RUN_CANCELLED'

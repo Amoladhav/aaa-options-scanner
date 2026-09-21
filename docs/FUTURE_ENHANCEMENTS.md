@@ -554,3 +554,17 @@ state; standalone scheduler preferences stay separate. No credentials or jobs ar
 activated. See [workspace settings](WORKSPACE_SETTINGS.md) for interface mapping,
 limits and verification. 276 core/24 web guarded tests pass; actual browser and
 native-platform acceptance remain separate. Next is C6c durable jobs.
+
+## Adopted increment: durable jobs (C6c)
+
+Shared Jobs service and schema 5 implement immutable submissions, pinned sources,
+explicit credential references, one transactional worker claim, cancellation,
+progress events and explicit interrupted recovery. CLI and web share validation.
+Browser submission never executes work; a user starts one foreground `job-run`.
+This keeps current operation demand-driven and avoids a daemon on shared machines.
+A job system is implemented; automatic scheduling, cloud workers and cross-workspace
+quota coordination are not. Catalog backups include job state and indexed outputs,
+not private captures or pacing files. See [JOBS.md](JOBS.md) for the recovery gap
+between output publication and terminal job state. No automatic retry is attempted.
+289 core/26 web synthetic tests pass. Next is C6 user acceptance before C7; native
+Windows verification remains at major releases. No provider execution occurred.

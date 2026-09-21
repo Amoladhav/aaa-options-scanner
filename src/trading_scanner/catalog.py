@@ -20,7 +20,7 @@ KINDS = ('prices', 'ota', 'tradier', 'report', 'legacy_history')
 PROFILES = ('synthetic', 'public', 'ota', 'sandbox', 'production')
 MAX_BYTES = 220_000_000
 MIGRATIONS = tuple(Path(__file__).with_name('migrations') / name
-                   for name in ('001_catalog.sql', '002_crs_history.sql', '003_legacy_history.sql', '004_workspace_settings.sql'))
+                   for name in ('001_catalog.sql', '002_crs_history.sql', '003_legacy_history.sql', '004_workspace_settings.sql', '005_jobs.sql'))
 
 
 def encoded(value):

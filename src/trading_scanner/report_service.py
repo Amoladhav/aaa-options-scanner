@@ -64,7 +64,7 @@ class ReportService:
         return prices,source
 
     def generate(self,prices_id,ota_id=None,tradier_id=None,*,now=None,filters=None,
-                 prior_id=_AUTO_PRIOR,replay_of=None,tradier_extra=()):
+                 prior_id=_AUTO_PRIOR,replay_of=None,tradier_extra=(),run_id=None,cancel_check=None,observer=None):
         from .progress import RunProgress
         from .run_ids import new_run_id
         from .scan_service import code_revision
@@ -87,7 +87,7 @@ class ReportService:
         legacy_prior=prior_id if prior_id and self.catalog.record(prior_id)['kind']=='legacy_history' else None
         ids.extend(aid for aid in (prior_id,replay_of) if aid and aid not in ids)
         evaluation_time=now or datetime.now(timezone.utc)
-        progress=RunProgress(self.catalog.root/'artifacts/logs',new_run_id(),'web-report',snapshot['profile'],code_revision())
+        progress=RunProgress(self.catalog.root/'artifacts/logs',run_id or new_run_id(),'web-report',snapshot['profile'],code_revision(),observer=observer)
         code, counts='REPORT_FAILED',{}
         try:
             progress.begin();progress.start('dashboard')
@@ -114,6 +114,7 @@ class ReportService:
                                        'tradier_profile':probes[0].get('profile') if probes else None}
             counts=coverage(result)
             progress.finish(counts=counts);progress.start('reports')
+            if cancel_check:cancel_check()
             aid=self.catalog.publish(encoded(result),kind='report',profile=result['profile'],
                                      input_ids=ids,run_id=progress.run_id,master=snapshot['universe'],
                                      observed_at=snapshot.get('membership_observed_at'),settings=result['filters'],
@@ -121,6 +122,9 @@ class ReportService:
             progress.finish();code=None
             print(f'Saved report: {self.catalog.root / self.catalog.record(aid)["relative_path"]}')
             return aid
+        except KeyboardInterrupt:
+            code='RUN_CANCELLED'
+            raise
         finally:
             progress.end(code,counts=counts)
             progress.close()

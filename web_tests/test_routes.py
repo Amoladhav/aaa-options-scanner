@@ -159,7 +159,7 @@ class WebRoutesTests(unittest.TestCase):
         path=self.report()
         for query in ('percent=nan','page=0','sort=arbitrary','search='+('x'*101),'page=1&page=2','path=/etc/passwd'):
             self.assertEqual(self.get(path+'?'+query).status_code,400)
-        for target in ('/artifacts/catalog/catalog.sqlite3','/raw/'+self.ota,'/assets/../../config/credentials.json','/jobs','/schedule'):
+        for target in ('/artifacts/catalog/catalog.sqlite3','/raw/'+self.ota,'/assets/../../config/credentials.json','/jobs/run/execute','/schedule'):
             self.assertEqual(self.get(target).status_code,404)
         self.assertEqual(self.get(path+'/export').status_code,400)
 
@@ -326,3 +326,38 @@ class WebRoutesTests(unittest.TestCase):
         self.assertNotIn('<script>bad</script>',response.text)
         self.assertIn('&lt;script&gt;',response.text)
         self.assertEqual(self.get(path+'/watchlist?'+query).data,b'')
+
+    def test_jobs_queue_show_cancel_without_execution(self):
+        from trading_scanner.jobs import Jobs
+        csrf=self.csrf()
+        page=self.get('/jobs');self.assertEqual(page.status_code,200)
+        self.assertNotIn('Queue OTA fetch',page.text)
+        data={'csrf':csrf,'action_key':'a'*32,'prices':self.prices,'ota':self.ota,'tradier':''}
+        with patch('trading_scanner.credentials.resolve') as resolve,patch.object(Jobs,'run') as worker:
+            response=self.client.post('/jobs/report',base_url=BASE,data=data,headers={'Origin':BASE})
+            self.assertEqual(response.status_code,303,response.text)
+            duplicate=self.client.post('/jobs/report',base_url=BASE,data=data,headers={'Origin':BASE})
+            self.assertEqual(duplicate.location,response.location)
+            detail=self.get(response.location);self.assertEqual(detail.status_code,200)
+            self.assertIn('job-run --job',detail.text)
+            cancelled=self.client.post(response.location+'/cancel',base_url=BASE,data={'csrf':csrf},headers={'Origin':BASE})
+            self.assertEqual(cancelled.status_code,303)
+            worker.assert_not_called();resolve.assert_not_called()
+        self.assertEqual(Jobs(self.catalog).list()[0]['state'],'cancelled')
+        self.assertEqual(self.client.post('/jobs/report',base_url=BASE,data=data).status_code,403)
+        self.assertEqual(self.client.post('/jobs/ota',base_url=BASE,data={'csrf':csrf},headers={'Origin':BASE}).status_code,403)
+
+    def test_provider_submission_pins_config_without_credentials(self):
+        from trading_scanner.ota_config import parse_config
+        from trading_scanner.jobs import Jobs
+        config=parse_config(json.dumps([{'field':'optionable','valueFilter':'BOOLEAN','valueChoices':'Yes','criteria':'true'}]))
+        path=self.catalog.root/'config/ota-screener.json';path.parent.mkdir();path.write_text(json.dumps(config))
+        self.app=create_app(self.catalog,provider_submission=True);self.client=self.app.test_client()
+        csrf=self.csrf()
+        with patch('trading_scanner.credentials.resolve') as resolve,patch.object(Jobs,'run') as worker:
+            response=self.client.post('/jobs/ota',base_url=BASE,headers={'Origin':BASE},data={
+                'csrf':csrf,'action_key':'b'*32,'page_size':'600','max_pages':'50','credential_source':'env'})
+            self.assertEqual(response.status_code,303,response.text)
+            worker.assert_not_called();resolve.assert_not_called()
+        row=Jobs(self.catalog).get(Jobs(self.catalog).list()[0]['id'])
+        self.assertEqual(row['request']['config'],config);self.assertEqual(row['state'],'queued')

@@ -25,22 +25,25 @@ def master_id(rows):
     return hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def run_batch(root, args):
+def run_batch(root, args, *, snapshot_override=None, cancel_check=None, run_id=None, observer=None):
     from .cli import code_revision
     from .credentials import resolve
     from .token_store import prompt_api_key, valid_token
     from .workflow import newest
-    run_id, revision = new_run_id(), code_revision()
+    run_id, revision = run_id or new_run_id(), code_revision()
     progress, state, destination, credential, code = None, None, None, None, None
     counts = {'master_symbols': 0, 'symbols_requested': 0, 'symbols_received': 0, 'symbols_failed': 0, 'requests': 0}
     try:
         if args.profile not in HOSTS:
             raise DataError('TRADIER_INVALID_INPUT')
-        progress = RunProgress(root / 'artifacts/logs', run_id, 'tradier-fetch', args.profile, revision)
+        progress = RunProgress(root / 'artifacts/logs', run_id, 'tradier-fetch', args.profile, revision, observer=observer)
         progress.begin()
         progress.start('snapshot_load')
-        path = args.snapshot or newest(root.glob('artifacts/runs/public/*/snapshot.json'))
-        snapshot = read_json(path)
+        if snapshot_override is None:
+            path = args.snapshot or newest(root.glob('artifacts/runs/public/*/snapshot.json'))
+            snapshot = read_json(path)
+        else:
+            snapshot = snapshot_override
         master = master_universe(snapshot)
         counts['master_symbols'] = len(master)
         as_of = observation_date(getattr(args, 'as_of', None))
@@ -57,25 +60,28 @@ def run_batch(root, args):
                            'result': None} for row in master]}
         atomic_json(destination / 'batch.json', state)
         progress.finish()
+        if cancel_check: cancel_check()
         progress.start('tradier_auth')
         credential = resolve('tradier', args.profile,
                              source=getattr(args, 'credential_source', None) or ('prompt' if getattr(args, 'prompt_token', False) else 'store'),
-                             allow_prompt=True, prompt=lambda: valid_token(prompt_api_key(save=False), provider='tradier'))
+                             allow_prompt=cancel_check is None, prompt=lambda: valid_token(prompt_api_key(save=False), provider='tradier'))
         progress.finish()
         progress.start('tradier_batch', total=len(master))
         from .throttling import Governor
-        with Governor(root / 'artifacts/throttling', 'tradier-' + args.profile, progress=progress) as governor:
+        with Governor(root / 'artifacts/throttling', 'tradier-' + args.profile, progress=progress, **({'cancel_check':cancel_check} if cancel_check else {})) as governor:
             governor.plan(len(master))
             # Stop systemic failures instead of sending the same failing request hundreds of times.
             local_errors = {'TRADIER_INVALID_INPUT', 'TRADIER_SCHEMA_INVALID',
                             'TRADIER_MONTHLY_UNVERIFIED', 'TRADIER_NO_ATM_PAIR'}
             for index, row in enumerate(state['rows']):
+                if cancel_check: cancel_check()
                 counts['symbols_requested'] += 1
                 row['status'] = 'in_progress'
                 atomic_json(destination / 'batch.json', state)
                 capture, capture_state = capture_writer(destination / 'symbols' / f'{index:04}',
                                                          args.profile, run_id, revision)
                 def before_request(endpoint=None):
+                    if cancel_check: cancel_check()
                     counts['requests'] += 1
                     detail = {'expirations': 'tradier_expirations', 'quote': 'tradier_quote', 'chain': 'tradier_chain'}.get(endpoint)
                     progress.advance(index, counts=counts, detail=detail)
@@ -99,6 +105,7 @@ def run_batch(root, args):
                 atomic_json(destination / 'batch.json', state)
                 progress.advance(index + 1, counts=counts)
                 governor.unit_done()
+        if cancel_check: cancel_check()
         state['status'] = 'completed_with_errors' if counts['symbols_failed'] else 'completed'
         state['finished_at'] = datetime.now(timezone.utc).isoformat()
         atomic_json(destination / 'batch.json', state)

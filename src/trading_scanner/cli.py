@@ -105,9 +105,14 @@ def main(argv=None, root: Path | None = None) -> int:
     add_setup_commands(subs)
     from .settings_cli import add_commands as add_settings_commands, COMMANDS as SETTINGS_COMMANDS
     add_settings_commands(subs)
+    from .jobs_cli import add_commands as add_job_commands, COMMANDS as JOB_COMMANDS
+    add_job_commands(subs)
     args = parser.parse_args(argv)
     if getattr(args, 'credential_source', None) and (getattr(args, 'use_stored_token', False) or getattr(args, 'prompt_token', False)):
         parser.error('Choose --credential-source or the legacy credential flag, not both.')
+    if args.command in JOB_COMMANDS:
+        from .jobs_cli import run_jobs
+        return run_jobs(root,args)
     if args.command in SETTINGS_COMMANDS:
         from .settings_cli import run_settings
         return run_settings(root,args)

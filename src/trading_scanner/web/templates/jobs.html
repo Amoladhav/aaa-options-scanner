@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Jobs · Local research workspace{% endblock %}
+{% block content %}
+<h1>Jobs</h1>
+<p>Submitting saves a request. Run one job explicitly in your terminal. Refresh this page to see progress; no background polling or scheduling.</p>
+{% if job %}
+<h2>{{ job.kind }} · {{ job.state }}</h2>
+<p>Profile: {{ job.profile }} · Submitted: {{ job.created_at|local_time }} · Run: {{ job.run_id }}</p>
+{% if job.error_code %}<p>{{ job.error_code }}</p>{% endif %}
+{% if job.state == 'queued' %}
+<p>From this project's directory, use your configured interpreter:</p>
+<p>Ubuntu/WSL: <code>.venv/bin/python -I run.py job-run --job {{ job.id }}{% if demo %} --demo{% endif %}</code></p>
+<p>PowerShell: <code>.\.venv\Scripts\python.exe -I run.py job-run --job {{ job.id }}{% if demo %} --demo{% endif %}</code></p>
+{% endif %}
+{% if job.state in ('queued','running','cancel_requested') %}
+<form action="{{ url_for('cancel_job',job_id=job.id) }}" method="post"><input type="hidden" name="csrf" value="{{ session.csrf }}"><button>Request cancellation</button></form>
+<p>Cancellation takes effect at the next checkpoint; it cannot undo an in-flight request or completed output. A stopped worker requires explicit terminal recovery.</p>
+{% endif %}
+{% if output %}<p>Output: {% if output.kind == 'report' %}<a href="{{ url_for('report',artifact_id=output.id) }}">Open report</a>{% else %}<a href="{{ url_for('sources') }}">Open sources</a>{% endif %}</p>{% endif %}
+<table><thead><tr><th>Time</th><th>State</th><th>Stage</th><th>Completed / total</th><th>Code</th></tr></thead><tbody>{% for event in events %}<tr><td>{{ event.created_at|local_time }}</td><td>{{ event.state }}</td><td>{{ event.stage }}</td><td>{{ event.completed }} / {{ event.total if event.total is not none else 'unknown' }}</td><td>{{ event.error_code or '' }}</td></tr>{% endfor %}</tbody></table>
+{% else %}
+<h2>Queue report from saved sources</h2>
+<form action="{{ url_for('submit_report_job') }}" method="post">
+<input type="hidden" name="csrf" value="{{ session.csrf }}"><input type="hidden" name="action_key" value="{{ action_key }}">
+{% for kind,label in [('prices','Prices'),('ota','OTA'),('tradier','Tradier')] %}
+<label>{{ label }} <select name="{{ kind }}" {% if kind == 'prices' %}required{% endif %}><option value="">{{ 'Choose prices' if kind == 'prices' else 'Not supplied' }}</option>{% for a in artifacts if a.kind == kind %}<option value="{{ a.id }}">{{ a.profile }} · {{ a.started_at|local_time }} · {{ a.id }}</option>{% endfor %}</select></label>
+{% endfor %}<button>Queue report</button></form>
+{% if provider_submission %}
+<h2>Queue OTA fetch</h2><p>Uses the current saved OTA configuration. Credentials are resolved only when you run the worker.</p>
+<form action="{{ url_for('submit_ota_job') }}" method="post"><input type="hidden" name="csrf" value="{{ session.csrf }}"><input type="hidden" name="action_key" value="{{ action_key }}">
+<label>Page size <input type="number" name="page_size" value="600" required></label><label>Maximum pages <input type="number" name="max_pages" value="50" min="1" max="100" required></label>
+<label>Credential source <select name="credential_source" required><option value="">Choose explicitly</option><option value="store">Native store</option><option value="env">Worker environment</option></select></label><button>Queue OTA</button></form>
+<h2>Queue Tradier fetch</h2>
+<form action="{{ url_for('submit_tradier_job') }}" method="post"><input type="hidden" name="csrf" value="{{ session.csrf }}"><input type="hidden" name="action_key" value="{{ action_key }}">
+<label>Master prices <select name="prices" required><option value="">Choose saved public prices</option>{% for a in artifacts if a.kind == 'prices' and a.profile == 'public' %}<option value="{{ a.id }}">{{ a.started_at|local_time }} · {{ a.id }}</option>{% endfor %}</select></label>
+<label>Profile <select name="profile" required><option value="">Choose explicitly</option><option value="sandbox">Sandbox</option><option value="production">Production</option></select></label><label>Observation date <input type="date" name="as_of" required></label>
+<label>Credential source <select name="credential_source" required><option value="">Choose explicitly</option><option value="store">Native store</option><option value="env">Worker environment</option></select></label><button>Queue Tradier</button></form>
+{% endif %}
+<h2>Saved jobs</h2><table><thead><tr><th>Job</th><th>Profile</th><th>State</th><th>Submitted</th></tr></thead><tbody>{% for row in jobs %}<tr><td><a href="{{ url_for('job',job_id=row.id) }}">{{ row.kind }}</a></td><td>{{ row.profile }}</td><td>{{ row.state }}</td><td>{{ row.created_at|local_time }}</td></tr>{% endfor %}</tbody></table>
+{% endif %}
+{% endblock %}

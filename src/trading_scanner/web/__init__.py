@@ -1,4 +1,4 @@
-"""Same-origin localhost adapter. No provider/credential/scheduling routes."""
+"""Same-origin localhost adapter. Submission only; no credential or worker execution."""
 from datetime import datetime, timezone
 from dataclasses import replace
 import hmac
@@ -25,7 +25,7 @@ def validate_port(port):
     return port
 
 
-def create_app(catalog, *, port=8765, service=None):
+def create_app(catalog, *, port=8765, service=None, provider_submission=False, demo=False):
     validate_port(port)
     app=Flask(__name__,static_folder=None,template_folder='templates')
     app.config.update(SECRET_KEY=secrets.token_hex(32),DEBUG=False,TESTING=False,
@@ -35,6 +35,8 @@ def create_app(catalog, *, port=8765, service=None):
                       SESSION_COOKIE_SAMESITE='Strict',SESSION_COOKIE_PATH='/')
     origin=f'http://127.0.0.1:{port}'
     service=service or ReportService(catalog)
+    from ..jobs import Jobs
+    jobs_service=Jobs(catalog)
     mutation_lock=threading.Lock()
     from ..workspace_settings import WorkspaceSettings,selection_payload
     workspace_settings=WorkspaceSettings(catalog)
@@ -206,6 +208,51 @@ def create_app(catalog, *, port=8765, service=None):
 
     def strict_form(keys):
         if set(request.form)!=set(keys) or any(len(request.form.getlist(key))!=1 for key in request.form):abort(400)
+
+    @app.get('/jobs')
+    def jobs():
+        return render_template('jobs.html',jobs=jobs_service.list(),job=None,
+                               artifacts=catalog.list_artifacts(),action_key=secrets.token_hex(16),
+                               provider_submission=provider_submission)
+
+    @app.get('/jobs/<job_id>')
+    def job(job_id):
+        row=jobs_service.get(job_id)
+        output=catalog.record(row['output_artifact_id']) if row['output_artifact_id'] else None
+        return render_template('jobs.html',job=row,events=jobs_service.events(job_id),output=output,demo=demo)
+
+    @app.post('/jobs/report')
+    def submit_report_job():
+        strict_form(('csrf','action_key','prices','ota','tradier'))
+        jid=jobs_service.submit_report(request.form['action_key'],request.form['prices'],
+                                      request.form['ota'] or None,request.form['tradier'] or None)
+        return redirect(url_for('job',job_id=jid),code=303)
+
+    @app.post('/jobs/ota')
+    def submit_ota_job():
+        if not provider_submission:abort(403)
+        strict_form(('csrf','action_key','page_size','max_pages','credential_source'))
+        from ..ota_config import pairs,MAX_INPUT
+        with (catalog.root/'config/ota-screener.json').open('rb') as stream:data=stream.read(MAX_INPUT+1)
+        if len(data)>MAX_INPUT:abort(400)
+        jid=jobs_service.submit_ota(request.form['action_key'],json.loads(data,object_pairs_hook=pairs),
+                                   page_size=int(request.form['page_size']),max_pages=int(request.form['max_pages']),
+                                   credential_source=request.form['credential_source'])
+        return redirect(url_for('job',job_id=jid),code=303)
+
+    @app.post('/jobs/tradier')
+    def submit_tradier_job():
+        if not provider_submission:abort(403)
+        strict_form(('csrf','action_key','prices','profile','as_of','credential_source'))
+        jid=jobs_service.submit_tradier(request.form['action_key'],request.form['prices'],request.form['profile'],
+                                       request.form['as_of'],credential_source=request.form['credential_source'])
+        return redirect(url_for('job',job_id=jid),code=303)
+
+    @app.post('/jobs/<job_id>/cancel')
+    def cancel_job(job_id):
+        strict_form(('csrf',))
+        jobs_service.cancel(job_id)
+        return redirect(url_for('job',job_id=job_id),code=303)
 
     @app.post('/preferences')
     def save_preferences():
