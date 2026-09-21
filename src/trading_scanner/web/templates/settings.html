@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Setup · Local research workspace{% endblock %}
+{% block content %}
+<h1>Credential setup</h1>
+<p>Saved reports and the demo need no credentials. This page does not inspect your environment or credential store.</p>
+<p>Enter secrets only in your terminal's hidden prompt or your chosen secret manager. Never paste them into chat, command arguments or report filters.</p>
+{% for provider in providers %}
+<article><h2>{{ provider.provider | upper }} · {{ provider.profile }}</h2>
+<p>{{ provider.renewal }} {{ provider.authentication }}</p>
+<p>From the project folder, native Windows PowerShell:</p>
+<pre>.\.venv\Scripts\python.exe -I run.py credential-manage add --provider {{ provider.provider }} --profile {{ provider.profile }}</pre>
+<p>Ubuntu/WSL/macOS:</p>
+<pre>.venv/bin/python -I run.py credential-manage add --provider {{ provider.provider }} --profile {{ provider.profile }}</pre>
+<p>Use <code>status</code> to check local presence/format, <code>replace</code> to update an existing entry, or <code>remove</code> to remove it locally. OS storage requires the optional keyring dependency and an unlocked native store.</p>
+<p>For Infisical/environment injection, use <code>{{ provider.variable }}</code>. See <code>docs/SECRETS.md</code> for the profile-specific wrapper and user-run provider check. This page does not install tools, authenticate, or enable scheduling.</p></article>
+{% endfor %}
+{% endblock %}

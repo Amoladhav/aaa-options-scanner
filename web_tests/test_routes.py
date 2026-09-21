@@ -65,6 +65,17 @@ class WebRoutesTests(unittest.TestCase):
         self.assertEqual(self.get(path).status_code, 200)
         self.assertIn('Prior ranks use imported legacy history', self.get(path).text)
 
+    def test_setup_page_never_reads_credentials_or_accepts_secret_posts(self):
+        with patch('trading_scanner.token_store.operate',side_effect=AssertionError('store denied')), patch('trading_scanner.credentials.resolve',side_effect=AssertionError('credentials denied')):
+            response=self.get('/settings')
+            self.assertEqual(response.status_code,200)
+            self.assertIn('credential-manage add',response.text)
+            self.assertIn('SCANNER_TRADIER_SANDBOX_TOKEN',response.text)
+            self.assertNotIn('type="password"',response.text)
+        response=self.client.post('/settings',base_url=BASE,data={'csrf':self.csrf(),'value':'synthetic-private-marker'},headers={'Origin':BASE})
+        self.assertEqual(response.status_code,405)
+        self.assertNotIn('synthetic-private-marker',response.text)
+
     def test_health_navigation_and_no_side_effects(self):
         before=len(self.catalog.runs())
         with patch('trading_scanner.credentials.resolve',side_effect=AssertionError('credentials denied')),patch('trading_scanner.ota_fetch.run_fetch',side_effect=AssertionError('providers denied')):

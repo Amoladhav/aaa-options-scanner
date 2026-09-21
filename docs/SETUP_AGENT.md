@@ -159,3 +159,8 @@ Target shared 8–16 GB machines alongside other trading apps. Installed RAM doe
 not establish available RAM; synthetic measurements exclude Chrome and WSL overhead.
 Do not promise a resource cap or change global WSL settings. See
 [resource evidence](LOCAL_WEB.md#resource-use-and-shared-machine-constraint).
+
+C6a provides a credential-free localhost **Setup** guide and user-run
+`credential-manage guide/status/add/replace/remove` commands. See
+[credential lifecycle](SECRETS.md#credential-lifecycle-c6a). Agents never execute
+credential mutations/checks against real stores; provider validation stays user-run.

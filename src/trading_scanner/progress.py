@@ -23,7 +23,9 @@ HISTORY_ERRORS = {'HISTORY_FAILED','HISTORY_NOT_RECORDED','HISTORY_REPLAY_VERSIO
 RECOVERY_ERRORS = {'RECOVERY_INVALID','RECOVERY_CHANGED','RECOVERY_LIMIT',
                    'RECOVERY_DESTINATION_EXISTS','RECOVERY_FAILED','RECOVERY_BUSY'}
 
-SAFE_ERRORS = RECOVERY_ERRORS | CREDENTIAL_ERRORS | {"REPORT_FAILED", "WEB_FAILED","CATALOG_FAILED", "CATALOG_RECONCILIATION_REQUIRED","OTA_REPORT_INPUT_INVALID", "OTA_REPORT_INPUT_MISSING", "OTA_REPORT_FAILED", "SCHEDULE_TASK_FAILED", "THROTTLE_BUSY", "THROTTLE_STATE_INVALID", "THROTTLE_COOLDOWN_ACTIVE", "THROTTLE_CIRCUIT_OPEN", "PUBLIC_NETWORK_ERROR", "PUBLIC_ACCESS_REJECTED", "PUBLIC_RATE_LIMITED", "PUBLIC_HTTP_ERROR","TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
+SETUP_ERRORS = {'CREDENTIAL_EXISTS','CREDENTIAL_NOT_FOUND','CREDENTIAL_ACTION_INVALID'}
+
+SAFE_ERRORS = SETUP_ERRORS | RECOVERY_ERRORS | CREDENTIAL_ERRORS | {"REPORT_FAILED", "WEB_FAILED","CATALOG_FAILED", "CATALOG_RECONCILIATION_REQUIRED","OTA_REPORT_INPUT_INVALID", "OTA_REPORT_INPUT_MISSING", "OTA_REPORT_FAILED", "SCHEDULE_TASK_FAILED", "THROTTLE_BUSY", "THROTTLE_STATE_INVALID", "THROTTLE_COOLDOWN_ACTIVE", "THROTTLE_CIRCUIT_OPEN", "PUBLIC_NETWORK_ERROR", "PUBLIC_ACCESS_REJECTED", "PUBLIC_RATE_LIMITED", "PUBLIC_HTTP_ERROR","TRADIER_BATCH_PARTIAL","SCAN_FAILED", "DEPENDENCY_UNAVAILABLE", "CONSTITUENTS_SCHEMA_CHANGED",
                "CONSTITUENTS_COUNT_INVALID", "CONSTITUENTS_RESPONSE_TOO_LARGE",
                "NO_VALID_PEER_GROUP", "INVALID_SNAPSHOT", "INSUFFICIENT_CALENDAR",
                "MISSING_SNAPSHOT", "INVALID_SESSION_ORDER", "WEEKEND_SESSION",
@@ -87,7 +89,7 @@ class RunProgress:
                  revision: str, stream=None):
         if not valid_run_id(run_id) or not re.fullmatch(r"[a-f0-9]{64}", revision):
             raise ValueError("INVALID_LOG_METADATA")
-        if command not in {"catalog-backup", "catalog-backup-verify", "catalog-restore", "history-preview", "history-import", "history-imports", "history-rollback", "history-list", "history-show", "history-compare", "report-replay", "report-build", "web", "web-report","catalog-init", "catalog-index", "catalog-reconcile","ota-report", "ota-report-demo", "schedule-run", "demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe", "tradier-fetch"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
+        if command not in {"credential-manage", "catalog-backup", "catalog-backup-verify", "catalog-restore", "history-preview", "history-import", "history-imports", "history-rollback", "history-list", "history-show", "history-compare", "report-replay", "report-build", "web", "web-report","catalog-init", "catalog-index", "catalog-reconcile","ota-report", "ota-report-demo", "schedule-run", "demo", "cached", "refresh", "ota-config", "ota-fetch", "ota-process", "dashboard", "dashboard-demo", "ota-token", "tradier-token", "tradier-probe", "tradier-fetch"} or profile not in {"synthetic", "public", "unknown", "ota", "sandbox", "production"}:
             raise ValueError("INVALID_LOG_METADATA")
         self.run_id, self.command, self.profile, self.revision = run_id, command, profile, revision
         self.stream = sys.stdout if stream is None else stream

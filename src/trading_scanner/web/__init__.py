@@ -188,6 +188,12 @@ def create_app(catalog, *, port=8765, service=None):
         data=watchlist_export(service.load(artifact_id),selected)
         return Response(data,mimetype='text/plain',headers={'Content-Disposition':'attachment; filename="filtered-watchlist.txt"'})
 
+    @app.get('/settings')
+    def settings():
+        from ..credential_setup import guidance
+        return render_template('settings.html',providers=[guidance('ota','ota'),
+                               guidance('tradier','sandbox'),guidance('tradier','production')])
+
     @app.get('/runs')
     def runs():
         return render_template('runs.html',runs=catalog.runs(),artifacts=catalog.list_artifacts())

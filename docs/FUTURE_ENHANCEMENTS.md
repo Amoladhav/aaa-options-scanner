@@ -39,7 +39,8 @@ synthetic/offline verification, never credentialed provider requests.
 - Secure token onboarding is C6a, after C5 recovery and before saved screeners/fetch
   controls. Reuse C1 and prepared C2 guidance for add/replace/remove, hidden input,
   format checks, user-run authentication checks and expiry handling. CLI/local-web
-  control scope is still to be selected; backend validation must be shared.
+  controls now use CLI-first lifecycle management and a credential-free web Setup
+  guide; backend validation is shared.
   Cloud callers must use noninteractive scoped secret resolution; never a global
   per-user environment mutation or browser-returned stored token. OTA renewal is
   user-run and cannot be solved by storage alone.
@@ -530,3 +531,14 @@ See [recovery](RECOVERY.md) and [decision 0005](decisions/0005-catalog-recovery.
 264 guarded core and 21 web tests pass on Ubuntu/Python 3.14.4. Real-data drills and
 native-platform acceptance remain pending, with Windows checks at major releases.
 Next is C6a secure token onboarding, then C6b screeners/preferences and C6c jobs.
+
+
+## Adopted increment: credential lifecycle (C6a)
+
+Explicit add/replace/remove/status commands reuse C1 validation and the native
+store adapter. The localhost Setup guide is read-only and never accesses secrets;
+secret entry remains in a user-run hidden CLI prompt. Infisical/env lifecycle
+stays external. This avoids adding browser credential transport to the current
+saved-data app. Older set/delete commands remain compatible. Local format checks
+are not authentication; live acceptance remains user-run. See [SECRETS](SECRETS.md).
+Next is C6b screeners/preferences; scheduling and hosted CI remain disabled.

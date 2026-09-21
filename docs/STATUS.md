@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-09-21. Phase: C5 catalog recovery implemented; C6a secure token onboarding next.
+Updated: 2026-09-21. Phase: C6a credential lifecycle implemented; C6b saved screeners/preferences next.
 
 Architecture/sequence clarification (2026-09-21, documentation only): CLI,
 local web and cloud are required delivery targets sharing application services.
@@ -58,7 +58,12 @@ publication, corruption, interrupted recovery, migration and replay drills. See
 [recovery scope and commands](RECOVERY.md). Native-platform and real-data recovery
 acceptance remain pending; no real backup or restore was run by agents.
 
-Next: C6a secure token onboarding, then saved screeners/preferences/durable jobs. Finviz/IBKR stays after C6 acceptance.
+C6a adds shared user-run credential add/replace/remove/status, a CLI guide and a
+credential-free localhost Setup page. 269 core/22 web guarded tests pass; actual
+OS-store/Infisical/provider validation remains pending. No real credentials were
+read or changed. See [credential lifecycle](SECRETS.md#credential-lifecycle-c6a).
+
+Next: C6b saved screeners/preferences, then durable jobs. Finviz/IBKR stays after C6 acceptance.
 Scheduling stays disabled. See [RESUME_PLAN.md](RESUME_PLAN.md).
 
 OTA live checkpoint: the user's short-page run returned 77 rows after one page

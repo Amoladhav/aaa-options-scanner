@@ -212,3 +212,8 @@ major-release acceptance and does not gate C5 implementation.
 After producing saved reports, see [catalog recovery](RECOVERY.md) for user-run
 backup/verify/restore commands and excluded data. Demo use needs no credentials;
 real-data recovery remains user-run. Recovery never activates scheduling.
+
+C6a provides a credential-free localhost **Setup** guide and user-run
+`credential-manage guide/status/add/replace/remove` commands. See
+[credential lifecycle](SECRETS.md#credential-lifecycle-c6a). Agents never execute
+credential mutations/checks against real stores; provider validation stays user-run.

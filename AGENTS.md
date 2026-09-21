@@ -350,7 +350,8 @@ This is guidance, not an active model configuration or a correctness guarantee.
   startup/tests and gave positive dashboard feedback. C4a catalog CRS history/replay
   is implemented. C4b legacy preview/import/rollback and standalone integration are
   implemented. C5 catalog backup/verify/restore is also implemented; see
-  docs/RECOVERY.md for catalog-only scope. Resume at C6a secure token onboarding.
+  docs/RECOVERY.md for catalog-only scope. C6a CLI credential lifecycle and credential-free web Setup guide are implemented.
+  Resume at C6b saved screeners/preferences, then durable jobs.
   Native Windows checks are deferred
   to major-release acceptance. Specific saved-data/import acceptance
   gaps remain in STATUS.md. Finviz/IBKR implementation follows C6 acceptance. Keep scheduling disabled.

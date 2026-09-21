@@ -154,3 +154,49 @@ this wrapper. Actual WSL, native Windows and macOS installation/login are each
 unverified. Documentation review and synthetic CLI tests do not establish them.
 Local catalog/web development can proceed without credentials while this user-run
 acceptance stays open.
+
+
+## Credential lifecycle (C6a)
+
+`credential-manage` is the shared user-run OS-store lifecycle interface. It accepts
+an explicit provider/profile and never takes a token argument. Native keyring
+setup is still optional; see the existing installation guidance. PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -I run.py credential-manage guide --provider tradier --profile sandbox
+.\.venv\Scripts\python.exe -I run.py credential-manage add --provider tradier --profile sandbox
+.\.venv\Scripts\python.exe -I run.py credential-manage status --provider tradier --profile sandbox
+.\.venv\Scripts\python.exe -I run.py credential-manage replace --provider tradier --profile sandbox
+.\.venv\Scripts\python.exe -I run.py credential-manage remove --provider tradier --profile sandbox
+```
+
+Ubuntu/WSL/macOS use `.venv/bin/python` with the same arguments. OTA uses
+`--provider ota --profile ota`; Tradier production must explicitly select
+`--provider tradier --profile production`. Use `guide` without optional dependencies
+or credential access. Add/replace prompt invisibly and validate format before a
+write. Add refuses an existing entry; replace refuses a missing entry. Remove is
+idempotent when absent. Status reports only presence/format, never a secret,
+fragment, hash or length. Do not run concurrent credential editors: native stores
+do not supply a cross-process compare-and-swap operation.
+
+The localhost **Setup** page at `/settings` shows these instructions without
+reading credentials. It has no secret form, store-status request or credential
+mutation route. CLI-first entry preserves the current browser boundary while the
+shared service remains reusable for future interfaces. Infisical/env values remain
+managed in the chosen secret manager; these commands do not modify environment
+variables or Infisical. Existing `ota-token set/delete` and `tradier-token
+set/delete` remain compatible; their `set` command retains upsert behavior.
+
+Local format checks are not authentication evidence. Run the existing explicit
+provider probe/fetch yourself after setup and inspect its sanitized review report.
+On auth rejection, renew/rotate at the provider and explicitly replace the selected
+local entry; no retry with another profile or source is implied. Local removal
+never revokes the provider credential, and OTA expiry cannot be fixed by storage.
+No scheduler/worker starts. Backups exclude credential stores; restore requires
+separate user-run credential onboarding.
+
+C6a evidence: 269 guarded core and 22 web tests on Ubuntu/Python 3.14.4. Fake stores
+cover profile isolation, add/replace preconditions, validation, cancellation and
+sanitized output; the setup route is checked under credential-access denial.
+Actual keyring/Infisical and provider authentication remain user-run and pending.
+Native Windows acceptance stays at major releases.

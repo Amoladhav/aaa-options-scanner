@@ -101,6 +101,8 @@ def main(argv=None, root: Path | None = None) -> int:
     add_history_commands(subs)
     from .recovery_cli import add_commands as add_recovery_commands
     add_recovery_commands(subs)
+    from .credential_setup import add_commands as add_setup_commands
+    add_setup_commands(subs)
     args = parser.parse_args(argv)
     if getattr(args, 'credential_source', None) and (getattr(args, 'use_stored_token', False) or getattr(args, 'prompt_token', False)):
         parser.error('Choose --credential-source or the legacy credential flag, not both.')
@@ -116,6 +118,9 @@ def main(argv=None, root: Path | None = None) -> int:
     if args.command.startswith('catalog-'):
         from .catalog_service import run_catalog
         return run_catalog(root, args)
+    if args.command == 'credential-manage':
+        from .credential_setup import run_setup
+        return run_setup(root,args)
     if args.command == 'credential-check':
         from .credentials import run_check
         return run_check(root, args)

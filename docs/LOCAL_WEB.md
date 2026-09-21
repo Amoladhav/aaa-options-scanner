@@ -266,3 +266,8 @@ inputs is still pending. Acceptance should distinguish Python process usage,
 Chrome tab usage and WSL overhead where applicable, and check responsiveness of
 the user's other applications during report generation and export. Keep provider
 operations user-run and scheduling disabled throughout this acceptance work.
+
+C6a provides a credential-free localhost **Setup** guide and user-run
+`credential-manage guide/status/add/replace/remove` commands. See
+[credential lifecycle](SECRETS.md#credential-lifecycle-c6a). Agents never execute
+credential mutations/checks against real stores; provider validation stays user-run.

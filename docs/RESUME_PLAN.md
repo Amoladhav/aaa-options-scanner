@@ -22,8 +22,8 @@ Native Windows verification is reserved for major releases, not intermediate
 checkpoints. Continue guarded local offline checks during each increment.
 Major releases require explicit Windows, Ubuntu/WSL and macOS evidence or a stated
 untested-platform limitation. Cloud adds its own deployment acceptance later.
-Secure onboarding reuses C1/C2; CLI-first versus including a local-web Settings
-page remains an open UX choice, not a blocker to shared backend design.
+C6a uses CLI-first secret entry with a credential-free localhost Setup guide.
+Shared lifecycle validation reuses C1/C2; no browser credential access is added.
 
 Current checkpoint: the user accepted the native Windows dashboard and authorized
 continuing. Windows/Python 3.11: 224 core tests passed with one expected symlink
@@ -35,7 +35,8 @@ workflow integration through shared services. 249 core and 21 web tests pass on
 Ubuntu/Python 3.14.4. Native Windows/macOS and actual legacy imports remain pending.
 C5 catalog backup/verify/restore is implemented through shared services and CLI.
 264 core and 21 web tests pass on Ubuntu/Python 3.14.4. See [recovery](RECOVERY.md)
-for its catalog-only scope and excluded state. Next is C6a secure token onboarding;
+for its catalog-only scope and excluded state. C6a credential lifecycle is now
+implemented (269 core/22 web tests); next is C6b saved screeners/preferences;
 native Windows verification remains at major releases. Do not auto-start providers.
 C4 native Windows verification is deferred to major-release acceptance. Positive synthetic dashboard feedback
 does not establish real saved quote coverage, Excel/TradingView imports or realistic
@@ -58,7 +59,7 @@ Current C4a offline evidence: 238 core and 20 web tests pass on Ubuntu/Python 3.
    resource measurements and full-report-loading limits. No provider operations,
    scheduling activation or real-data migration ran. C2 Infisical/Tradier
    acceptance and remaining browser/native OS checks are pending.
-4. Continue C6a secure token onboarding, then saved screeners/preferences and
+4. Continue C6b saved screeners/preferences, then
    durable fetch lifecycle. C3 is not a fetch-job implementation.
    Keep focused commits, README/status updates, isolated tests and staged scans.
    User performs pushes and every credentialed operation. C7 remains after C6
@@ -68,8 +69,8 @@ Suggested next-thread prompt:
 
 > Read AGENTS.md, docs/RESUME_PLAN.md, docs/STATUS.md and docs/CRS_HISTORY.md.
 > C4a/C4b catalog history, legacy import/rollback and standalone integration are
-> implemented, as is C5 catalog recovery. Read docs/RECOVERY.md and resume C6a
-> secure token onboarding; native Windows verification stays at major releases. Keep raw inputs
+> implemented, as are C5 recovery and C6a credential lifecycle. Resume C6b
+> saved screeners/preferences; native Windows verification stays at major releases. Keep raw inputs
 > immutable, provider operations user-run, scheduling/hosted CI disabled, and
 > native OS verification distinct from guarded synthetic checks. C5 follows C4.
 
